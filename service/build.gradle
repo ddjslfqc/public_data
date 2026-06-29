@@ -1,0 +1,10 @@
+apply plugin: 'com.android.library'
+apply from:'../dependencies.gradle'
+
+android {
+    namespace 'com.fuusy.service'
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.10"
+}

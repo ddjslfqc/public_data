@@ -1,0 +1,44 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+    ext.kotlin_version = "1.8.10"
+    ext.koin_version = '3.4.0'
+    repositories {
+        // 阿里云镜像，加速国内下载
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/central' }
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        // 官方仓库作为备用
+        google()
+        mavenCentral()
+        // JitPack用于GitHub项目
+        maven { url 'https://jitpack.io' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.0' // 示例版本，根据官方文档更新
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+
+//allprojects {
+//    repositories {
+//        // 阿里云镜像，加速国内下载
+//        maven { url 'https://maven.aliyun.com/repository/google' }
+//        maven { url 'https://maven.aliyun.com/repository/central' }
+//        maven { url 'https://maven.aliyun.com/repository/public' }
+//        // 官方仓库作为备用
+//        google()
+//        mavenCentral()
+//        // JitPack用于GitHub项目
+//        maven { url 'https://jitpack.io' }
+//        // 移除 jcenter() - 已废弃
+//    }
+//}
+
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

@@ -1,0 +1,16 @@
+<resources>
+    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/login_blue</item>
+        <item name="colorPrimaryDark">@color/login_blue_dark</item>
+        <item name="colorAccent">@color/login_blue</item>
+    </style>
+
+    <style name="LoginTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/login_blue</item>
+        <item name="colorPrimaryDark">@color/login_blue_dark</item>
+        <item name="colorAccent">@color/login_blue</item>
+        <item name="android:statusBarColor">@color/color_ffffff</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+</resources>

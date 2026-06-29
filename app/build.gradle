@@ -1,0 +1,43 @@
+// 强制app模块始终作为application
+apply plugin: 'com.android.application'
+apply from:'../dependencies.gradle'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace 'com.fuusy.jetpackkt'
+    
+    defaultConfig {
+        // 始终设置 applicationId
+        applicationId "com.fuusy.jetpackkt"
+        minSdk 24
+        targetSdk 33
+        versionCode 1
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('keystore/release.jks')
+            storePassword '123456'
+            keyAlias 'releasekey'
+            keyPassword '123456'
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation project(path: ':common')
+    implementation project(path: ':service')
+    // 移除条件判断，始终包含这些依赖
+    implementation project(path: ':webview')
+    implementation project(path: ':personal')
+    implementation project(path: ':project')
+    implementation project(path: ':login')
+    implementation project(path: ':hiddendanger')
+}

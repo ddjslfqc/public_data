@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="status_bar_height">24dp</dimen>
+    <dimen name="grid_spacing">2dp</dimen>
+    <dimen name="personal_grid_spacing">5dp</dimen>
+    <!-- 底部悬浮按钮让出空间 -->
+    <dimen name="dp_50">50dp</dimen>
+</resources>

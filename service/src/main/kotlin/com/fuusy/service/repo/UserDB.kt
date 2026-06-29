@@ -1,0 +1,63 @@
+package com.fuusy.service.repo
+
+import android.content.Context
+import androidx.lifecycle.LiveData
+import androidx.room.*
+import com.google.gson.annotations.SerializedName
+
+@Database(entities = [LoginResp::class], version = 2, exportSchema = false)
+abstract class UserDB : RoomDatabase() {
+
+    abstract val userDao: UserDao
+
+    companion object {
+        const val DB_NAME = "tb_user"
+
+        @Volatile
+        private var instance: UserDB? = null
+
+        fun get(context: Context): UserDB {
+            return instance ?: Room.databaseBuilder(context, UserDB::class.java, DB_NAME)
+                .fallbackToDestructiveMigration()
+                .build()
+                .also { instance = it }
+        }
+    }
+}
+
+@Entity(tableName = "tb_user")
+data class LoginResp(
+    @PrimaryKey
+    @SerializedName("userId")
+    val id: Int,
+    val username: String,
+    @SerializedName("nickName")
+    val nickName: String = "",
+    @SerializedName("deptId")
+    val deptId: Long = 0,
+    @SerializedName("deptName")
+    val department: String = "",
+    val admin: String = "",
+    val company: String = "",
+) {
+    fun displayName(): String = nickName.ifBlank { username }
+}
+
+@Dao
+interface UserDao {
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertUser(info: LoginResp)
+
+    @Update(onConflict = OnConflictStrategy.REPLACE)
+    fun updateUser(info: LoginResp)
+
+    @Delete
+    fun deleteUser(info: LoginResp)
+
+    @Query("select * from tb_user where id =:id")
+    fun queryLiveUser(id: Int = 0): LiveData<LoginResp>
+
+    @Query("select * from tb_user where id =:id")
+    fun queryUser(id: Int = 0): LoginResp?
+}

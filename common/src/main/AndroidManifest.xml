@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+	<uses-permission android:name="android.permission.VIBRATE" />
+	<uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+	<application
+			android:allowBackup="true"
+			android:label="@string/app_name"
+			android:supportsRtl="true"
+			android:theme="@style/AppTheme">
+			<service
+				android:name="com.fuusy.common.intercom.IntercomService"
+				android:exported="false"
+				android:process=":webrtc"
+				android:foregroundServiceType="microphone" />
+	</application>
+
+</manifest>

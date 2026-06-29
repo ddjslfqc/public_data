@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#6200EE</color>
+    <color name="colorPrimaryDark">#3700B3</color>
+    <color name="colorAccent">#03DAC5</color>
+    <color name="color_4474FF">#4474FF</color>
+    <color name="color_A6A6C0">#A6A6C0</color>
+    <color name="color_405182">#405182</color>
+    <color name="color_F1F3F9">#F1F3F9</color>
+    <color name="color_fab27b">#fab27b</color>
+    <color name="color_ffffff">#ffffff</color>
+    <color name="color_FF4500">#FF4500</color>
+    <color name="color_61FF4500">#61FF4500</color>
+    <color name="color_000000">#000000</color>
+    <color name="color_FFA500">#FFA500</color>
+    <color name="color_FF7F50">#FF7F50</color>
+    <color name="color_FF6347">#FF6347</color>
+    <color name="color_FF0000">#FF0000</color>
+    <!-- 新增的颜色资源 -->
+    <color name="color_f5f5f5">#F5F5F5</color>
+    <color name="color_e0e0e0">#E0E0E0</color>
+    <color name="color_333333">#333333</color>
+    <color name="color_666666">#666666</color>
+    <color name="color_999999">#999999</color>
+    <color name="color_f44336">#F44336</color>
+    <color name="color_d32f2f">#D32F2F</color>
+
+    <!-- 项目列表相关颜色 -->
+    <color name="project_item_selected_background">#E53E3E</color>
+    <color name="project_item_normal_background">#FFFFFF</color>
+    <color name="project_item_selected_border">#F44336</color>
+    <color name="project_item_text_primary">#333333</color>
+    <color name="project_item_text_secondary">#666666</color>
+    <color name="text_primary">#333333</color>
+    <color name="text_secondary">#666666</color>
+    <color name="primary_color">#2196F3</color>
+    <color name="primary_red">#D32F2F</color>
+    <color name="text_gray">#666666</color>
+    <!-- 您需要的颜色 -->
+    <color name="text_color_gray_light">#999999</color> <!-- 您可以根据实际效果调整这个灰色的值 -->
+    <color name="black">#000000</color> <!-- 如果您希望用 black 而不是 color_000000 -->
+    <color name="text_color_red">#FF0000</color>    <!-- 您可以根据实际效果调整这个红色的值 -->
+    <color name="selected_background_color">#FFEBEE</color> <!-- 之前方案中提到的选中背景色，如果还没定义的话 -->
+    <color name="item_top_line_color">#EAEAEA</color>
+    <color name="card_background">#FF0000</color>
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#757575</color>
+    <color name="hint_text">#BDBDBD</color>
+    <color name="divider_color">#E0E0E0</color>
+</resources>

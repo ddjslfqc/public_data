@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 相机权限 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- 录音权限 -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- 存储权限 -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!-- Android 10及以上需要 -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <!-- Android 13+ 媒体权限 -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+
+    <application android:theme="@style/HiddenDangerTheme">
+
+
+        <!-- 添加工单创建Activity -->
+        <activity
+            android:name=".ui.CreateWorkOrderActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="创建工单" />
+
+        <!-- 添加相机Activity -->
+        <activity
+            android:name=".ui.CameraActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:screenOrientation="portrait" />
+
+        <!-- 添加自定义相册Activity -->
+        <activity
+            android:name=".ui.album.CustomAlbumActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/HiddenDangerTheme" />
+
+        <!-- 添加工单详情Activity -->
+        <activity
+            android:name=".ui.OrderDetailActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="工单详情" />
+
+        <activity
+            android:name=".ui.MyArchiveActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="我的档案" />
+
+        <activity
+            android:name=".ui.MyGoalsActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="我的目标" />
+
+        <activity
+            android:name=".ui.EvaluationRecordActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="评价记录" />
+
+        <activity
+            android:name=".ui.EditGoalActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="填写目标"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.KrApprovalActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="KR待审批" />
+
+        <activity android:name="com.fuusy.hiddendanger.ui.DraftBoxActivity" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+    </application>
+
+</manifest>

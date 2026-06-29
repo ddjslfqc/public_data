@@ -1,0 +1,119 @@
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileSdk 34
+    buildToolsVersion '34.0.0'
+    
+    // 添加 Java 编译选项
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    
+    // 添加 Kotlin 编译选项
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    
+    // 启用 DataBinding 和 ViewBinding
+    dataBinding {
+        enabled = true
+    }
+    
+    viewBinding {
+        enabled = true
+    }
+    
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 34
+        versionCode 1
+        versionName "1.0.0"
+        multiDexEnabled true
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        kapt {
+            arguments {
+                arg("AROUTER_MODULE_NAME", project.getName())
+                arg("kapt.kotlin.generated", "$buildDir/generated/source/kapt/main")
+            }
+        }
+        
+        // 禁用 ProfileInstaller
+        manifestPlaceholders = [
+            'profileInstaller': 'false'
+        ]
+    }
+}
+
+dependencies {
+    
+    // 显式添加 concurrent-futures 依赖
+    implementation 'androidx.concurrent:concurrent-futures:1.1.0'
+    
+    // 降级 ProfileInstaller 版本或完全禁用（推荐）
+    // implementation 'androidx.profileinstaller:profileinstaller:1.3.1'  // 注释掉这行
+    
+    // 如果需要 ProfileInstaller，使用更低版本
+    // implementation 'androidx.profileinstaller:profileinstaller:1.2.2'
+    
+    def nav_version = "2.7.2"
+    // implementation fileTree(dir: "libs", include: ["*.jar"]) // 注释掉这一行
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.vectordrawable:vectordrawable:1.1.0'
+    implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
+    implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
+    implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
+
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+
+    //paging3
+    implementation 'androidx.paging:paging-runtime:3.2.1'
+    implementation 'androidx.paging:paging-common:3.2.1'
+
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3"
+    implementation "androidx.viewpager2:viewpager2:1.0.0"
+    implementation "com.alibaba:arouter-api:1.5.2"
+    kapt "com.alibaba:arouter-compiler:1.5.2"
+
+    //room
+    implementation 'androidx.room:room-runtime:2.5.2'
+    implementation 'androidx.room:room-common:2.5.2'
+    implementation 'androidx.room:room-ktx:2.5.2'
+    implementation 'androidx.room:room-paging:2.5.2'  // 添加这行
+    kapt "androidx.room:room-compiler:2.5.2"
+
+    // Koin for Kotlin
+    implementation "io.insert-koin:koin-core:$koin_version"
+    implementation "io.insert-koin:koin-android:$koin_version"
+
+    implementation 'io.github.scwang90:refresh-layout-kernel:2.0.6'  // 坐标
+    //gson
+    implementation("com.google.code.gson:gson:2.10.1")
+
+    //coil
+    implementation("io.coil-kt:coil:2.4.0")
+
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    //retrofit
+    api("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    implementation("com.tencent:mmkv-static:1.3.1")
+
+    // 取消注释这行，或者使用其他加载状态库
+    api 'com.kingja.loadsir:loadsir:1.3.8'
+    // 如果上面这行还有问题，可以尝试：
+    // implementation 'com.github.KingJA:LoadSir:v1.3.8'
+}

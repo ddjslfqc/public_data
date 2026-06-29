@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="viewModel"
+            type="com.fuusy.project.viewmodel.VideoFullScreenViewModel" />
+    </data>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000">
+
+        <!-- 视频画面 -->
+        <TextureView
+            android:id="@+id/textureView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Loading 指示器 -->
+        <FrameLayout
+            android:id="@+id/loadingContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#80000000"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ProgressBar
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:indeterminateTint="#FFFFFF" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="视频加载中..."
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
+
+            <!-- 重试按钮 - 覆盖在中央 -->
+            <TextView
+                android:id="@+id/btnRetry"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_btn_red_round"
+                android:text="重试"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:minWidth="60dp"
+                android:visibility="invisible" />
+
+        </FrameLayout>
+
+        <!-- 顶部返回和通道名 -->
+        <LinearLayout
+            android:id="@+id/topBarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingTop="30dp"
+            android:paddingEnd="16dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="返回"
+                android:src="@drawable/ic_back" />
+
+            <TextView
+                android:id="@+id/tvChannelName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="通道1"
+                android:textColor="#FFF"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <!-- 右上角功能按钮 -->
+        <LinearLayout
+            android:id="@+id/rightBarLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|top"
+            android:gravity="end"
+            android:orientation="vertical"
+            android:paddingTop="40dp"
+            android:paddingEnd="16dp">
+
+            <ImageView
+                android:id="@+id/btnReverse"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginBottom="12dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="画面反转"
+                android:src="@mipmap/ic_reverse" />
+
+            <ImageView
+                android:id="@+id/btnMute"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginBottom="12dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="静音"
+                android:src="@mipmap/ic_mute" />
+
+            <ImageView
+                android:id="@+id/btnTalk"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginBottom="12dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="语音对讲"
+                android:src="@mipmap/duijiang_close" />
+        </LinearLayout>
+
+        <!-- 底部操作按钮区 -->
+        <LinearLayout
+            android:id="@+id/bottomBarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingBottom="40dp">
+
+            <ImageView
+                android:id="@+id/btnRecord"
+                android:layout_width="120dp"
+                android:layout_height="48dp"
+                android:drawablePadding="8dp"
+                android:src="@mipmap/bg_video"
+                android:text="录像"
+                android:textColor="#000"
+                android:textSize="16sp" />
+
+            <ImageView
+                android:id="@+id/btnCapture"
+                android:layout_width="120dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="24dp"
+                android:drawablePadding="8dp"
+                android:src="@mipmap/bg_photo"
+                android:text="拍照"
+                android:textColor="#000"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <!-- 左下角云台方向控制（可自定义View或用ImageView/TextView模拟） -->
+        <!--        <ImageView-->
+        <!--            android:id="@+id/ptzControl"-->
+        <!--            android:layout_width="120dp"-->
+        <!--            android:layout_height="120dp"-->
+        <!--            android:layout_gravity="bottom|start"-->
+        <!--            android:layout_marginStart="24dp"-->
+        <!--            android:layout_marginBottom="40dp"-->
+        <!--            android:contentDescription="方向控制"-->
+        <!--            android:src="@mipmap/bg_player_contorl_full" />-->
+
+        <FrameLayout
+            android:id="@+id/ptzControl"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_gravity="bottom|start"
+            android:layout_marginStart="24dp"
+            android:layout_marginBottom="40dp"
+            android:background="@mipmap/bg_player_contorl_full">
+
+            <!-- 上 -->
+            <TextView
+                android:id="@+id/btnUp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="top|center_horizontal"
+                android:gravity="center"
+                android:textSize="24sp" />
+
+            <!-- 下 -->
+            <TextView
+                android:id="@+id/btnDown"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="bottom|center_horizontal"
+                android:gravity="center"
+                android:textSize="24sp" />
+
+            <!-- 左 -->
+            <TextView
+                android:id="@+id/btnLeft"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center_vertical|start"
+                android:gravity="center"
+                android:textSize="24sp" />
+
+            <!-- 右 -->
+            <TextView
+                android:id="@+id/btnRight"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center_vertical|end"
+                android:gravity="center"
+                android:textSize="24sp" />
+
+        </FrameLayout>
+        <!-- 录制计时器 -->
+        <TextView
+            android:id="@+id/tv_record_timer"
+            android:layout_width="wrap_content"
+            android:layout_height="35dp"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/bg_record_timer"
+            android:gravity="center"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
+            android:text="00:00:00"
+            android:textColor="#FFF"
+            android:textSize="18sp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+    </FrameLayout>
+</layout> 

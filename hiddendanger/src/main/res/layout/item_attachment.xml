@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="64dp"
+    android:layout_height="64dp"
+    android:layout_margin="4dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/mediaCard"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="2dp">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/iv_attachment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="附件图片"
+                android:scaleType="centerCrop" />
+
+            <ImageView
+                android:id="@+id/iv_play"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:contentDescription="播放视频"
+                android:src="@drawable/ic_play_white"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/btn_delete"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="top|end"
+                android:layout_marginEnd="2dp"
+                android:background="@drawable/bg_delete_red"
+                android:contentDescription="删除"
+                android:src="@drawable/ic_close_white" />
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+</FrameLayout>

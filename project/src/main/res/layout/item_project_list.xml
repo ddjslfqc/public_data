@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cardView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginVertical="8dp"
+    android:layout_marginLeft="0dp"
+    android:layout_marginRight="16dp"
+    android:background="@drawable/item_background_selector"
+    android:clickable="true"
+    android:elevation="2dp"
+    android:focusable="true"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 项目名称 - 大标题 -->
+
+    <!-- 项目信息列表 -->
+    <TextView
+        android:id="@+id/tv_item_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:text="项目名称"
+        android:textColor="@color/text_color_selector"
+        android:textFontWeight="700"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="项目编号"
+            android:textColor="@color/label_text_color_selector"
+            android:textFontWeight="400"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tv_item"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="WSD0005"
+            android:textColor="@color/text_color_selector"
+            android:textFontWeight="400"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="项目单位"
+            android:textColor="@color/label_text_color_selector"
+            android:textFontWeight="400"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tv_project_unit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="深圳悦诚节能科技有限公司"
+            android:textColor="@color/text_color_selector"
+            android:textFontWeight="400"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="项目负责人"
+            android:textColor="@color/label_text_color_selector"
+            android:textFontWeight="400"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tv_charge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="朱森"
+            android:textColor="@color/text_color_selector"
+            android:textFontWeight="400"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="作业地点"
+            android:textColor="@color/label_text_color_selector"
+            android:textFontWeight="400"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tv_address"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="汽机凝汽器0米"
+            android:textColor="@color/text_color_selector"
+            android:textFontWeight="400"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="作业内容"
+            android:textColor="@color/label_text_color_selector"
+            android:textFontWeight="400"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tv_job_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="在线清洗机器人安装"
+            android:textColor="@color/text_color_selector"
+            android:textFontWeight="400"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary_blue">#2196F3</color>
+    <color name="danger_red">#F56565</color>
+    <color name="person_orange">#ED8936</color>
+    <color name="urgent_purple">#9F7AEA</color>
+    <color name="red">#FF0000</color>
+    
+    <!-- 添加主色调 -->
+    <color name="primary_color">#2196F3</color>
+    
+    <!-- 新增文本颜色 -->
+    <color name="text_gray">#718096</color>
+    <color name="text_white">#FFFFFF</color>
+    <!-- 在现有的 colors.xml 中添加 -->
+    <color name="text_primary">#333333</color>
+    <color name="text_hint">#999999</color>
+    <color name="background_light">#F8F9FA</color>
+    <color name="border_light">#E5E5E5</color>
+    <color name="icon_gray">#666666</color>
+    
+    <!-- 补充缺失的颜色资源 -->
+    <color name="white">#FFFFFF</color>
+    <color name="black_alpha_50">#80000000</color>
+    <color name="black">#000000</color>
+    
+    <!-- 对话框相关颜色 -->
+    <color name="dialog_background">#FFFFFF</color>
+    <color name="dialog_title_text">#212121</color>
+    <color name="dialog_option_text">#424242</color>
+    
+    <!-- 分页指示器颜色 -->
+    <color name="page_indicator_background">#80000000</color>
+    <color name="page_indicator_text">#FFFFFF</color>
+
+    <!-- 我的页 -->
+    <color name="personal_bg">#EEF1F8</color>
+    <color name="personal_text_sub">#686D79</color>
+</resources>

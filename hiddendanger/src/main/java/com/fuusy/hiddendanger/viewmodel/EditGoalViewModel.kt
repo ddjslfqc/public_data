@@ -1,0 +1,136 @@
+package com.fuusy.hiddendanger.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
+import com.fuusy.common.network.UserIdProvider
+import com.fuusy.hiddendanger.data.AlignOptionsResponse
+import com.fuusy.hiddendanger.data.AlignableKr
+import com.fuusy.hiddendanger.data.CreateKrRequest
+import com.fuusy.hiddendanger.data.CreateObjectiveRequest
+import com.fuusy.hiddendanger.data.OkrDepartment
+import com.fuusy.hiddendanger.data.OkrPeriodHelper
+import com.fuusy.hiddendanger.data.OkrUser
+import com.fuusy.hiddendanger.repository.OkrRepository
+import com.fuusy.hiddendanger.ui.model.GoalAlignType
+import com.fuusy.hiddendanger.ui.model.GoalKrEditItem
+import kotlinx.coroutines.launch
+
+class EditGoalViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repo = OkrRepository()
+
+    private val _loading = MutableLiveData(false)
+    val loading: LiveData<Boolean> = _loading
+
+    private val _error = MutableLiveData<String?>()
+    val error: LiveData<String?> = _error
+
+    private val _created = MutableLiveData<Long?>()
+    val created: LiveData<Long?> = _created
+
+    private val _alignOptions = MutableLiveData<AlignOptionsResponse?>()
+    val alignOptions: LiveData<AlignOptionsResponse?> = _alignOptions
+
+    private val _alignableKrs = MutableLiveData<List<AlignableKr>>(emptyList())
+    val alignableKrs: LiveData<List<AlignableKr>> = _alignableKrs
+
+    var alignType: GoalAlignType = GoalAlignType.DEPARTMENT
+    var selectedDept: OkrDepartment? = null
+    var selectedUser: OkrUser? = null
+    var selectedParentKr: AlignableKr? = null
+    var ownDept: OkrDepartment? = null
+
+    fun loadAlignOptions() {
+        viewModelScope.launch {
+            _loading.value = true
+            repo.getAlignOptions().fold(
+                onSuccess = { options ->
+                    _alignOptions.value = options
+                    if (ownDept == null) {
+                        val loginDeptId = com.fuusy.common.utils.SpUtils.getLong("user_dept_id", 0L)
+                        ownDept = options.departments?.find { it.id == loginDeptId }
+                            ?: options.departments?.firstOrNull()
+                    }
+                    if (selectedDept == null) {
+                        selectedDept = options.departments?.firstOrNull()
+                    }
+                    refreshAlignableKrs()
+                },
+                onFailure = { _error.value = it.message }
+            )
+            _loading.value = false
+        }
+    }
+
+    fun refreshAlignableKrs() {
+        viewModelScope.launch {
+            val deptId = if (alignType == GoalAlignType.DEPARTMENT) selectedDept?.id else null
+            val userId = if (alignType == GoalAlignType.SUPERVISOR) selectedUser?.id else null
+            repo.getAlignableKrs(deptId, userId).fold(
+                onSuccess = { list ->
+                    _alignableKrs.value = list
+                    if (selectedParentKr != null && list.none { it.id == selectedParentKr?.id }) {
+                        selectedParentKr = null
+                    }
+                },
+                onFailure = { _error.value = it.message }
+            )
+        }
+    }
+
+    fun createObjective(
+        periodQueryValue: String,
+        title: String,
+        description: String?,
+        alignEnabled: Boolean,
+        krItems: List<GoalKrEditItem>
+    ) {
+        val dept = ownDept
+        if (dept == null) {
+            _error.value = "请选择所属部门"
+            return
+        }
+        val filled = krItems.filter { it.title.isNotBlank() }
+        if (filled.isEmpty()) {
+            _error.value = "请至少填写一条关键结果"
+            return
+        }
+        val weightEach = 100 / filled.size
+        val remainder = 100 - weightEach * filled.size
+        val currentUserId = UserIdProvider.userId
+        val krRequests = filled.mapIndexed { index, item ->
+            CreateKrRequest(
+                title = item.title.trim(),
+                targetValue = item.targetValue.toDoubleOrNull() ?: 0.0,
+                weight = weightEach + if (index == 0) remainder else 0,
+                unit = item.unit.trim().ifBlank { null },
+                sortOrder = index,
+                userId = item.assigneeUserId ?: currentUserId
+            )
+        }
+        val (start, end) = OkrPeriodHelper.dateRange(periodQueryValue)
+        val body = CreateObjectiveRequest(
+            title = title.trim(),
+            description = description?.trim()?.ifBlank { null },
+            periodType = OkrPeriodHelper.createPeriodType(periodQueryValue),
+            startDate = start,
+            endDate = end,
+            deptId = dept.id,
+            parentKrId = if (alignEnabled) selectedParentKr?.id else null,
+            objectiveType = 1,
+            keyResults = krRequests
+        )
+        viewModelScope.launch {
+            _loading.value = true
+            _error.value = null
+            repo.createObjective(body).fold(
+                onSuccess = { _created.value = it },
+                onFailure = { _error.value = it.message ?: "创建失败" }
+            )
+            _loading.value = false
+        }
+    }
+}

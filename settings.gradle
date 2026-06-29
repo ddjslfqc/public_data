@@ -1,0 +1,32 @@
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        // Use HTTP versions for troubleshooting
+        maven { 
+            url 'http://maven.aliyun.com/repository/google'
+            allowInsecureProtocol = true
+        }
+        maven { 
+            url 'http://maven.aliyun.com/repository/central'
+            allowInsecureProtocol = true
+        }
+        maven { 
+            url 'http://maven.aliyun.com/repository/public'
+            allowInsecureProtocol = true
+        }
+        // Keep HTTPS as backup
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+include ':service'
+include ':login'
+include ':project'
+include ':personal'
+include ':webview'
+include ':hiddendanger'
+include ':common'
+include ':app'
+rootProject.name = "JetPackKt"

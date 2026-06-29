@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable
+            name="item"
+            type="com.fuusy.project.repo.VideoInfo" />
+    </data>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="12dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- 视频封面（设计稿约 393:295） -->
+            <ImageView
+                android:id="@+id/iv_cover"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:background="#272727"
+                android:scaleType="centerCrop"
+                app:layout_constraintDimensionRatio="393:295"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:src="@mipmap/logo" />
+
+            <!-- LIVE 标签 -->
+            <TextView
+                android:id="@+id/tv_live_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="18dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_live_badge"
+                android:gravity="center"
+                android:paddingStart="8dp"
+                android:paddingEnd="6dp"
+                android:text="LIVE"
+                android:textColor="#FFFFFF"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="@id/iv_cover"
+                app:layout_constraintTop_toTopOf="@id/iv_cover"
+                tools:visibility="visible" />
+
+            <!-- 隐患标签（如：入侵检测） -->
+            <TextView
+                android:id="@+id/tv_danger_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="18dp"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_video_danger_label"
+                android:gravity="center"
+                android:paddingStart="7dp"
+                android:paddingEnd="7dp"
+                android:textColor="#FFFFFF"
+                android:textSize="9sp"
+                android:visibility="gone"
+                app:layout_constraintStart_toEndOf="@id/tv_live_badge"
+                app:layout_constraintTop_toTopOf="@id/tv_live_badge"
+                tools:text="入侵检测"
+                tools:visibility="visible" />
+
+            <!-- 通道标签（右上角） -->
+            <TextView
+                android:id="@+id/tv_channel_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="18dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_channel_badge"
+                android:gravity="center"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:text="通道1"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                app:layout_constraintEnd_toEndOf="@id/iv_cover"
+                app:layout_constraintTop_toTopOf="@id/iv_cover" />
+
+            <!-- 报警态：画面中央大图标 -->
+            <ImageView
+                android:id="@+id/iv_alarm_center"
+                android:layout_width="38dp"
+                android:layout_height="34dp"
+                android:src="@drawable/ic_alarm_red"
+                android:visibility="gone"
+                app:layout_constraintBottom_toTopOf="@id/ll_info_bar"
+                app:layout_constraintEnd_toEndOf="@id/iv_cover"
+                app:layout_constraintStart_toStartOf="@id/iv_cover"
+                app:layout_constraintTop_toTopOf="@id/iv_cover"
+                tools:visibility="gone" />
+
+            <!-- 底部信息条（叠在封面底部，设计稿高 56dp） -->
+            <LinearLayout
+                android:id="@+id/ll_info_bar"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_video_info_bar"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                app:layout_constraintBottom_toBottomOf="@id/iv_cover"
+                app:layout_constraintEnd_toEndOf="@id/iv_cover"
+                app:layout_constraintStart_toStartOf="@id/iv_cover">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:id="@+id/view_status_dot"
+                            android:layout_width="5dp"
+                            android:layout_height="5dp"
+                            android:layout_marginEnd="6dp"
+                            android:background="@drawable/bg_status_dot_online" />
+
+                        <TextView
+                            android:id="@+id/tv_camera_name"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            tools:text="1号炉A侧入口" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_camera_location"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="11dp"
+                        android:layout_marginTop="2dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="#A9B0C6"
+                        android:textSize="11sp"
+                        tools:text="A侧低过三级人孔门" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_action_btn"
+                    android:layout_width="64dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/bg_action_btn"
+                    android:gravity="center"
+                    android:text="查看"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+</layout>

@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <import type="android.view.View" />
+        <variable
+            name="viewModel"
+            type="com.fuusy.hiddendanger.ui.OrderDetailViewModel" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#EEEEF8">
+
+        <RelativeLayout
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@android:color/white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_centerVertical="true"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@null"
+                android:focusable="true"
+                android:padding="12dp"
+                android:src="@drawable/ic_back_black" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="工单详情"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </RelativeLayout>
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/nestedScroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:fillViewport="true"
+            android:scrollbars="none"
+            app:layout_constraintBottom_toTopOf="@id/bottom_bar"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/toolbar">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    app:cardBackgroundColor="#A3FFFFFF"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:id="@+id/tvTitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_marginEnd="8dp"
+                                android:layout_toStartOf="@id/tvStatus"
+                                android:ellipsize="end"
+                                android:maxLines="2"
+                                android:text="@{viewModel.title}"
+                                android:textColor="#000000"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                tools:text="客户门户体验优化需求" />
+
+                            <TextView
+                                android:id="@+id/tvStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="20dp"
+                                android:layout_alignParentEnd="true"
+                                android:gravity="center"
+                                android:paddingHorizontal="8dp"
+                                android:text="@{viewModel.status}"
+                                android:textSize="11sp"
+                                tools:text="处理中" />
+                        </RelativeLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvMetaCode"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@{viewModel.metaCode}"
+                                android:textColor="#686D79"
+                                android:textSize="11sp"
+                                tools:text="WD202606180001" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:text="@{viewModel.metaDept}"
+                                android:textColor="#686D79"
+                                android:textSize="11sp"
+                                tools:text="软件研发部" />
+
+                            <TextView
+                                android:id="@+id/tvMetaPriority"
+                                android:layout_width="wrap_content"
+                                android:layout_height="20dp"
+                                android:layout_marginStart="8dp"
+                                android:gravity="center"
+                                android:paddingHorizontal="5dp"
+                                android:text="@{viewModel.metaPriority}"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                tools:text="P1" />
+
+                            <TextView
+                                android:id="@+id/tvMetaStay"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="@{viewModel.metaStay}"
+                                android:textColor="#EA9300"
+                                android:textSize="11sp"
+                                android:visibility="@{viewModel.showMetaStay ? View.VISIBLE : View.GONE}"
+                                tools:text="滞留 2.5h" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <LinearLayout
+                    android:id="@+id/card_reject_tip"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:background="@drawable/bg_reject_tip"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:visibility="@{viewModel.showRejectTip ? View.VISIBLE : View.GONE}"
+                    tools:visibility="visible">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="驳回原因"
+                        android:textColor="#EB1919"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvRejectReason"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:lineSpacingExtra="3dp"
+                        android:text="@{viewModel.rejectReason}"
+                        android:textColor="#D6413F"
+                        android:textSize="13sp"
+                        tools:text="需求说明描述过于简略，请补充具体的用户场景和预期效果描述。" />
+                </LinearLayout>
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    app:cardBackgroundColor="#A3FFFFFF"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="基本信息"
+                            android:textColor="#000000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout style="@style/OrderDetailRow">
+                            <TextView style="@style/OrderDetailLabel" android:text="工单编码" />
+                            <TextView
+                                android:id="@+id/tvBasicCode"
+                                style="@style/OrderDetailValue"
+                                android:text="@{viewModel.basicCode}"
+                                android:textColor="#1365EC"
+                                tools:text="WD202606180001" />
+                        </LinearLayout>
+
+                        <LinearLayout style="@style/OrderDetailRow">
+                            <TextView style="@style/OrderDetailLabel" android:text="工单名称" />
+                            <TextView style="@style/OrderDetailValue" android:text="@{viewModel.basicName}" tools:text="客户门户体验优化需求" />
+                        </LinearLayout>
+
+                        <LinearLayout style="@style/OrderDetailRow">
+                            <TextView style="@style/OrderDetailLabel" android:text="类型" />
+                            <TextView style="@style/OrderDetailValue" android:text="@{viewModel.basicType}" tools:text="软件研发" />
+                        </LinearLayout>
+
+                        <LinearLayout style="@style/OrderDetailRow">
+                            <TextView style="@style/OrderDetailLabel" android:text="优先级" />
+                            <TextView
+                                android:id="@+id/tvBasicPriority"
+                                style="@style/OrderDetailValue"
+                                android:text="@{viewModel.basicPriority}"
+                                tools:text="P1" />
+                        </LinearLayout>
+
+                        <LinearLayout style="@style/OrderDetailRow">
+                            <TextView style="@style/OrderDetailLabel" android:text="处理人部门" />
+                            <TextView style="@style/OrderDetailValue" android:text="@{viewModel.basicHandlerDept}" tools:text="软件研发部" />
+                        </LinearLayout>
+
+                        <LinearLayout style="@style/OrderDetailRow">
+                            <TextView style="@style/OrderDetailLabel" android:text="处理人" />
+                            <TextView style="@style/OrderDetailValue" android:text="@{viewModel.basicHandler}" tools:text="王健" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    app:cardBackgroundColor="#A3FFFFFF"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="提单信息"
+                            android:textColor="#000000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout style="@style/OrderDetailRow">
+                            <TextView style="@style/OrderDetailLabel" android:text="提单人" />
+                            <TextView style="@style/OrderDetailValue" android:text="@{viewModel.submitUserName}" tools:text="张三" />
+                        </LinearLayout>
+
+                        <LinearLayout style="@style/OrderDetailRow">
+                            <TextView style="@style/OrderDetailLabel" android:text="所属部门" />
+                            <TextView style="@style/OrderDetailValue" android:text="@{viewModel.submitUserDept}" tools:text="软件研发部" />
+                        </LinearLayout>
+
+                        <LinearLayout style="@style/OrderDetailRow">
+                            <TextView style="@style/OrderDetailLabel" android:text="派单时间" />
+                            <TextView style="@style/OrderDetailValue" android:text="@{viewModel.dispatchTime}" tools:text="2026-06-18 09:30:00" />
+                        </LinearLayout>
+
+                        <LinearLayout style="@style/OrderDetailRow">
+                            <TextView style="@style/OrderDetailLabel" android:text="隶属项目" />
+                            <TextView style="@style/OrderDetailValue" android:text="@{viewModel.projectName}" tools:text="A项目" />
+                        </LinearLayout>
+
+                        <LinearLayout style="@style/OrderDetailRow">
+                            <TextView style="@style/OrderDetailLabel" android:text="期望完成" />
+                            <TextView style="@style/OrderDetailValue" android:text="@{viewModel.expectedCompleteTime}" tools:text="2026-06-20 18:00:00" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    app:cardBackgroundColor="#A3FFFFFF"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="需求说明"
+                            android:textColor="#000000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvDesc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:lineSpacingExtra="4dp"
+                            android:text="@{viewModel.desc}"
+                            android:textColor="#686D79"
+                            android:textSize="14sp"
+                            tools:text="客户反馈现有门户操作路径过长..." />
+
+                        <TextView
+                            android:id="@+id/tvAttachmentTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="附件"
+                            android:textColor="#000000"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:visibility="gone" />
+
+                        <LinearLayout
+                            android:id="@+id/cardView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="vertical"
+                            android:visibility="gone">
+
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/rvSimpleAttachments"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:nestedScrollingEnabled="false"
+                                android:overScrollMode="never"
+                                android:scrollbars="none" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    app:cardBackgroundColor="#A3FFFFFF"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="备注"
+                            android:textColor="#000000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="@{viewModel.remark}"
+                            android:textColor="#898FA0"
+                            android:textSize="13sp"
+                            tools:text="暂无备注" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <LinearLayout
+            android:id="@+id/bottom_bar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="20dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="17dp"
+    android:height="14dp"
+    android:viewportWidth="17"
+    android:viewportHeight="14">
+    <!-- 红色告警三角图标 -->
+    <path
+        android:fillColor="#EB1919"
+        android:pathData="M8.5,1L16,13H1L8.5,1Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M8.5,9L8.5,5M8.5,11L8.5,12"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"/>
+</vector>
