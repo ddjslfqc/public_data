@@ -108,7 +108,7 @@ object WorkOrderMockStore {
             handler = "公共",
             time = "2026-06-17 14:20",
             priority = "P1",
-            status = WorkOrderStatus.SUBMITTED,
+            status = WorkOrderStatus.PENDING,
             project = "B项目",
             assigner = "王健"
         ),

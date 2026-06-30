@@ -104,30 +104,21 @@
                     android:layout_height="0dp"
                     android:layout_weight="1" />
 
-                <!-- OneBottomNavigationBar 占位容器（隐藏），用于满足其 FragmentManager 依赖 -->
-                <FrameLayout
-                    android:id="@+id/bottom_nav_stub_container"
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:visibility="gone" />
-
                 <!-- 底部导航栏 -->
-                <cn.onestravel.one.navigation.androidx.OneBottomNavigationBar
+                <com.google.android.material.bottomnavigation.BottomNavigationView
                     android:id="@+id/BottomLayout"
+                    style="@style/Widget.Project.BottomNavigationView"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
+                    android:layout_height="wrap_content"
                     android:background="@android:color/white"
                     android:elevation="8dp"
-                    android:paddingTop="4dp"
-                    android:paddingBottom="4dp"
-                    app:oneItemIconHeight="20dp"
-                    app:oneItemIconTint="@color/icon_color_selector"
-                    app:oneItemIconWidth="20dp"
-                    app:oneItemTextColor="@color/text_color_selector"
-                    app:oneItemTextSize="10sp"
-                    app:oneItemTextTopMargin="1dp"
-                    app:oneItemTopLineColor="@android:color/transparent"
-                    app:oneMenu="@menu/bottom_navigation_menu" />
+                    app:itemIconSize="20dp"
+                    app:itemIconTint="@color/icon_color_selector"
+                    app:itemTextAppearanceActive="@style/BottomNavText.Active"
+                    app:itemTextAppearanceInactive="@style/BottomNavText.Inactive"
+                    app:itemTextColor="@color/text_color_selector"
+                    app:labelVisibilityMode="labeled"
+                    app:menu="@menu/bottom_navigation_menu" />
 
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>

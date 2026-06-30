@@ -15,41 +15,56 @@ import java.io.File
 
 class MobileWorkOrderRepository {
 
-    private val api: WorkOrderApi by lazy {
-        val client = RetrofitManager.client.newBuilder()
-            .addInterceptor(UserIdHeaderInterceptor())
-            .build()
+    /** 当前用户工单，需 X-User-Id */
+    private val authApi: WorkOrderApi by lazy {
         Retrofit.Builder()
             .baseUrl(ServerConfig.getBaseUrl())
-            .client(client)
+            .client(
+                RetrofitManager.client.newBuilder()
+                    .addInterceptor(UserIdHeaderInterceptor())
+                    .build()
+            )
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(WorkOrderApi::class.java)
+    }
+
+    /** 全部工单，无需 X-User-Id */
+    private val publicApi: WorkOrderApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(ServerConfig.getBaseUrl())
+            .client(RetrofitManager.client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(WorkOrderApi::class.java)
     }
 
     suspend fun list(status: WorkOrderStatus? = null): Result<List<WorkOrderItem>> =
-        safeList { api.list(WorkOrderMapper.localStatusToQuery(status)) }
+        safeList { authApi.list(WorkOrderMapper.localStatusToQuery(status)) }
             .map { list -> list.map { WorkOrderMapper.listDtoToItem(it) } }
 
-    suspend fun listAll(): Result<List<WorkOrderItem>> =
-        safeList { api.list(null) }
+    /** 兼容旧调用：拉当前用户全部状态工单 */
+    suspend fun listAll(): Result<List<WorkOrderItem>> = list(null)
+
+    suspend fun listPublic(status: WorkOrderStatus? = null): Result<List<WorkOrderItem>> =
+        safeList { publicApi.all(WorkOrderMapper.localStatusToQuery(status)) }
             .map { list -> list.map { WorkOrderMapper.listDtoToItem(it) } }
 
     suspend fun detail(id: String): Result<WorkOrderItem> =
-        safeCall { api.detail(id) }.map { WorkOrderMapper.detailDtoToItem(it) }
+        safeCall { authApi.detail(id) }.map { WorkOrderMapper.detailDtoToItem(it) }
 
     suspend fun create(body: CreateWorkOrderRequest): Result<CreateWorkOrderResult> =
-        safeCall { api.create(body) }
+        safeCall { authApi.create(body) }
 
     suspend fun options(): Result<WorkOrderOptionsDto> =
-        safeCall { api.options() }
+        safeCall { publicApi.options() }
 
     suspend fun approve(
         workOrderId: String,
         approve: Boolean,
         opinion: String? = null
     ): Result<Unit> = try {
-        val resp = api.approve(
+        val resp = authApi.approve(
             ApproveWorkOrderRequest(
                 workOrderId = workOrderId,
                 approvalResult = if (approve) "APPROVE" else "REJECT",
@@ -66,11 +81,11 @@ class MobileWorkOrderRepository {
         safeCall {
             val body = file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
             val part = MultipartBody.Part.createFormData("file", file.name, body)
-            api.uploadAttachment(workOrderId, part)
+            authApi.uploadAttachment(workOrderId, part)
         }
 
     suspend fun deleteAttachment(id: String): Result<Unit> = try {
-        val resp = api.deleteAttachment(id)
+        val resp = authApi.deleteAttachment(id)
         if (resp.isSuccess) Result.success(Unit)
         else Result.failure(IllegalStateException(resp.errorMsg ?: "删除失败"))
     } catch (e: Exception) {

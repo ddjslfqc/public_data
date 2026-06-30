@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -45,9 +46,11 @@ class VideoListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
+        setupSwipeRefresh()
         setupTabs()
         setupSearch()
         setupSettings()
+        updateTabStyle()
         loadVideoList()
     }
 
@@ -63,6 +66,11 @@ class VideoListFragment : Fragment() {
         )
         binding.rvVideoList.layoutManager = LinearLayoutManager(requireContext())
         binding.rvVideoList.adapter = adapter
+    }
+
+    private fun setupSwipeRefresh() {
+        binding.swipeRefresh.setColorSchemeResources(R.color.home_blue)
+        binding.swipeRefresh.setOnRefreshListener { loadVideoList(fromRefresh = true) }
     }
 
     private fun setupTabs() {
@@ -107,27 +115,28 @@ class VideoListFragment : Fragment() {
     }
 
     private fun updateTabStyle() {
-        val selected = R.drawable.bg_tab_selected
-        val normal = R.drawable.bg_tab_normal
-        val alarmBg = R.drawable.bg_tab_alarm
+        val selectedBg = R.drawable.bg_tab_selected
+        val normalBg = R.drawable.bg_tab_normal
+        val alarmNormalBg = R.drawable.bg_tab_alarm
+        val alarmSelectedBg = R.drawable.bg_tab_alarm_selected
         val selectedColor = ContextCompat.getColor(requireContext(), R.color.color_ffffff)
-        val normalColor = ContextCompat.getColor(requireContext(), R.color.home_text_normal)
+        val normalColor = ContextCompat.getColor(requireContext(), R.color.home_text_secondary)
         val alarmColor = ContextCompat.getColor(requireContext(), R.color.home_red)
 
         binding.tabAll.apply {
-            setBackgroundResource(if (currentFilter == FilterType.ALL) selected else normal)
+            setBackgroundResource(if (currentFilter == FilterType.ALL) selectedBg else normalBg)
             setTextColor(if (currentFilter == FilterType.ALL) selectedColor else normalColor)
         }
         binding.tabOnline.apply {
-            setBackgroundResource(if (currentFilter == FilterType.ONLINE) selected else normal)
+            setBackgroundResource(if (currentFilter == FilterType.ONLINE) selectedBg else normalBg)
             setTextColor(if (currentFilter == FilterType.ONLINE) selectedColor else normalColor)
         }
         binding.tabAlarm.apply {
-            setBackgroundResource(alarmBg)
-            setTextColor(alarmColor)
+            setBackgroundResource(if (currentFilter == FilterType.ALARM) alarmSelectedBg else alarmNormalBg)
+            setTextColor(if (currentFilter == FilterType.ALARM) selectedColor else alarmColor)
         }
         binding.tabOffline.apply {
-            setBackgroundResource(if (currentFilter == FilterType.OFFLINE) selected else normal)
+            setBackgroundResource(if (currentFilter == FilterType.OFFLINE) selectedBg else normalBg)
             setTextColor(if (currentFilter == FilterType.OFFLINE) selectedColor else normalColor)
         }
     }
@@ -149,27 +158,44 @@ class VideoListFragment : Fragment() {
                     video.danger_label?.contains(searchQuery, ignoreCase = true) == true
             }
         }
+        Log.d(TAG, "筛选结果: tab=$currentFilter, search=$searchQuery, count=${filtered.size}")
         adapter.submitList(filtered)
         binding.llEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
         binding.rvVideoList.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
     }
 
-    private fun loadVideoList() {
+    private fun loadVideoList(fromRefresh: Boolean = false) {
+        if (!fromRefresh) {
+            binding.swipeRefresh.isRefreshing = true
+        }
         viewLifecycleOwner.lifecycleScope.launch {
             val result = ProjectNetRepo().fetchVideoList()
+            binding.swipeRefresh.isRefreshing = false
             allVideos = if (result.isSuccess) {
-                val list = result.getOrNull().orEmpty()
-                if (list.isNotEmpty()) list else {
-                    showToast("暂无视频数据")
-                    VideoListMockData.items()
-                }
+                result.getOrNull().orEmpty()
             } else {
                 showToast("加载失败：${result.exceptionOrNull()?.message ?: "网络异常"}")
-                VideoListMockData.items()
+                emptyList()
             }
+            if (allVideos.isEmpty() && result.isSuccess) {
+                showToast("暂无视频数据")
+            }
+            logVideoList(allVideos)
             updateTabCounts()
             updateTabStyle()
             applyFilter()
+        }
+    }
+
+    private fun logVideoList(list: List<VideoInfo>) {
+        Log.d(TAG, "视频列表共 ${list.size} 条")
+        list.forEachIndexed { index, video ->
+            Log.d(
+                TAG,
+                "[$index] name=${video.show_name}, type=${video.type}, device=${video.device_id}, " +
+                    "channel=${video.channel_id}, path=${video.videoPath}, location=${video.location}, " +
+                    "danger=${video.danger_label}, channelLabel=${video.channel_label}"
+            )
         }
     }
 
@@ -178,6 +204,7 @@ class VideoListFragment : Fragment() {
     }
 
     private fun openCloudControl(videoInfo: VideoInfo) {
+        Log.d(TAG, "打开视频: name=${videoInfo.show_name}, path=${videoInfo.videoPath}")
         val intent = Intent(requireContext(), CloudControlActivity::class.java).apply {
             putExtra("streamUrl", videoInfo.videoPath)
             putExtra("videoPath", videoInfo.videoPath)
@@ -195,86 +222,8 @@ class VideoListFragment : Fragment() {
     }
 
     companion object {
+        private const val TAG = "VideoList"
+
         fun newInstance() = VideoListFragment()
     }
-}
-
-private object VideoListMockData {
-
-    fun items(): List<VideoInfo> {
-        val featured = listOf(
-            VideoInfo(
-                videoPath = "http://example.com/stream1.flv",
-                device_id = "device_001",
-                channel_id = "ch_001",
-                show_name = "1号炉A侧入口",
-                type = 0,
-                location = "A侧低过三级人孔门",
-                danger_label = "入侵检测",
-                channel_label = "通道1"
-            ),
-            VideoInfo(
-                videoPath = "http://example.com/stream2.flv",
-                device_id = "device_002",
-                channel_id = "ch_002",
-                show_name = "2号循环泵房",
-                type = 2,
-                location = "2号机组·3楼",
-                channel_label = "通道2"
-            ),
-            VideoInfo(
-                videoPath = "http://example.com/stream3.flv",
-                device_id = "device_003",
-                channel_id = "ch_003",
-                show_name = "1号炉B侧入口",
-                type = 1,
-                location = "B侧低过三级人孔门",
-                channel_label = "通道3"
-            )
-        )
-        val fillers = listOf(
-            mockOnline("3号主控室", "主控室一层", "通道4", "ch_004", "device_004"),
-            mockOnline("4号脱硫塔", "塔顶平台", "通道5", "ch_005", "device_005"),
-            mockOnline("5号变电房", "配电室A区", "通道6", "ch_006", "device_006"),
-            mockOnline("6号输煤栈桥", "栈桥中段", "通道7", "ch_007", "device_007"),
-            mockOnline("7号冷却塔", "塔基监测点", "通道8", "ch_008", "device_008"),
-            mockOnline("8号化学车间", "酸碱储存区", "通道9", "ch_009", "device_009"),
-            mockOnline("9号升压站", "升压站入口", "通道10", "ch_010", "device_010"),
-            mockAlarm("10号煤仓", "煤仓顶部", "通道11", "ch_011", "device_011"),
-            mockOnline("11号检修平台", "平台东侧", "通道12", "ch_012", "device_012"),
-        )
-        return featured + fillers
-    }
-
-    private fun mockOnline(
-        name: String,
-        location: String,
-        channel: String,
-        channelId: String,
-        deviceId: String
-    ) = VideoInfo(
-        videoPath = "http://example.com/$channelId.flv",
-        device_id = deviceId,
-        channel_id = channelId,
-        show_name = name,
-        type = 0,
-        location = location,
-        channel_label = channel
-    )
-
-    private fun mockAlarm(
-        name: String,
-        location: String,
-        channel: String,
-        channelId: String,
-        deviceId: String
-    ) = VideoInfo(
-        videoPath = "http://example.com/$channelId.flv",
-        device_id = deviceId,
-        channel_id = channelId,
-        show_name = name,
-        type = 2,
-        location = location,
-        channel_label = channel
-    )
 }

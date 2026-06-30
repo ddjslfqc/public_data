@@ -22,6 +22,7 @@ import com.fuusy.project.adapter.HistoryOrderAdapter
 import com.fuusy.project.databinding.FragmentWorkOrderListBinding
 import com.fuusy.project.viewmodel.WorkOrderListViewModel
 
+/** 工单列表：状态与 workorder-api.md §3.1 一致 */
 class WorkOrderListFragment : Fragment() {
 
     private var _binding: FragmentWorkOrderListBinding? = null
@@ -30,13 +31,13 @@ class WorkOrderListFragment : Fragment() {
     private val viewModel: WorkOrderListViewModel by viewModels()
     private lateinit var adapter: HistoryOrderAdapter
     private var currentFilter: FilterType = FilterType.ALL
-    private var allOrders: List<com.fuusy.common.data.WorkOrderItem> = emptyList()
+    private var displayOrders: List<com.fuusy.common.data.WorkOrderItem> = emptyList()
+    private var countOrders: List<com.fuusy.common.data.WorkOrderItem> = emptyList()
 
     private enum class FilterType(val status: WorkOrderStatus?) {
         ALL(null),
         DRAFT(WorkOrderStatus.DRAFT),
         PENDING(WorkOrderStatus.PENDING),
-        SUBMITTED(WorkOrderStatus.SUBMITTED),
         REJECT(WorkOrderStatus.REJECT),
         PROCESSING(WorkOrderStatus.PROCESSING),
         EVAL(WorkOrderStatus.EVAL),
@@ -55,6 +56,7 @@ class WorkOrderListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         applyStatusBarPadding()
+        binding.tabSubmitted.visibility = View.GONE
         adapter = HistoryOrderAdapter { item ->
             ARouter.getInstance()
                 .build("/hiddendanger/OrderDetailActivity")
@@ -63,26 +65,34 @@ class WorkOrderListFragment : Fragment() {
         }
         binding.rvWorkOrders.layoutManager = LinearLayoutManager(requireContext())
         binding.rvWorkOrders.adapter = adapter
-        binding.swipeRefresh.setOnRefreshListener { viewModel.loadAll() }
+        binding.swipeRefresh.setOnRefreshListener { reload() }
         setupTabs()
         setupSearch()
         setupFab()
         setupStatClicks()
         observeViewModel()
-        viewModel.loadAll()
+        reload()
     }
 
     override fun onResume() {
         super.onResume()
-        viewModel.loadAll()
+        reload()
+    }
+
+    private fun reload() {
+        viewModel.refreshTabCounts()
+        viewModel.load(currentFilter.status)
     }
 
     private fun observeViewModel() {
         viewModel.orders.observe(viewLifecycleOwner) { list ->
-            allOrders = list
+            displayOrders = list
+            applySearchFilter()
+        }
+        viewModel.allForCount.observe(viewLifecycleOwner) { list ->
+            countOrders = list
             updateTabCounts()
             updateStatBar()
-            applyFilter()
         }
         viewModel.loading.observe(viewLifecycleOwner) { loading ->
             binding.swipeRefresh.isRefreshing = loading == true
@@ -96,7 +106,6 @@ class WorkOrderListFragment : Fragment() {
         binding.tabAll.setOnClickListener { switchTab(FilterType.ALL) }
         binding.tabDraft.setOnClickListener { switchTab(FilterType.DRAFT) }
         binding.tabPending.setOnClickListener { switchTab(FilterType.PENDING) }
-        binding.tabSubmitted.setOnClickListener { switchTab(FilterType.SUBMITTED) }
         binding.tabReject.setOnClickListener { switchTab(FilterType.REJECT) }
         binding.tabProcessing.setOnClickListener { switchTab(FilterType.PROCESSING) }
         binding.tabEval.setOnClickListener { switchTab(FilterType.EVAL) }
@@ -114,7 +123,7 @@ class WorkOrderListFragment : Fragment() {
         binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
-            override fun afterTextChanged(s: Editable?) = applyFilter()
+            override fun afterTextChanged(s: Editable?) = applySearchFilter()
         })
     }
 
@@ -133,7 +142,7 @@ class WorkOrderListFragment : Fragment() {
     private fun switchTab(filter: FilterType) {
         currentFilter = filter
         updateTabStyle()
-        applyFilter()
+        viewModel.load(filter.status)
     }
 
     private fun updateTabCounts() {
@@ -141,7 +150,6 @@ class WorkOrderListFragment : Fragment() {
             binding.tabAll to FilterType.ALL,
             binding.tabDraft to FilterType.DRAFT,
             binding.tabPending to FilterType.PENDING,
-            binding.tabSubmitted to FilterType.SUBMITTED,
             binding.tabReject to FilterType.REJECT,
             binding.tabProcessing to FilterType.PROCESSING,
             binding.tabEval to FilterType.EVAL,
@@ -149,11 +157,8 @@ class WorkOrderListFragment : Fragment() {
         )
         tabs.forEach { (tab, type) ->
             val count = when (type.status) {
-                null -> allOrders.size
-                WorkOrderStatus.SUBMITTED -> allOrders.count {
-                    it.status == WorkOrderStatus.SUBMITTED || it.status == WorkOrderStatus.PENDING
-                }
-                else -> allOrders.count { it.status == type.status }
+                null -> countOrders.size
+                else -> countOrders.count { it.status == type.status }
             }
             tab.text = "${tabLabel(type)} $count"
         }
@@ -163,7 +168,6 @@ class WorkOrderListFragment : Fragment() {
         FilterType.ALL -> "全部"
         FilterType.DRAFT -> "待提交"
         FilterType.PENDING -> "待认领"
-        FilterType.SUBMITTED -> "已提交"
         FilterType.REJECT -> "驳回"
         FilterType.PROCESSING -> "处理中"
         FilterType.EVAL -> "待评价"
@@ -171,12 +175,10 @@ class WorkOrderListFragment : Fragment() {
     }
 
     private fun updateStatBar() {
-        binding.statPendingNum.text = allOrders.count {
-            it.status == WorkOrderStatus.PENDING || it.status == WorkOrderStatus.SUBMITTED
-        }.toString()
-        binding.statProcessingNum.text = allOrders.count { it.status == WorkOrderStatus.PROCESSING }.toString()
-        binding.statEvalNum.text = allOrders.count { it.status == WorkOrderStatus.EVAL }.toString()
-        binding.statCompletedNum.text = allOrders.count { it.status == WorkOrderStatus.COMPLETED }.toString()
+        binding.statPendingNum.text = countOrders.count { it.status == WorkOrderStatus.PENDING }.toString()
+        binding.statProcessingNum.text = countOrders.count { it.status == WorkOrderStatus.PROCESSING }.toString()
+        binding.statEvalNum.text = countOrders.count { it.status == WorkOrderStatus.EVAL }.toString()
+        binding.statCompletedNum.text = countOrders.count { it.status == WorkOrderStatus.COMPLETED }.toString()
     }
 
     private fun updateTabStyle() {
@@ -188,7 +190,6 @@ class WorkOrderListFragment : Fragment() {
             binding.tabAll to FilterType.ALL,
             binding.tabDraft to FilterType.DRAFT,
             binding.tabPending to FilterType.PENDING,
-            binding.tabSubmitted to FilterType.SUBMITTED,
             binding.tabReject to FilterType.REJECT,
             binding.tabProcessing to FilterType.PROCESSING,
             binding.tabEval to FilterType.EVAL,
@@ -216,7 +217,6 @@ class WorkOrderListFragment : Fragment() {
             FilterType.ALL -> android.graphics.Color.parseColor("#1465EB")
             FilterType.DRAFT -> android.graphics.Color.parseColor("#898FA0")
             FilterType.PENDING -> android.graphics.Color.parseColor("#F97316")
-            FilterType.SUBMITTED -> android.graphics.Color.parseColor("#1465EB")
             FilterType.REJECT -> android.graphics.Color.parseColor("#EB1919")
             FilterType.PROCESSING -> android.graphics.Color.parseColor("#6366F1")
             FilterType.EVAL -> android.graphics.Color.parseColor("#8B5CF6")
@@ -245,22 +245,15 @@ class WorkOrderListFragment : Fragment() {
             resources.displayMetrics
         ).toInt()
 
-    private fun applyFilter() {
+    private fun applySearchFilter() {
         val key = binding.etSearch.text?.toString().orEmpty()
-        val status = currentFilter.status
-        val filtered = allOrders.filter { order ->
-            val statusMatch = when (status) {
-                null -> true
-                WorkOrderStatus.SUBMITTED -> order.status == WorkOrderStatus.SUBMITTED ||
-                    order.status == WorkOrderStatus.PENDING
-                else -> order.status == status
-            }
-            statusMatch && (key.isBlank()
+        val filtered = displayOrders.filter { order ->
+            key.isBlank()
                 || order.hiddenDangerName?.contains(key, ignoreCase = true) == true
                 || order.workOrderNo?.contains(key, ignoreCase = true) == true
                 || order.id.contains(key, ignoreCase = true)
                 || order.submitUser.contains(key, ignoreCase = true)
-                || order.responsiblePerson?.contains(key, ignoreCase = true) == true)
+                || order.responsiblePerson?.contains(key, ignoreCase = true) == true
         }
         adapter.submitList(filtered)
         binding.tvEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE

@@ -81,6 +81,20 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    fun deleteAttachment(workOrderId: String, attachmentId: String, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            _loading.value = true
+            repo.deleteAttachment(attachmentId).fold(
+                onSuccess = {
+                    loadDetail(workOrderId)
+                    onResult(true, null)
+                },
+                onFailure = { onResult(false, it.message) }
+            )
+            _loading.value = false
+        }
+    }
+
     fun setWorkOrder(item: WorkOrderItem) {
         _workOrder.value = item
 

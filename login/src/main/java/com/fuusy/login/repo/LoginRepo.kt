@@ -6,9 +6,8 @@ import com.fuusy.service.repo.LoginResp
 
 class LoginRepo(private val service: LoginApi) : BaseRepository() {
 
-    suspend fun login(userName: String, password: String, stateLiveData: StateLiveData<LoginResp>) {
+    suspend fun login(userName: String, password: String, stateLiveData: StateLiveData<LoginResp>) =
         executeResp({ service.login(LoginBody(userName, password)) }, stateLiveData)
-    }
 
     suspend fun register(
         userName: String,
@@ -16,11 +15,9 @@ class LoginRepo(private val service: LoginApi) : BaseRepository() {
         nickName: String,
         deptId: Long,
         stateLiveData: StateLiveData<Boolean>
-    ) {
-        executeResp({
-            service.register(RegisterBody(userName, password, nickName, deptId))
-        }, stateLiveData)
-    }
+    ) = executeResp({
+        service.register(RegisterBody(userName, password, nickName, deptId))
+    }, stateLiveData)
 
     suspend fun loadDeptList(): Result<List<Pair<Long, String>>> = try {
         val resp = service.getDeptList()

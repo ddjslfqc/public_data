@@ -4,6 +4,7 @@ package com.fuusy.project.ui;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.SurfaceHolder;
@@ -35,6 +36,10 @@ public class VLCPlayer implements MediaPlayer.EventListener {
     private boolean isMediaPrepared = false; // 添加Media是否已准备的标志
     private boolean isPaused = false; // 添加暂停状态标志
     private int playAttempt = 0; // 0=MediaCodec, 1=软解
+    private volatile boolean released = false;
+    private volatile boolean decodeStarted = false;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private Runnable playTimeoutRunnable;
 
     public VLCPlayer(Context context) {
         this.context = context; // 保存Context引用
@@ -245,6 +250,7 @@ public class VLCPlayer implements MediaPlayer.EventListener {
             if (!url.equals(playUrl)) {
                 resetMedia();
                 playAttempt = 0;
+                decodeStarted = false;
             }
             playUrl = url;
             Log.d("VLC", "setDataSource: url=" + url);
@@ -258,8 +264,13 @@ public class VLCPlayer implements MediaPlayer.EventListener {
      */
     public void play() {
         Log.d("VLC", "[VLCPlayer.play] called, url=" + playUrl + ", mediaPlayer=" + (mediaPlayer != null));
+        if (released) {
+            Log.w("VLC", "[VLCPlayer.play] player already released");
+            return;
+        }
         if (mediaPlayer != null && playUrl != null && !playUrl.isEmpty()) {
             try {
+                cancelPlayTimeout();
                 // 本地文件不需要网络
                 if (!isLocalUri(playUrl) && !isNetworkAvailable()) {
                     Log.e("VLC", "[VLCPlayer.play] 网络不可用，无法播放流");
@@ -293,21 +304,19 @@ public class VLCPlayer implements MediaPlayer.EventListener {
                 mediaPlayer.play();
                 isPaused = false;
                 Log.d("VLC", "[VLCPlayer.play] play() called");
-                
-                // 添加播放超时检查
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mediaPlayer != null && !mediaPlayer.isPlaying() && !isPaused) {
-                            Log.w("VLC", "[VLCPlayer.play] 播放超时，可能连接失败");
-                            if (playAttempt == 0) {
-                                retryWithSoftwareDecode();
-                            } else if (callback != null) {
-                                callback.onError();
-                            }
+
+                playTimeoutRunnable = () -> {
+                    if (released || mediaPlayer == null) return;
+                    try {
+                        if (!mediaPlayer.isPlaying() && !isPaused) {
+                            Log.w("VLC", "[VLCPlayer.play] 播放超时，通知上层切换地址");
+                            notifyError();
                         }
+                    } catch (Exception e) {
+                        Log.w("VLC", "[VLCPlayer.play] 播放超时检查异常: " + e.getMessage());
                     }
-                }, 10000); // 10秒超时
+                };
+                mainHandler.postDelayed(playTimeoutRunnable, 10000);
                 
             } catch (Exception e) {
                 Log.e("VLCPlayer", "播放时发生错误: " + e.getMessage());
@@ -345,19 +354,44 @@ public class VLCPlayer implements MediaPlayer.EventListener {
         }
     }
 
-    /** MediaCodec 失败后降级软解重试一次 */
-    private void retryWithSoftwareDecode() {
-        if (playAttempt > 0 || playUrl == null || mediaPlayer == null) {
+    /** 仅在已收到画面/缓冲后，才认为是解码失败并降级软解 */
+    private void retryWithSoftwareDecodeAsync() {
+        if (released || playAttempt > 0 || playUrl == null || mediaPlayer == null) {
+            notifyError();
             return;
         }
         playAttempt = 1;
-        Log.w("VLC", "[VLCPlayer] MediaCodec 解码失败，降级软解重试");
-        try {
-            mediaPlayer.stop();
-        } catch (Exception ignored) {
+        decodeStarted = false;
+        Log.w("VLC", "[VLCPlayer] 解码失败，后台降级软解重试");
+        final MediaPlayer player = mediaPlayer;
+        new Thread(() -> {
+            try {
+                if (player.isPlaying()) {
+                    player.stop();
+                }
+            } catch (Exception ignored) {
+            }
+            mainHandler.post(() -> {
+                if (released || mediaPlayer == null) return;
+                resetMedia();
+                play();
+            });
+        }, "VLC-SwDecodeRetry").start();
+    }
+
+    private void cancelPlayTimeout() {
+        if (playTimeoutRunnable != null) {
+            mainHandler.removeCallbacks(playTimeoutRunnable);
+            playTimeoutRunnable = null;
         }
-        resetMedia();
-        play();
+    }
+
+    private void notifyError() {
+        cancelPlayTimeout();
+        if (released || callback == null) return;
+        VLCPlayerCallback cb = callback;
+        callback = null;
+        cb.onError();
     }
 
     /** 判断是否为本地URI */
@@ -463,18 +497,18 @@ public class VLCPlayer implements MediaPlayer.EventListener {
      * 安全停止播放
      */
     public void safeStop() {
-        if (mediaPlayer != null) {
+        if (released || mediaPlayer == null) return;
+        final MediaPlayer player = mediaPlayer;
+        new Thread(() -> {
             try {
-                if (mediaPlayer.isPlaying()) {
-                    mediaPlayer.stop();
+                if (player.isPlaying()) {
+                    player.stop();
                 }
                 Log.d("VLC", "safeStop() 播放已停止");
             } catch (Exception e) {
                 Log.e("VLC", "safeStop error: " + e.getMessage());
             }
-        } else {
-            Log.w("VLCPlayer", "mediaPlayer 为 null，无法停止");
-        }
+        }, "VLC-StopThread").start();
     }
 
     /**
@@ -485,12 +519,14 @@ public class VLCPlayer implements MediaPlayer.EventListener {
      */
     public void safeRelease() {
         Log.d("VLCPlayer", "safeRelease() called");
+        released = true;
+        cancelPlayTimeout();
+        callback = null;
         if (mediaPlayer == null) {
             Log.w("VLCPlayer", "mediaPlayer is null, no need to release.");
             return;
         }
 
-        // 1. 同步断开与UI的连接，这是防止native崩溃的关键
         try {
             if (mediaPlayer.getVLCVout().areViewsAttached()) {
                 mediaPlayer.getVLCVout().detachViews();
@@ -501,11 +537,8 @@ public class VLCPlayer implements MediaPlayer.EventListener {
         }
 
         final MediaPlayer playerToRelease = mediaPlayer;
-        // 注意：sLibVLC是静态的，通常不应在这里释放，除非确定App内所有播放器都已销毁。
-        // 为避免多实例问题，暂时只释放MediaPlayer。
-        this.mediaPlayer = null; // 立即置空，防止后续误用
-        
-        // 释放当前Media对象
+        mediaPlayer = null;
+
         if (currentMedia != null) {
             try {
                 currentMedia.release();
@@ -516,24 +549,19 @@ public class VLCPlayer implements MediaPlayer.EventListener {
         }
         isMediaPrepared = false;
         isPaused = false;
+        decodeStarted = false;
 
-        if (playerToRelease.isPlaying()) {
-            playerToRelease.stop();
-        }
-
-
-//        // 2. 异步释放耗时的native资源
-//        new Thread(() -> {
-//            try {
-//                if (playerToRelease.isPlaying()) {
-//                    playerToRelease.stop();
-//                }
-//                playerToRelease.release();
-//                Log.d("VLCPlayer", "safeRelease() - MediaPlayer released on background thread.");
-//            } catch (Exception e) {
-//                Log.e("VLCPlayer", "safeRelease() - background release failed: " + e.getMessage(), e);
-//            }
-//        }, "VLC-ReleaseThread").start();
+        new Thread(() -> {
+            try {
+                if (playerToRelease.isPlaying()) {
+                    playerToRelease.stop();
+                }
+                playerToRelease.release();
+                Log.d("VLCPlayer", "safeRelease() - MediaPlayer released on background thread.");
+            } catch (Exception e) {
+                Log.e("VLCPlayer", "safeRelease() - background release failed: " + e.getMessage(), e);
+            }
+        }, "VLC-ReleaseThread").start();
     }
 
     public boolean isPlaying() {
@@ -572,14 +600,15 @@ public class VLCPlayer implements MediaPlayer.EventListener {
 
     @Override
     public void onEvent(MediaPlayer.Event event) {
+        if (released) return;
         Log.d("VLC", "onEvent: type=" + event.type + ", event=" + event);
         switch (event.type) {
             case MediaPlayer.Event.EncounteredError:
-                Log.e("VLC", "[event] 播放失败: EncounteredError");
-                if (playAttempt == 0) {
-                    retryWithSoftwareDecode();
-                } else if (callback != null) {
-                    callback.onError();
+                Log.e("VLC", "[event] 播放失败: EncounteredError, decodeStarted=" + decodeStarted);
+                if (playAttempt == 0 && decodeStarted) {
+                    retryWithSoftwareDecodeAsync();
+                } else {
+                    notifyError();
                 }
                 break;
             case MediaPlayer.Event.Opening:
@@ -587,12 +616,17 @@ public class VLCPlayer implements MediaPlayer.EventListener {
                 break;
             case MediaPlayer.Event.Buffering:
                 Log.d("VLC", "[event] 缓冲中... " + event.getBuffering());
+                if (event.getBuffering() > 0f) {
+                    decodeStarted = true;
+                }
                 if (callback != null) {
                     callback.onBuffering(event.getBuffering());
                 }
                 break;
             case MediaPlayer.Event.Playing:
                 Log.d("VLC", "[event] 开始播放");
+                decodeStarted = true;
+                cancelPlayTimeout();
                 if (callback != null) callback.playing();
                 break;
             case MediaPlayer.Event.Stopped:

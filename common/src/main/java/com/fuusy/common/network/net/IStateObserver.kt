@@ -137,4 +137,7 @@ abstract class IStateObserver<T>(view: View?) : Observer<BaseResp<T>>, Callback.
 
     }
 
+    override fun onReload(view: View?) {
+    }
+
 }

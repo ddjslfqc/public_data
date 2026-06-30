@@ -83,7 +83,7 @@ open class BaseRepository {
     suspend fun <T : Any> executeResp(
         block: suspend () -> BaseResp<T>,
         stateLiveData: StateLiveData<T>
-    ) {
+    ): BaseResp<T> {
         var baseResp = BaseResp<T>()
         try {
             baseResp.dataState = DataState.STATE_LOADING
@@ -105,6 +105,7 @@ open class BaseRepository {
             } else {
                 Log.d(TAG, "executeResp: 服务器错误，errorCode = ${baseResp.errorCode}")
                 baseResp.dataState = DataState.STATE_FAILED
+                baseResp.error = IOException(baseResp.errorMsg ?: "请求失败(${baseResp.errorCode})")
             }
         } catch (e: Exception) {
             //非后台返回错误，捕获到的异常
@@ -113,6 +114,7 @@ open class BaseRepository {
         } finally {
             stateLiveData.postValue(baseResp)
         }
+        return baseResp
     }
 
 

@@ -20,5 +20,6 @@ class Constants {
         const val SP_KEY_REMEMBER_PASSWORD = "SP_KEY_REMEMBER_PASSWORD"
         const val SP_KEY_SAVED_USERNAME = "SP_KEY_SAVED_USERNAME"
         const val SP_KEY_SAVED_PASSWORD = "SP_KEY_SAVED_PASSWORD"
+        const val SP_KEY_USER_ID = "user_id"
     }
 }

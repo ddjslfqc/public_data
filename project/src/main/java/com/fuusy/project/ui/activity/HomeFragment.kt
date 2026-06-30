@@ -97,7 +97,6 @@ class HomeFragment : Fragment() {
         val activeStatuses = setOf(
             WorkOrderStatus.PENDING,
             WorkOrderStatus.PROCESSING,
-            WorkOrderStatus.SUBMITTED,
             WorkOrderStatus.DRAFT,
             WorkOrderStatus.EVAL
         )

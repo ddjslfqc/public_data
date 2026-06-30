@@ -9,7 +9,7 @@ class BaseResp<T>{
     @SerializedName(value = "errorCode", alternate = ["code"])
     var errorCode = -1
     
-    @SerializedName(value = "errorMsg", alternate = ["message", "status"])
+    @SerializedName(value = "errorMsg", alternate = ["message", "status", "msg"])
     var errorMsg: String? = null
     
     var data: T? = null

@@ -6,6 +6,45 @@ import com.fuusy.common.data.WorkOrderStatus
 
 object WorkOrderMapper {
 
+    /** 将表单字段映射为文档定义的 create 请求体 */
+    fun buildCreateRequest(
+        form: Map<String, String>,
+        projectName: String?,
+        projectDevice: String?
+    ): CreateWorkOrderRequest {
+        fun opt(key: String): String? = form[key]?.trim()?.takeIf { it.isNotBlank() }
+
+        return CreateWorkOrderRequest(
+            title = form["hiddenDangerName"].orEmpty(),
+            brief = form["hiddenDangerDescription"].orEmpty(),
+            typeCode = opt("workOrderType") ?: opt("typeCode").orEmpty(),
+            responsibleDept = opt("responsibleDepartment") ?: opt("responsibleDept").orEmpty(),
+            rectificationPerson = opt("responsiblePerson") ?: opt("rectificationPerson"),
+            priority = opt("priority"),
+            project = projectName?.trim()?.takeIf { it.isNotBlank() },
+            expectedCompletionTime = normalizeDateTime(
+                opt("expectedCompletionTime") ?: opt("expectedCompleteTime")
+            ),
+            reason = opt("reasonAnalysis") ?: opt("reason"),
+            consequences = opt("hazardConsequence") ?: opt("consequences"),
+            controlLevel = opt("controlLevel") ?: opt("hiddenDangerLevel") ?: opt("hazardLevel"),
+            rectificationScheme = opt("treatmentRequirement") ?: opt("rectificationScheme"),
+            device = opt("unitSystem") ?: opt("device") ?: projectDevice?.trim()?.takeIf { it.isNotBlank() }
+        )
+    }
+
+    private fun normalizeDateTime(raw: String?): String? {
+        if (raw.isNullOrBlank()) return null
+        return when {
+            raw.contains('T') -> raw
+            raw.matches(Regex("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) ->
+                raw.replace(' ', 'T')
+            raw.matches(Regex("\\d{4}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2}")) ->
+                raw.replace('.', '-').replace(' ', 'T') + ":00"
+            else -> raw
+        }
+    }
+
     fun apiStatusToLocal(status: String?): WorkOrderStatus = when (status?.uppercase()) {
         "DRAFT" -> WorkOrderStatus.DRAFT
         "PENDING" -> WorkOrderStatus.PENDING
@@ -18,7 +57,7 @@ object WorkOrderMapper {
 
     fun localStatusToQuery(status: WorkOrderStatus?): String? = when (status) {
         WorkOrderStatus.DRAFT -> "draft"
-        WorkOrderStatus.PENDING, WorkOrderStatus.SUBMITTED -> "pending"
+        WorkOrderStatus.PENDING -> "pending"
         WorkOrderStatus.PROCESSING -> "processing"
         WorkOrderStatus.EVAL -> "pending_evaluation"
         WorkOrderStatus.COMPLETED -> "completed"
@@ -75,6 +114,7 @@ object WorkOrderMapper {
             unitSystem = dto.device,
             attachments = dto.attachments?.map { att ->
                 Attachment(
+                    id = att.id,
                     fileName = att.fileName,
                     size = att.fileType,
                     url = att.filePath

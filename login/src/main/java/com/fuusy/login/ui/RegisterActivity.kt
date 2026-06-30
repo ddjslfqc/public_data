@@ -70,10 +70,6 @@ class RegisterActivity : BaseVmActivity<ActivityRegisterBinding>() {
                 showToast("注册成功，请登录")
                 finish()
             }
-
-            override fun onError(e: Throwable?) {
-                showToast(e?.message ?: "注册失败")
-            }
         })
     }
 

@@ -42,16 +42,31 @@ data class WorkOrderItem(
 ) : Serializable
 
 data class Attachment(
-    val fileName: String? = "", val size: String? = "", val url: String? = ""
+    val id: String? = null,
+    val fileName: String? = "",
+    val size: String? = "",
+    val url: String? = ""
 ) : Serializable
 
+/** 与 workorder-api.md 第四节状态码一致 */
 enum class WorkOrderStatus(val displayName: String) : Serializable {
     DRAFT("待提交"),
     PENDING("待认领"),
-    SUBMITTED("已提交"),
     REJECT("驳回"),
     PROCESSING("处理中"),
     EVAL("待评价"),
-    COMPLETED("已完成"),
-    CANCELLED("已取消")
+    COMPLETED("已完成");
+
+    companion object {
+        /** 兼容本地旧数据 / 历史枚举名 */
+        fun fromStored(name: String?): WorkOrderStatus = when (name?.uppercase()) {
+            "DRAFT" -> DRAFT
+            "PENDING", "SUBMITTED" -> PENDING
+            "PROCESSING" -> PROCESSING
+            "PENDING_EVALUATION", "EVAL" -> EVAL
+            "COMPLETED" -> COMPLETED
+            "REJECTED", "REJECT" -> REJECT
+            else -> PENDING
+        }
+    }
 } 

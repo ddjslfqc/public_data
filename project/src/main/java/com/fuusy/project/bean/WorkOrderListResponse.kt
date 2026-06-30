@@ -61,7 +61,7 @@ fun WorkOrderNetItem.toWorkOrderItem(): com.fuusy.common.data.WorkOrderItem {
             when (status) {
                 "0" -> com.fuusy.common.data.WorkOrderStatus.PROCESSING
                 "1" -> com.fuusy.common.data.WorkOrderStatus.COMPLETED
-                "2" -> com.fuusy.common.data.WorkOrderStatus.CANCELLED
+                "2" -> com.fuusy.common.data.WorkOrderStatus.REJECT
                 else -> com.fuusy.common.data.WorkOrderStatus.PROCESSING
             }
         },

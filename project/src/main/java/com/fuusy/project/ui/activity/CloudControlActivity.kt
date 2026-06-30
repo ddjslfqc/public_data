@@ -26,6 +26,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import com.fuusy.common.network.ServerConfig
+import androidx.activity.OnBackPressedCallback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,6 +54,7 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
     private var playbackCandidates: List<StreamUrlResolver.PlaybackTarget> = emptyList()
     private var playbackCandidateIndex = 0
     private var openedFullScreen = false
+    private var isExiting = false
     private var vibrator: android.os.Vibrator? = null
 
     data class DeviceInfo(
@@ -72,11 +74,9 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
 
         vibrator = getSystemService(android.content.Context.VIBRATOR_SERVICE) as? android.os.Vibrator
 
-        streamUrl = ServerConfig.resolveStreamUrl(
-            intent.getStringExtra("streamUrl")
-                ?: intent.getStringArrayListExtra("stream_urls")?.firstOrNull()
-                ?: intent.getStringExtra("videoPath")
-        )
+        streamUrl = intent.getStringExtra("streamUrl")
+            ?: intent.getStringArrayListExtra("stream_urls")?.firstOrNull()
+            ?: intent.getStringExtra("videoPath")
 
         val cameraip = intent.getStringExtra("cameraip") ?: ""
         val channelId = intent.getStringExtra("channelId") ?: ""
@@ -90,11 +90,9 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
         applyStatusBarPadding()
         textureView = mBinding.textureView
         setupHeader()
+        setupBackHandler()
 
         Log.d("VideoControl", "CloudControlActivity初始化: streamUrl=$streamUrl")
-        if (!ServerConfig.debugStreamUrl.isNullOrBlank()) {
-            Log.d("VideoControl", "已启用调试播放地址，忽略接口返回的 videoPath")
-        }
         vlcScreenRecorder = VLCScreenRecorder(this)
         vlcScreenRecorder.setCallback(object : VLCScreenRecorder.VLCRecorderCallback {
             override fun onRecordingStarted() {
@@ -235,9 +233,7 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
             vibrator?.vibrate(30)
             intercomController.toggleIntercom()
         }
-        mBinding.btnBack.setOnClickListener {
-            finish()
-        }
+        mBinding.btnBack.setOnClickListener { exitPage() }
         mBinding.btnPlayback.setOnClickListener {
             showToast("回放功能即将上线")
         }
@@ -339,6 +335,33 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
             onLog = { msg -> android.util.Log.e("Intercom", msg) })
     }
 
+    private fun setupBackHandler() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                exitPage()
+            }
+        })
+    }
+
+    private fun isPageActive(): Boolean =
+        !isExiting && !isFinishing && !isDestroyed
+
+    private fun exitPage() {
+        if (isExiting) return
+        isExiting = true
+        Log.d("CloudControl", "用户退出，停止播放并关闭页面")
+        stopPlayback()
+        finish()
+    }
+
+    private fun stopPlayback() {
+        currentPlayJob?.cancel()
+        currentPlayJob = null
+        mBinding.loadingContainer.visibility = View.GONE
+        releaseExoPlayer()
+        releaseVlcPlayer()
+    }
+
     /** 设计稿：状态栏 62px 后标题栏从 y=65 起，预留系统状态栏 + 3dp */
     private fun applyStatusBarPadding() {
         StatusBar().lightStatusBar(this, false)
@@ -372,13 +395,22 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
         startActivity(intent)
     }
 
+    override fun onPause() {
+        super.onPause()
+        if (isExiting || isFinishing) return
+        if (!openedFullScreen) {
+            stopPlayback()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
+        if (isExiting || isFinishing) return
         if (openedFullScreen) {
             openedFullScreen = false
-            if (textureView.isAvailable) {
-                playCurrentChannel()
-            }
+        }
+        if (textureView.isAvailable) {
+            playCurrentChannel()
         }
     }
 
@@ -435,6 +467,7 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
     }
 
     private fun playCurrentChannel() {
+        if (!isPageActive()) return
         val url = streamUrl ?: viewModel.getCurrentUrl()
         Log.d("CloudControl", "Current URL to play: $url")
 
@@ -464,6 +497,7 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
     }
 
     private fun playNextCandidate() {
+        if (!isPageActive()) return
         if (playbackCandidateIndex >= playbackCandidates.size) {
             Log.e("CloudControl", "所有播放候选均失败，共 ${playbackCandidates.size} 个")
             showPlayError()
@@ -482,6 +516,7 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
     }
 
     private fun onCandidateFailed() {
+        if (!isPageActive()) return
         if (playbackCandidateIndex < playbackCandidates.size) {
             Log.w("CloudControl", "当前候选失败，尝试下一个")
             playNextCandidate()
@@ -510,6 +545,7 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
     }
 
     private fun onPlaySuccess() {
+        if (!isPageActive()) return
         mBinding.loadingContainer.visibility = View.GONE
         mBinding.btnRetry?.visibility = View.INVISIBLE
     }
@@ -538,11 +574,13 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
         exoLivePlayer = ExoLivePlayer(this, textureView).also { exo ->
             exo.setCallback(object : ExoLivePlayer.Callback {
                 override fun onPlaying() {
+                    if (!isPageActive()) return
                     Log.d("CloudControl", "ExoPlayer 开始播放")
                     onPlaySuccess()
                 }
 
                 override fun onError(message: String?) {
+                    if (!isPageActive()) return
                     Log.e("CloudControl", "ExoPlayer 播放错误: $message")
                     releaseExoPlayer()
                     onFail()
@@ -558,6 +596,7 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
             try {
                 withTimeout(15_000) {
                     withContext(Dispatchers.Main) {
+                        if (!isPageActive()) return@withContext
                         Log.d("CloudControl", "开始初始化 VLC 播放器")
                         releaseVlcPlayer()
 
@@ -566,17 +605,20 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
                         newPlayer.setVolume(if (isMuted) 0 else 100)
                         newPlayer.setCallback(object : VLCPlayer.VLCPlayerCallback {
                             override fun onError() {
+                                if (!isPageActive()) return
                                 Log.e("CloudControl", "VLC 播放错误: $url")
                                 releaseVlcPlayer()
                                 onFail()
                             }
 
                             override fun playing() {
+                                if (!isPageActive()) return
                                 Log.d("CloudControl", "播放器开始播放")
                                 onPlaySuccess()
                             }
 
                             override fun onBuffering(bufferPercent: Float) {
+                                if (!isPageActive()) return
                                 if (bufferPercent > 95f) {
                                     onPlaySuccess()
                                 }
@@ -599,6 +641,7 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
                     }
                 }
             } catch (e: Exception) {
+                if (!isPageActive()) return@launch
                 Log.e("CloudControl", "播放器初始化失败: ${e.message}")
                 withContext(Dispatchers.Main) {
                     releaseVlcPlayer()
@@ -647,14 +690,10 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
     }
 
     override fun onDestroy() {
+        isExiting = true
         super.onDestroy()
         Log.d("CloudControl", "onDestroy called. Releasing player.")
-        
-        // 取消所有播放任务
-        currentPlayJob?.cancel()
-        
-        releaseExoPlayer()
-        releaseVlcPlayer()
+        stopPlayback()
         LoadingDialogUtils.hideLoading()
     }
     /**

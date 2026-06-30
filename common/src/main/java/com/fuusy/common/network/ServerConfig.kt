@@ -31,18 +31,10 @@ object ServerConfig {
     /**
      * 是否使用mock数据
      */
-    val isMockData = true
+    val isMockData = false
 
-    /**
-     * 调试播放地址：非空时所有视频详情页统一使用该 FLV（测试完改回 null）
-     */
-     val debugStreamUrl: String? =
-        "http://8.130.120.35:8080/rtp/34020000001110000002_43000000801310004056.live.flv"
-
-    fun resolveStreamUrl(url: String?): String? {
-        val override = debugStreamUrl?.trim().orEmpty()
-        return override.takeIf { it.isNotEmpty() } ?: url
-    }
+    fun resolveStreamUrl(url: String?): String? =
+        url?.trim()?.takeIf { it.isNotEmpty() }
 
     /**
      * 服务器地址配置

@@ -91,7 +91,7 @@ class LoginActivity : BaseVmActivity<ActivityLoginBinding>() {
                 is LoadingStatus.Success -> LoadingUtils.hideLoading()
                 is LoadingStatus.Error -> {
                     LoadingUtils.hideLoading()
-                    showToast("登录失败：${status.message}")
+                    showToast(status.message)
                 }
             }
         }
@@ -114,7 +114,7 @@ class LoginActivity : BaseVmActivity<ActivityLoginBinding>() {
                 SpUtils.put("user_dept_id", data?.deptId ?: 0L)
 
                 data?.let { userData ->
-                    UserIdProvider.userId = userData.id.toLong()
+                    UserIdProvider.update(userData.id.toLong())
                     DbHelper.insertUserInfo(this@LoginActivity, userData)
                 }
 
@@ -129,10 +129,6 @@ class LoginActivity : BaseVmActivity<ActivityLoginBinding>() {
                 }
             }
 
-            override fun onError(e: Throwable?) {
-                super.onError(e)
-                showToast("登录失败：${e?.message}")
-            }
         })
     }
 
@@ -170,6 +166,7 @@ class LoginActivity : BaseVmActivity<ActivityLoginBinding>() {
                 } else {
                     saveRememberCredentials(username, password)
                     SpUtils.put("is_logged_in", true)
+                    UserIdProvider.update(1L)
                     ARouter.getInstance().build("/project/ProjectDetailActivity").navigation()
                     finish()
                 }

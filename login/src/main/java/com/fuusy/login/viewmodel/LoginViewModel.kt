@@ -3,6 +3,7 @@ package com.fuusy.login.viewmodel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.fuusy.common.base.BaseViewModel
+import com.fuusy.common.network.DataState
 import com.fuusy.common.network.net.StateLiveData
 import com.fuusy.login.repo.LoginRepo
 import com.fuusy.service.repo.LoginResp
@@ -22,8 +23,14 @@ class LoginViewModel(private val repo: LoginRepo) : BaseViewModel() {
         viewModelScope.launch {
             try {
                 loadingStatus.postValue(LoadingStatus.Loading)
-                repo.login(userName, password, loginLiveData)
-                loadingStatus.postValue(LoadingStatus.Success)
+                val resp = repo.login(userName, password, loginLiveData)
+                if (resp.dataState == DataState.STATE_SUCCESS) {
+                    loadingStatus.postValue(LoadingStatus.Success)
+                } else {
+                    loadingStatus.postValue(
+                        LoadingStatus.Error(resp.errorMsg ?: resp.error?.message ?: "登录失败")
+                    )
+                }
             } catch (e: Exception) {
                 loadingStatus.postValue(LoadingStatus.Error(e.message ?: "登录失败"))
             }
@@ -49,8 +56,14 @@ class LoginViewModel(private val repo: LoginRepo) : BaseViewModel() {
         viewModelScope.launch {
             try {
                 loadingStatus.postValue(LoadingStatus.Loading)
-                repo.register(userName, password, nickName, deptId, registerLiveData)
-                loadingStatus.postValue(LoadingStatus.Success)
+                val resp = repo.register(userName, password, nickName, deptId, registerLiveData)
+                if (resp.dataState == DataState.STATE_SUCCESS) {
+                    loadingStatus.postValue(LoadingStatus.Success)
+                } else {
+                    loadingStatus.postValue(
+                        LoadingStatus.Error(resp.errorMsg ?: resp.error?.message ?: "注册失败")
+                    )
+                }
             } catch (e: Exception) {
                 loadingStatus.postValue(LoadingStatus.Error(e.message ?: "注册失败"))
             }

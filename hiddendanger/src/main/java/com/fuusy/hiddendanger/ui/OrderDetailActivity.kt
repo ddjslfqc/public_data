@@ -89,12 +89,10 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
         val (bgRes, textColor) = when (status) {
             WorkOrderStatus.DRAFT -> R.drawable.bg_status_tag to Color.parseColor("#898FA0")
             WorkOrderStatus.PENDING -> R.drawable.bg_status_tag to Color.parseColor("#F97316")
-            WorkOrderStatus.SUBMITTED -> R.drawable.bg_status_tag to Color.parseColor("#1465EB")
             WorkOrderStatus.REJECT -> R.drawable.bg_status_reject to Color.parseColor("#D6413F")
             WorkOrderStatus.PROCESSING -> R.drawable.bg_status_tag_processing to Color.parseColor("#6366F1")
             WorkOrderStatus.EVAL -> R.drawable.bg_status_tag to Color.parseColor("#8B5CF6")
             WorkOrderStatus.COMPLETED -> R.drawable.bg_status_done to Color.parseColor("#00AA60")
-            WorkOrderStatus.CANCELLED -> R.drawable.bg_status_tag to Color.parseColor("#898FA0")
         }
         tvStatus.setBackgroundResource(bgRes)
         tvStatus.setTextColor(textColor)
@@ -127,6 +125,7 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
         val simpleAttachmentList = item.attachments?.mapNotNull { att ->
             att ?: return@mapNotNull null
             SimpleAttachment(
+                id = att.id,
                 fileName = att.fileName.orEmpty(),
                 fileSize = att.size.orEmpty(),
                 fileUrl = att.url.orEmpty(),
@@ -153,6 +152,18 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
                 PictureSelector.create(this).openPreview()
                     .setImageEngine(com.fuusy.hiddendanger.util.GlideEngine())
                     .startActivityPreview(position, false, ArrayList(mediaList))
+            },
+            onLongClick = { att ->
+                val attachmentId = att.id ?: return@SimpleAttachmentAdapter
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setMessage("删除该附件？")
+                    .setPositiveButton("删除") { _, _ ->
+                        viewModel.deleteAttachment(item.id, attachmentId) { ok, msg ->
+                            if (!ok) ToastUtil.showCustomToast(this@OrderDetailActivity, msg ?: "删除失败")
+                        }
+                    }
+                    .setNegativeButton("取消", null)
+                    .show()
             }
         )
         binding.rvSimpleAttachments.layoutManager = LinearLayoutManager(this)
@@ -167,7 +178,7 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
                 addActionButton("撤回", style = ButtonStyle.GHOST) { confirmWithdraw(item) }
                 addActionButton("提交", style = ButtonStyle.PRIMARY) { confirmSubmit(item) }
             }
-            WorkOrderStatus.PENDING, WorkOrderStatus.SUBMITTED -> {
+            WorkOrderStatus.PENDING -> {
                 binding.bottomBar.isVisible = true
                 addActionButton("认领工单", style = ButtonStyle.ORANGE, fullWidth = true) {
                     confirmClaim(item)
@@ -190,7 +201,7 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
                     showEvaluateDialog(item)
                 }
             }
-            WorkOrderStatus.COMPLETED, WorkOrderStatus.CANCELLED -> {
+            WorkOrderStatus.COMPLETED -> {
                 binding.bottomBar.isVisible = false
             }
         }

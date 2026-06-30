@@ -43,14 +43,13 @@ class MainApp : Application() {
         initLoadSir()
         initKoin()
         AppHelper.init(this.applicationContext)
-        UserIdProvider.userId = DbHelper.getUserInfo(this)?.id?.toLong()
+        UserIdProvider.restoreFromCache()
 
         GlobalExceptionProtector.install(this)
 
-        // 全局预加载最近6条相册媒体
         GlobalScope.launch(Dispatchers.IO) {
+            DbHelper.getUserInfo(this@MainApp)?.id?.toLong()?.let { UserIdProvider.update(it) }
             com.fuusy.hiddendanger.viewmodel.PersonalViewModel.preloadRecentMedia(this@MainApp)
-            // 新增：自定义相册全局预加载
             CustomAlbumViewModel.preloadAlbum(this@MainApp, maxCount = 100)
         }
     }

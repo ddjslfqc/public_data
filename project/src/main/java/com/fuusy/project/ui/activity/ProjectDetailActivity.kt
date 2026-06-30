@@ -9,8 +9,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
-import cn.onestravel.one.navigation.androidx.OnItemSelectedListener
 import com.alibaba.android.arouter.facade.annotation.Route
+import com.google.android.material.navigation.NavigationBarView
 import com.alibaba.android.arouter.launcher.ARouter
 import com.fuusy.common.base.BaseActivity
 import com.fuusy.common.support.Constants
@@ -108,19 +108,20 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
 
     private fun initFragments(savedInstanceState: Bundle?) {
         val fm = supportFragmentManager
-        val existHome = fm.findFragmentByTag(TAG_HOME) as? HomeFragment
 
-        homeFragment = existHome ?: run {
+        homeFragment = (fm.findFragmentByTag(TAG_HOME) as? HomeFragment) ?: run {
             val projectId = intent.getStringExtra(Constants.KEY_PROJECT_ID) ?: ""
             if (projectId.isNotEmpty()) HomeFragment.newInstance(projectId)
             else HomeFragment.newInstance()
         }
+        videoFragment = fm.findFragmentByTag(TAG_VIDEO) as? VideoListFragment
+        workOrderFragment = fm.findFragmentByTag(TAG_WORK_ORDER)
+        personalFragment = fm.findFragmentByTag(TAG_PERSONAL)
 
-        // 如果是首次创建，预先添加首页
-        if (existHome == null) {
+        if (fm.findFragmentByTag(TAG_HOME) == null) {
             fm.beginTransaction()
                 .add(R.id.fragment_container, homeFragment, TAG_HOME)
-                .commit()
+                .commitNow()
             currentFragment = homeFragment
         } else {
             currentFragment = homeFragment
@@ -128,81 +129,76 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
     }
 
     private fun initBottomNavigation() {
-        try {
-            mBinding.BottomLayout.setFragmentManager(
-                supportFragmentManager,
-                mBinding.bottomNavStubContainer
-            )
-        } catch (_: Throwable) {
-        }
-
-        mBinding.BottomLayout.setOnItemSelectedListener(object : OnItemSelectedListener {
-            override fun invoke(item: cn.onestravel.one.navigation.androidx.OneBottomNavigationBar.Item, position: Int) {
-                when (item.id) {
-                    R.id.navigation_home -> {
-                        switchToFragment(homeFragment)
-                        true
-                    }
-                    R.id.navigation_video -> {
-                        showVideoFragment()
-                        true
-                    }
-                    R.id.navigation_work_order -> {
-                        showWorkOrderFragment()
-                        true
-                    }
-                    R.id.navigation_profile -> {
-                        showPersonalFragment()
-                        true
-                    }
-                    else -> false
-                }
-            }
-        })
-        mBinding.BottomLayout.setSelected(0)
+        mBinding.BottomLayout.setOnItemSelectedListener(bottomNavListener())
+        mBinding.BottomLayout.selectedItemId = R.id.navigation_home
     }
 
     fun switchToVideoTab() {
-        mBinding.BottomLayout.setSelected(1)
+        selectBottomTab(R.id.navigation_video)
     }
 
     fun switchToWorkOrderTab() {
-        mBinding.BottomLayout.setSelected(2)
+        selectBottomTab(R.id.navigation_work_order)
+    }
+
+    private fun selectBottomTab(itemId: Int) {
+        val bottomNav = mBinding.BottomLayout
+        bottomNav.setOnItemSelectedListener(null)
+        bottomNav.selectedItemId = itemId
+        bottomNav.setOnItemSelectedListener(bottomNavListener())
+    }
+
+    private fun bottomNavListener() = NavigationBarView.OnItemSelectedListener { item ->
+        when (item.itemId) {
+            R.id.navigation_home -> {
+                switchToFragment(homeFragment)
+                true
+            }
+            R.id.navigation_video -> {
+                showVideoFragment()
+                true
+            }
+            R.id.navigation_work_order -> {
+                showWorkOrderFragment()
+                true
+            }
+            R.id.navigation_profile -> {
+                showPersonalFragment()
+                true
+            }
+            else -> false
+        }
     }
 
     private fun showVideoFragment() {
-        val fm = supportFragmentManager
         if (videoFragment == null) {
-            videoFragment = VideoListFragment.newInstance()
-            fm.beginTransaction()
-                .add(R.id.fragment_container, videoFragment!!, TAG_VIDEO)
-                .commit()
+            videoFragment = supportFragmentManager.findFragmentByTag(TAG_VIDEO) as? VideoListFragment
+                ?: VideoListFragment.newInstance()
         }
-        switchToFragment(videoFragment!!)
+        switchToFragment(videoFragment!!, TAG_VIDEO)
     }
 
     private fun showWorkOrderFragment() {
-        val fm = supportFragmentManager
         if (workOrderFragment == null) {
-            workOrderFragment = WorkOrderListFragment.newInstance()
-            fm.beginTransaction()
-                .add(R.id.fragment_container, workOrderFragment!!, TAG_WORK_ORDER)
-                .commit()
+            workOrderFragment = supportFragmentManager.findFragmentByTag(TAG_WORK_ORDER)
+                ?: WorkOrderListFragment.newInstance()
         }
-        switchToFragment(workOrderFragment!!)
+        switchToFragment(workOrderFragment!!, TAG_WORK_ORDER)
     }
 
     private fun showPersonalFragment() {
-        val fm = supportFragmentManager
         if (personalFragment == null) {
-            try {
-                personalFragment = ARouter.getInstance()
-                    .build("/hiddendanger/PersonalFragment")
-                    .navigation() as? Fragment
-            } catch (_: Throwable) {
+            personalFragment = supportFragmentManager.findFragmentByTag(TAG_PERSONAL)
+            if (personalFragment == null) {
+                try {
+                    personalFragment = ARouter.getInstance()
+                        .build("/hiddendanger/PersonalFragment")
+                        .navigation() as? Fragment
+                } catch (_: Throwable) {
+                }
             }
         }
-        personalFragment?.let { switchToFragment(it) }
+        personalFragment?.let { switchToFragment(it, TAG_PERSONAL) }
     }
 
     private fun initClickListeners() {
@@ -247,13 +243,36 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
         }
     }
 
-    private fun switchToFragment(fragment: Fragment) {
-        if (currentFragment === fragment) return
+    private fun switchToFragment(fragment: Fragment, tag: String) {
         val fm = supportFragmentManager
+        val target = fm.findFragmentByTag(tag) ?: fragment
+        if (currentFragment === target && target.isAdded && target.isVisible) return
+
         val transaction = fm.beginTransaction().setReorderingAllowed(true)
+        currentFragment?.takeIf { it.isAdded }?.let { transaction.hide(it) }
 
-        currentFragment?.let { transaction.hide(it) }
+        if (!target.isAdded) {
+            transaction.add(R.id.fragment_container, target, tag)
+        } else {
+            transaction.show(target)
+        }
+        transaction.commitNow()
 
+        when (tag) {
+            TAG_VIDEO -> videoFragment = target as? VideoListFragment
+            TAG_WORK_ORDER -> workOrderFragment = target
+            TAG_PERSONAL -> personalFragment = target
+        }
+        currentFragment = target
+
+        val topBar = findViewById<ConstraintLayout>(R.id.topBar)
+        when (target) {
+            homeFragment, personalFragment -> topBar?.visibility = View.GONE
+            else -> topBar?.visibility = View.VISIBLE
+        }
+    }
+
+    private fun switchToFragment(fragment: Fragment) {
         val tag = when (fragment) {
             homeFragment -> TAG_HOME
             videoFragment -> TAG_VIDEO
@@ -261,20 +280,7 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
             personalFragment -> TAG_PERSONAL
             else -> fragment::class.java.simpleName
         }
-        val exist = fm.findFragmentByTag(tag)
-        if (exist == null && !fragment.isAdded) {
-            transaction.add(R.id.fragment_container, fragment, tag)
-        } else {
-            transaction.show(exist ?: fragment)
-        }
-        transaction.commit()
-        currentFragment = fragment
-
-        val topBar = findViewById<ConstraintLayout>(R.id.topBar)
-        when (fragment) {
-            homeFragment, personalFragment -> topBar?.visibility = View.GONE
-            else -> topBar?.visibility = View.VISIBLE
-        }
+        switchToFragment(fragment, tag)
     }
 
     override fun onBackPressed() {

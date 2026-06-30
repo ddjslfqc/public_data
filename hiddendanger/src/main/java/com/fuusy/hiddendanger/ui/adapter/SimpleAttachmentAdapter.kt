@@ -14,7 +14,8 @@ import com.fuusy.hiddendanger.data.SimpleAttachment
 class SimpleAttachmentAdapter(
     private var data: List<SimpleAttachment>,
     private val onDownloadClick: (SimpleAttachment) -> Unit,
-    private val onItemClick: (SimpleAttachment, Int) -> Unit
+    private val onItemClick: (SimpleAttachment, Int) -> Unit,
+    private val onLongClick: ((SimpleAttachment) -> Unit)? = null
 ) : RecyclerView.Adapter<SimpleAttachmentAdapter.ViewHolder>() {
 
     fun updateData(newData: List<SimpleAttachment>) {
@@ -83,5 +84,9 @@ class SimpleAttachmentAdapter(
             .into(holder.ivThumb)
         holder.ivPlayIcon.visibility = if (item.isVideo) View.VISIBLE else View.INVISIBLE
         holder.itemView.setOnClickListener { onItemClick(item, position) }
+        holder.itemView.setOnLongClickListener {
+            onLongClick?.invoke(item)
+            onLongClick != null
+        }
     }
 } 

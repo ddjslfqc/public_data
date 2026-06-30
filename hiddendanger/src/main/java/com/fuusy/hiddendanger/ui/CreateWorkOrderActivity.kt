@@ -136,13 +136,8 @@ class CreateWorkOrderActivity : BaseVmActivity<ActivityCreateWorkOrderBinding>()
         mBinding.btnBack.setOnClickListener {
             handleBackAction()
         }
-        if (com.fuusy.common.network.ServerConfig.isMockData) {
-            mBinding.draftIcon.text = "取消"
-            mBinding.draftIcon.setOnClickListener { finish() }
-        } else {
-            mBinding.draftIcon.setOnClickListener {
-                startActivity(Intent(this@CreateWorkOrderActivity, DraftBoxActivity::class.java))
-            }
+        mBinding.draftIcon.setOnClickListener {
+            startActivity(Intent(this@CreateWorkOrderActivity, DraftBoxActivity::class.java))
         }
     }
 
@@ -175,27 +170,7 @@ class CreateWorkOrderActivity : BaseVmActivity<ActivityCreateWorkOrderBinding>()
     }
 
     private fun setupBasicInfo() {
-        if (com.fuusy.common.network.ServerConfig.isMockData) {
-            mBinding.cardBasicInfo.visibility = View.GONE
-            return
-        }
-        val userInfo = viewModel.getUserInfo()
-
-        // 设置隐患编号（动态生成）
-        mBinding.tvHiddenDangerNumber.text = viewModel.generateHiddenDangerNumber()
-
-        // 设置填报人
-        mBinding.tvReporter.text = userInfo["username"] ?: "admin"
-
-        // 设置公司
-        mBinding.tvCompany.text = userInfo["company"] ?: "悦城"
-
-        // 设置发现时间（当前时间）
-        mBinding.tvTime.text =
-            java.text.SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.getDefault()).format(Date())
-
-        // 设置填报部门
-        mBinding.tvDepartment.text = userInfo["department"] ?: "安监管理部"
+        mBinding.cardBasicInfo.visibility = View.GONE
     }
 
     private fun updateBasicInfo(userInfo: Map<String, String>) {

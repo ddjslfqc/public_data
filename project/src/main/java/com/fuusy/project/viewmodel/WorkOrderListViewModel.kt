@@ -20,14 +20,19 @@ class WorkOrderListViewModel(application: Application) : AndroidViewModel(applic
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
+    /** 当前 Tab 展示的列表（按 status 调 /mobile/workorder/list） */
     private val _orders = MutableLiveData<List<WorkOrderItem>>(emptyList())
     val orders: LiveData<List<WorkOrderItem>> = _orders
 
-    fun loadAll() {
+    /** 用于 Tab 计数：GET /list 不传 status */
+    private val _allForCount = MutableLiveData<List<WorkOrderItem>>(emptyList())
+    val allForCount: LiveData<List<WorkOrderItem>> = _allForCount
+
+    fun load(status: WorkOrderStatus? = null) {
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
-            repo.listAll().fold(
+            repo.list(status).fold(
                 onSuccess = { _orders.value = it },
                 onFailure = { _error.value = it.message ?: "加载失败" }
             )
@@ -35,6 +40,17 @@ class WorkOrderListViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    fun loadAll() = load(null)
+
+    fun refreshTabCounts() {
+        viewModelScope.launch {
+            repo.list(null).fold(
+                onSuccess = { _allForCount.value = it },
+                onFailure = { /* Tab 计数失败不影响列表 */ }
+            )
+        }
+    }
+
     fun countByStatus(status: WorkOrderStatus): Int =
-        _orders.value.orEmpty().count { it.status == status }
+        _allForCount.value.orEmpty().count { it.status == status }
 }

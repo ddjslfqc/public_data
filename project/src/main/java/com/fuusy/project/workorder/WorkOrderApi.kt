@@ -16,6 +16,9 @@ interface WorkOrderApi {
     @GET("mobile/workorder/list")
     suspend fun list(@Query("status") status: String? = null): BaseResp<List<WorkOrderListDto>>
 
+    @GET("mobile/workorder/all")
+    suspend fun all(@Query("status") status: String? = null): BaseResp<List<WorkOrderListDto>>
+
     @GET("mobile/workorder/detail/{id}")
     suspend fun detail(@Path("id") id: String): BaseResp<WorkOrderDetailDto>
 

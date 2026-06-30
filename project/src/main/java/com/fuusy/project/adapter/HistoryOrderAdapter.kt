@@ -119,7 +119,6 @@ class HistoryOrderAdapter(
 
     private fun footerText(item: WorkOrderItem): String = when (item.status) {
         WorkOrderStatus.PENDING -> "期望：${item.expectedCompleteTime ?: item.submitTime}"
-        WorkOrderStatus.SUBMITTED -> "派单人：${item.assigner ?: "--"}"
         WorkOrderStatus.PROCESSING -> "滞留：${item.stayDuration ?: "--"}"
         WorkOrderStatus.COMPLETED -> "完成于 ${item.submitTime}"
         WorkOrderStatus.REJECT -> "↩ 撤回修改后重新提交"
@@ -136,12 +135,10 @@ class HistoryOrderAdapter(
         val (bgRes, textColor) = when (item.status) {
             WorkOrderStatus.DRAFT -> R.drawable.bg_order_status_draft to Color.parseColor("#898FA0")
             WorkOrderStatus.PENDING -> R.drawable.bg_wo_status_pending to Color.parseColor("#F97316")
-            WorkOrderStatus.SUBMITTED -> R.drawable.bg_wo_status_submitted to Color.parseColor("#1465EB")
             WorkOrderStatus.REJECT -> R.drawable.bg_status_reject to Color.parseColor("#EB1919")
             WorkOrderStatus.PROCESSING -> R.drawable.bg_status_processing to Color.parseColor("#6366F1")
             WorkOrderStatus.EVAL -> R.drawable.bg_wo_status_eval to Color.parseColor("#8B5CF6")
             WorkOrderStatus.COMPLETED -> R.drawable.bg_status_done to Color.parseColor("#00AA60")
-            WorkOrderStatus.CANCELLED -> R.drawable.bg_order_status_draft to Color.parseColor("#898FA0")
         }
         tvStatus.setBackgroundResource(bgRes)
         tvStatus.setTextColor(textColor)

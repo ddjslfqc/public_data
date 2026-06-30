@@ -219,7 +219,7 @@ class VideoFullScreenActivity : BaseVmActivity<ActivityVideoFullScreenBinding>()
                 (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION)
         }
 
-        val streamUrl = ServerConfig.resolveStreamUrl(intent.getStringExtra("streamUrl")) ?: ""
+        val streamUrl = intent.getStringExtra("streamUrl")?.trim().orEmpty()
         viewModel.streamUrl.value = streamUrl
         
         // 获取设备信息

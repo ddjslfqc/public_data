@@ -57,12 +57,7 @@ dependencies {
     implementation project(path: ':common')
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'com.google.android.material:material:1.9.0'
-
-    // 排除 one_bottom_navigationbar 中的 androidx.core 相关依赖
-    implementation('cn.onestravel.one:one_bottom_navigationbar:1.1.1') {
-        exclude group: 'androidx.core', module: 'core-ktx'
-        exclude group: 'androidx.core', module: 'core'
-    }
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
 
     // 强制使用兼容的版本
     implementation 'androidx.core:core-ktx:1.12.0'

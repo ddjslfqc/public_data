@@ -32,7 +32,8 @@
 
 | API路径 | 方法 | 功能 |
 |---------|------|------|
-| `/mobile/workorder/list` | GET | 获取工单列表 |
+| `/mobile/workorder/list` | GET | 获取工单列表（需认证） |
+| `/mobile/workorder/all` | GET | 获取所有工单列表（无需认证） |
 | `/mobile/workorder/detail/{id}` | GET | 获取工单详情 |
 | `/mobile/workorder/create` | POST | 创建工单 |
 | `/mobile/workorder/attachment/upload` | POST | 上传工单附件 |
@@ -55,7 +56,19 @@ Headers: X-User-Id: {userId}
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | userId | Long | 是 | 用户ID（从Header获取） |
-| status | String | 否 | 状态筛选：`draft`/`pending`/`processing`/`pending_evaluation`/`completed`/`rejected` |
+| status | String | 否 | 状态筛选（见下方状态值说明），不传则返回全部 |
+
+**状态值说明**
+
+| 值 | 含义 | 对应状态 |
+|----|------|----------|
+| （不传） | 全部 | 返回所有状态的工单 |
+| `draft` | 待提交 | 草稿状态，未提交的工单 |
+| `pending` | 待认领 | 已提交，等待处理人认领 |
+| `processing` | 处理中 | 已认领，正在处理 |
+| `pending_evaluation` | 待评价 | 处理完成，等待提报人评价 |
+| `completed` | 已完成 | 评价通过，工单结束 |
+| `rejected` | 驳回 | 审批被驳回 |
 
 **响应**
 ```json
@@ -86,7 +99,47 @@ Headers: X-User-Id: {userId}
 }
 ```
 
-### 3.2 获取工单详情
+### 3.2 获取所有工单列表
+
+**请求**
+```
+GET /mobile/workorder/all?status={status}
+```
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| status | String | 否 | 状态筛选（见上方状态值说明），不传则返回全部 |
+
+**响应**
+```json
+{
+  "code": 200,
+  "msg": "操作成功",
+  "data": [
+    {
+      "id": "1",
+      "no": "WD202606180001",
+      "title": "客户门户体验优化需求",
+      "brief": "客户反馈现有门户操作路径过长...",
+      "typeCode": "PERSONNEL",
+      "typeName": "人员因素",
+      "priority": "P1",
+      "project": "A项目",
+      "expectedCompletionTime": "2026-06-18 18:00:00",
+      "status": "PENDING",
+      "statusLabel": "待认领",
+      "recordCreator": "1",
+      "recordCreatorName": "张三",
+      "recordTime": "2026-06-18 09:30:00",
+      "responsibleDept": "5",
+      "responsibleDeptName": "软件研发部",
+      "rectificationPerson": "10"
+    }
+  ]
+}
+```
+
+### 3.3 获取工单详情
 
 **请求**
 ```
@@ -141,7 +194,7 @@ Headers: X-User-Id: {userId}
 }
 ```
 
-### 3.3 创建工单
+### 3.4 创建工单
 
 **请求**
 ```
@@ -191,7 +244,7 @@ Content-Type: application/json
 }
 ```
 
-### 3.4 上传工单附件
+### 3.5 上传工单附件
 
 **请求**
 ```
@@ -220,7 +273,7 @@ Content-Type: multipart/form-data
 }
 ```
 
-### 3.5 删除工单附件
+### 3.6 删除工单附件
 
 **请求**
 ```
@@ -242,7 +295,7 @@ Headers: X-User-Id: {userId}
 }
 ```
 
-### 3.6 审批工单
+### 3.7 审批工单
 
 **请求**
 ```
@@ -284,7 +337,7 @@ Content-Type: application/json
 }
 ```
 
-### 3.7 获取选项列表
+### 3.8 获取选项列表
 
 **请求**
 ```

@@ -17,6 +17,10 @@ class ProjectNetRepo {
     private val projectApi = ApiService.projectApi
     private val videoApi = ApiService.videoApi
 
+    companion object {
+        private const val TAG = "VideoList"
+    }
+
     suspend fun getWorkOrderList(): Result<WorkOrderListResponse> {
         return try {
             val resp = projectApi.getWorkOrderList()
@@ -28,16 +32,28 @@ class ProjectNetRepo {
 
     suspend fun fetchVideoList(): Result<List<VideoInfo>> {
         return try {
-            Log.d("VideoControl", "开始获取视频列表")
+            val requestUrl = "${ServerConfig.getBaseUrl()}mobile/video/list"
+            Log.d(TAG, "请求视频列表: POST $requestUrl")
             val resp = videoApi.getVideoList(VideoListBody())
-            Log.d("VideoControl", "视频列表API响应: code=${resp.code}, count=${resp.data?.allVideo?.size}")
+            val list = resp.data?.allVideo.orEmpty()
+            Log.d(
+                TAG,
+                "视频列表响应: code=${resp.code}, msg=${resp.msg}, count=${list.size}, inPersonNum=${resp.data?.inPersonNum}"
+            )
+            list.forEachIndexed { index, video ->
+                Log.d(
+                    TAG,
+                    "[$index] name=${video.show_name}, type=${video.type}, device=${video.device_id}, " +
+                        "channel=${video.channel_id}, path=${video.videoPath}, location=${video.location}"
+                )
+            }
             if (resp.code == 200) {
-                Result.success(resp.data?.allVideo ?: emptyList())
+                Result.success(list)
             } else {
                 Result.failure(Exception(resp.msg ?: "获取视频列表失败"))
             }
         } catch (e: Exception) {
-            Log.e("VideoControl", "获取视频列表失败", e)
+            Log.e(TAG, "获取视频列表失败", e)
             Result.failure(e)
         }
     }

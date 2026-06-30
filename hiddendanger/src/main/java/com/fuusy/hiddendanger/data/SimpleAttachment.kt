@@ -1,6 +1,7 @@
 package com.fuusy.hiddendanger.data
 
 data class SimpleAttachment(
+    val id: String? = null,
     val fileName: String,
     val fileSize: String,
     val fileUrl: String, // 直接是图片/视频地址
