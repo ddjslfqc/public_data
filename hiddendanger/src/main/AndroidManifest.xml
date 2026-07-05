@@ -84,6 +84,19 @@
             android:label="KR详情"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".ui.KrUpdateProgressActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="更新进度"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.OkrCommentListActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="KR评论" />
+
         <activity android:name="com.fuusy.hiddendanger.ui.DraftBoxActivity" />
 
         <provider

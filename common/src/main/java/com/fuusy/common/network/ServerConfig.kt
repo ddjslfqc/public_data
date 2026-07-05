@@ -47,6 +47,11 @@ object ServerConfig {
     )
 
     /**
+     * 获取 OKR 服务器地址（与业务服务器同源，含评论、进度更新记录等完整 OKR 接口）
+     */
+    fun getOkrBaseUrl(): String = getWorkOrderBaseUrl()
+
+    /**
      * 获取当前环境的服务器地址
      * 优先使用自定义配置的IP地址
      */

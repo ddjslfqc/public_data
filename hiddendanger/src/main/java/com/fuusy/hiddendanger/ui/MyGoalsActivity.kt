@@ -48,6 +48,9 @@ class MyGoalsActivity : AppCompatActivity() {
         binding.cardKrApproval.setOnClickListener {
             ARouter.getInstance().build("/hiddendanger/KrApprovalActivity").navigation()
         }
+        binding.cardKrComments.setOnClickListener {
+            OkrCommentListActivity.start(this)
+        }
 
         binding.rvObjectives.layoutManager = LinearLayoutManager(this)
         binding.rvObjectives.adapter = objectiveAdapter

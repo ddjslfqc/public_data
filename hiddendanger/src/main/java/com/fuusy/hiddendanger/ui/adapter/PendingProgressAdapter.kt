@@ -27,10 +27,10 @@ class PendingProgressAdapter(
         val item = getItem(position)
         holder.binding.apply {
             tvObjectiveTitle.text = item.objectiveTitle.orEmpty()
-            tvKrTitle.text = item.title.orEmpty()
+            tvKrTitle.text = item.krTitle.orEmpty()
             val unit = item.unit.orEmpty()
             val oldValue = item.currentValue?.toString().orEmpty()
-            val newValue = item.newValue?.toString().orEmpty()
+            val newValue = item.submittedValue?.toString().orEmpty()
             val target = item.targetValue?.toString().orEmpty()
             tvKrDetail.text = buildString {
                 if (newValue.isNotBlank()) {

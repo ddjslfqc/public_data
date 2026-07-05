@@ -290,12 +290,12 @@ class EditGoalActivity : AppCompatActivity() {
     private fun updateKrUiState() {
         binding.btnAddKr.alpha = if (krAdapter.canAddMore()) 1f else 0.45f
         binding.tvKrCount.text = "已添加 ${krAdapter.itemCount()} 条"
+        val multiKr = krAdapter.itemCount() > 1
+        binding.tvKrWeightTotal.isVisible = multiKr
+        if (!multiKr) return
         val total = krAdapter.totalWeight()
-        binding.tvKrWeightTotal.text = if (krAdapter.itemCount() > 1) {
+        binding.tvKrWeightTotal.text =
             "权重合计 ${total}%（拖动滑块调整，其余 KR 自动联动）"
-        } else {
-            "权重合计 100%（单条 KR 默认占满）"
-        }
         binding.tvKrWeightTotal.setTextColor(
             Color.parseColor(if (total == GoalKrWeightHelper.TOTAL) "#00AA60" else "#EB1919")
         )

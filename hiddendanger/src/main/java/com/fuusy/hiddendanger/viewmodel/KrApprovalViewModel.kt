@@ -51,7 +51,7 @@ class KrApprovalViewModel(application: Application) : AndroidViewModel(applicati
             _loading.value = true
             repo.approveKr(
                 KrApproveRequest(
-                    krId = krId,
+                    id = krId,
                     approvalStatus = if (pass) 1 else 2,
                     approvalRemark = remark?.trim()?.ifBlank { null }
                 )

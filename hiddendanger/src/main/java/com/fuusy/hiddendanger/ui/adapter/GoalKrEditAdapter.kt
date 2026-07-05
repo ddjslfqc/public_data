@@ -103,7 +103,6 @@ class GoalKrEditAdapter(
 
         private val watchers = mutableListOf<Pair<android.widget.EditText, TextWatcher>>()
         private var weightListener: SeekBar.OnSeekBarChangeListener? = null
-        private var targetListener: SeekBar.OnSeekBarChangeListener? = null
 
         fun bind(item: GoalKrEditItem, position: Int) {
             clearWatchers()
@@ -126,32 +125,9 @@ class GoalKrEditAdapter(
                 if (pos != RecyclerView.NO_POSITION) onAssigneeClick(pos)
             }
 
-            bindTargetUi(item)
             bindWeightUi(item)
 
             addWatcher(binding.etKrTitle) { syncCurrentItem() }
-        }
-
-        private fun bindTargetUi(item: GoalKrEditItem) {
-            val percent = item.targetPercent.coerceIn(0, 100)
-            binding.tvTarget.text = "$percent%"
-            binding.seekTarget.max = 100
-            binding.seekTarget.progress = percent
-
-            targetListener = object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                    binding.tvTarget.text = "$progress%"
-                    if (!fromUser) return
-                    val pos = bindingAdapterPosition
-                    if (pos == RecyclerView.NO_POSITION) return
-                    items[pos] = items[pos].copy(targetPercent = progress)
-                    onChanged()
-                }
-
-                override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
-                override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
-            }
-            binding.seekTarget.setOnSeekBarChangeListener(targetListener)
         }
 
         private fun bindWeightUi(item: GoalKrEditItem) {
@@ -213,9 +189,7 @@ class GoalKrEditAdapter(
 
         private fun clearSeekListeners() {
             binding.seekWeight.setOnSeekBarChangeListener(null)
-            binding.seekTarget.setOnSeekBarChangeListener(null)
             weightListener = null
-            targetListener = null
         }
     }
 

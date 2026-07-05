@@ -3,11 +3,13 @@ package com.fuusy.hiddendanger.data
 import com.fuusy.common.network.BaseResp
 import okhttp3.MultipartBody
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 /**
@@ -20,6 +22,11 @@ interface OkrApi {
     suspend fun getMyGoal(
         @Query("periodType") periodType: String? = null
     ): BaseResp<MyGoalResponse>
+
+    @GET("mobile/okr/detail/{id}")
+    suspend fun getObjectiveDetail(
+        @Path("id") objectiveId: Long
+    ): BaseResp<OkrObjective>
 
     @GET("mobile/okr/align-options")
     suspend fun getAlignOptions(): BaseResp<AlignOptionsResponse>
@@ -80,5 +87,32 @@ interface OkrApi {
     @POST("mobile/okr/update-record/reject")
     suspend fun rejectUpdateRecord(
         @Body body: UpdateRecordApproveRequest
+    ): BaseResp<Any?>
+
+    @GET("mobile/okr/update-record/list")
+    suspend fun getUpdateRecordList(
+        @Query("okrType") okrType: String,
+        @Query("okrId") okrId: Long
+    ): BaseResp<List<OkrUpdateRecordItem>>
+
+    @POST("mobile/okr/kr/comment/create")
+    suspend fun createKrComment(
+        @Body body: KrCommentCreateRequest
+    ): BaseResp<Long>
+
+    @GET("mobile/okr/kr/comment/list/{krId}")
+    suspend fun getKrCommentList(
+        @Path("krId") krId: Long
+    ): BaseResp<List<OkrKrComment>>
+
+    @GET("mobile/okr/kr/comment/received")
+    suspend fun getReceivedComments(): BaseResp<List<OkrKrComment>>
+
+    @GET("mobile/okr/kr/comment/sent")
+    suspend fun getSentComments(): BaseResp<List<OkrKrComment>>
+
+    @DELETE("mobile/okr/kr/comment/delete/{commentId}")
+    suspend fun deleteKrComment(
+        @Path("commentId") commentId: Long
     ): BaseResp<Any?>
 }

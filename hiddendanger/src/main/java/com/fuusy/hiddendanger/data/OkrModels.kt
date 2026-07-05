@@ -23,6 +23,7 @@ data class OkrParentKr(
 
 data class OkrKeyResult(
     val id: Long = 0,
+    val objectiveId: Long? = null,
     val title: String,
     val targetValue: Double = 0.0,
     val weight: Int? = null,
@@ -34,12 +35,15 @@ data class OkrKeyResult(
     val sortOrder: Int? = null,
     val userId: Long? = null,
     val progressApprovalStatus: Int? = null,
-    val pendingProgressValue: Double? = null
+    val pendingProgressValue: Double? = null,
+    val attachments: List<OkrKrAttachment>? = null,
+    val comments: List<OkrKrComment>? = null
 )
 
 data class OkrObjective(
     val id: Long,
     val title: String,
+    val userId: Long? = null,
     val createTime: String? = null,
     val periodType: String? = null,
     val periodLabel: String? = null,
@@ -55,6 +59,8 @@ data class OkrObjective(
     val parentId: Long? = null,
     val parentKrId: Long? = null,
     val parentKr: OkrParentKr? = null,
+    val parentObjective: OkrObjectiveBrief? = null,
+    val deptId: Long? = null,
     val keyResults: List<OkrKeyResult>? = null
 )
 
@@ -135,7 +141,7 @@ data class PendingKrItem(
 )
 
 data class KrApproveRequest(
-    val krId: Long,
+    val id: Long,
     val approvalStatus: Int,
     val approvalRemark: String? = null
 )
@@ -146,38 +152,110 @@ data class KrUpdateProgressRequest(
     val progressDescription: String? = null
 )
 
+data class OkrUpdateRecordAttachment(
+    val id: Long? = null,
+    val recordId: Long? = null,
+    val type: String? = null,
+    val name: String? = null,
+    val url: String? = null,
+    val createTime: String? = null
+)
+
 data class CreateUpdateRecordRequest(
     val okrType: String = "kr",
     val okrId: Long,
-    val updateContent: String? = null,
-    val oldValue: Double? = null,
-    val newValue: Double? = null,
-    val attachments: List<Long>? = null
+    val title: String? = null,
+    val description: String? = null,
+    val periodType: String? = null,
+    val currentValue: Double? = null,
+    val content: String? = null,
+    val attachments: List<OkrUpdateRecordAttachment>? = null
 )
 
 data class UpdateRecordApproveRequest(
     val recordId: Long,
-    val approvalRemark: String? = null
+    val remark: String? = null
 )
 
 /** GET /update-record/pending 返回项 */
 data class PendingUpdateRecordItem(
     val id: Long,
+    val okrType: String? = null,
+    val okrId: Long? = null,
     val krId: Long? = null,
     val objectiveId: Long? = null,
     val title: String? = null,
+    val okrTitle: String? = null,
     val currentValue: Double? = null,
     val newValue: Double? = null,
     val targetValue: Double? = null,
     val unit: String? = null,
+    val content: String? = null,
     val updateContent: String? = null,
     val objectiveTitle: String? = null,
+    val status: Int? = null,
     val userId: Long? = null,
-    val createTime: String? = null
+    val createTime: String? = null,
+    val attachments: List<OkrUpdateRecordAttachment>? = null
 ) {
+    val krTitle: String?
+        get() = okrTitle ?: title
+
     val remark: String?
-        get() = updateContent
+        get() = content ?: updateContent
+
+    val submittedValue: Double?
+        get() = newValue ?: currentValue
 }
+
+/** GET /update-record/list 返回项 */
+data class OkrUpdateRecordItem(
+    val id: Long,
+    val okrType: String? = null,
+    val okrId: Long? = null,
+    val userId: Long? = null,
+    val currentValue: Double? = null,
+    val content: String? = null,
+    val status: Int? = null,
+    val approvalRemark: String? = null,
+    val approvalTime: String? = null,
+    val createTime: String? = null,
+    val attachments: List<OkrUpdateRecordAttachment>? = null
+)
+
+data class OkrKrAttachment(
+    val id: Long? = null,
+    val krId: Long? = null,
+    val fileName: String? = null,
+    val fileUrl: String? = null,
+    val fileSize: Long? = null,
+    val createTime: String? = null
+)
+
+data class OkrKrComment(
+    val id: Long,
+    val krId: Long,
+    val userId: Long,
+    val content: String,
+    val createTime: String? = null,
+    val updateTime: String? = null,
+    val userName: String? = null,
+    val nickName: String? = null,
+    val deptId: Long? = null,
+    val deptName: String? = null,
+    val krTitle: String? = null,
+    val krUserId: Long? = null
+) {
+    val displayName: String
+        get() = nickName?.takeIf { it.isNotBlank() }
+            ?: userName?.takeIf { it.isNotBlank() }
+            ?: "用户$userId"
+}
+
+data class KrCommentCreateRequest(
+    val krId: Long,
+    val content: String
+)
 
 data class OkrAttachmentDto(
     val id: Long? = null,

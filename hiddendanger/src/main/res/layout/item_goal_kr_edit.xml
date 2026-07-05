@@ -31,7 +31,7 @@
             android:layout_marginEnd="28dp"
             android:layout_toEndOf="@id/tv_kr_index"
             android:background="@null"
-            android:hint="请输入KR关键结果"
+            android:hint="请输入可量化的关键结果，如：客户满意度达到95%"
             android:inputType="text"
             android:minHeight="40dp"
             android:textColor="#000000"
@@ -54,51 +54,6 @@
         android:layout_marginTop="8dp"
         android:alpha="0.25"
         android:background="#686D79" />
-
-    <LinearLayout
-        android:id="@+id/row_target"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:orientation="vertical">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:alpha="0.5"
-                android:text="目标进度"
-                android:textColor="#686D79"
-                android:textSize="12sp" />
-
-            <TextView
-                android:id="@+id/tv_target"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:gravity="end"
-                android:textColor="#6A2DF6"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                tools:text="95%" />
-        </LinearLayout>
-
-        <SeekBar
-            android:id="@+id/seek_target"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:max="100"
-            android:progressTint="#6A2DF6"
-            android:thumbTint="#6A2DF6"
-            tools:progress="95" />
-    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/row_weight"

@@ -1,303 +1,326 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/personal_bg">
 
-    <androidx.core.widget.NestedScrollView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:overScrollMode="never"
-        android:paddingBottom="24dp">
+        android:orientation="vertical">
 
-        <LinearLayout
+        <RelativeLayout
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:background="#FFFFFF"
+            android:minHeight="48dp"
+            android:paddingHorizontal="12dp">
 
-            <RelativeLayout
-                android:id="@+id/toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="#FFFFFF"
-                android:minHeight="48dp"
-                android:paddingHorizontal="12dp">
-
-                <ImageView
-                    android:id="@+id/btn_back"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_centerVertical="true"
-                    android:contentDescription="@null"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_back_black" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerInParent="true"
-                    android:text="KR 详情"
-                    android:textColor="#000000"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </RelativeLayout>
-
-            <!-- 基本信息 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="12dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_personal_menu_card"
-                android:orientation="vertical"
-                android:padding="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="26dp"
-                        android:layout_height="20dp"
-                        android:background="@drawable/bg_goal_kr_badge"
-                        android:gravity="center"
-                        android:text="KR"
-                        android:textColor="#6A2DF6"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tv_kr_title"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:textColor="#000000"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        tools:text="我的KR1" />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tv_objective_title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textColor="#686D79"
-                    android:textSize="12sp"
-                    tools:text="所属目标：王健的O" />
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp">
-
-                    <FrameLayout
-                        android:id="@+id/fl_progress"
-                        android:layout_width="match_parent"
-                        android:layout_height="8dp"
-                        android:layout_centerVertical="true"
-                        android:layout_marginEnd="48dp"
-                        android:background="@drawable/bg_goal_kr_track">
-
-                        <View
-                            android:id="@+id/view_progress"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:background="@drawable/bg_archive_bar_fill" />
-                    </FrameLayout>
-
-                    <TextView
-                        android:id="@+id/tv_progress_percent"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:textColor="#000000"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        tools:text="0%" />
-                </RelativeLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/tv_kr_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_goal_progress_tag"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="2dp"
-                        android:textColor="#1365EC"
-                        android:textSize="11sp"
-                        tools:text="0/100%" />
-
-                    <TextView
-                        android:id="@+id/tv_approval_status"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
-                        android:background="@drawable/bg_goal_status_processing"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="2dp"
-                        android:textColor="#00AA60"
-                        android:textSize="11sp"
-                        tools:text="已通过" />
-
-                    <TextView
-                        android:id="@+id/tv_progress_approval"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
-                        android:background="@drawable/bg_archive_tag_warn"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="2dp"
-                        android:textColor="#EA9300"
-                        android:textSize="11sp"
-                        android:visibility="gone"
-                        tools:text="进度待审批" />
-                </LinearLayout>
-            </LinearLayout>
+            <ImageView
+                android:id="@+id/btn_back"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_centerVertical="true"
+                android:contentDescription="@null"
+                android:padding="8dp"
+                android:src="@drawable/ic_back_black" />
 
             <TextView
-                android:id="@+id/tv_blocked_hint"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="12dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_goal_warning"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="10dp"
-                android:textColor="#EA9300"
-                android:textSize="13sp"
-                android:visibility="gone"
-                tools:text="进度更新已提交，等待目标创建人审批" />
+                android:layout_centerInParent="true"
+                android:text="KR 详情"
+                android:textColor="#000000"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
-            <!-- 更新进度表单 -->
+            <TextView
+                android:id="@+id/btn_update_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:gravity="center"
+                android:paddingHorizontal="4dp"
+                android:text="更新进度"
+                android:textColor="#1365EC"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:visibility="visible" />
+        </RelativeLayout>
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scroll_content"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:overScrollMode="never"
+            android:paddingBottom="12dp">
+
             <LinearLayout
-                android:id="@+id/section_update"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="12dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_personal_menu_card"
-                android:orientation="vertical"
-                android:padding="12dp"
-                android:visibility="gone"
-                tools:visibility="visible">
+                android:orientation="vertical">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="更新进度"
-                    android:textColor="#000000"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tv_value_hint"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textColor="#686D79"
-                    android:textSize="12sp"
-                    tools:text="目标：100%" />
-
+                <!-- 基本信息 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="12dp"
                     android:layout_marginTop="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:background="@drawable/bg_personal_menu_card"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="26dp"
+                            android:layout_height="20dp"
+                            android:background="@drawable/bg_goal_kr_badge"
+                            android:gravity="center"
+                            android:text="KR"
+                            android:textColor="#6A2DF6"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_kr_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:textColor="#000000"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            tools:text="我的KR1" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_objective_title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="#686D79"
+                        android:textSize="12sp"
+                        tools:text="所属目标：王健的O" />
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp">
+
+                        <FrameLayout
+                            android:id="@+id/fl_progress"
+                            android:layout_width="match_parent"
+                            android:layout_height="8dp"
+                            android:layout_centerVertical="true"
+                            android:layout_marginEnd="48dp"
+                            android:background="@drawable/bg_goal_kr_track">
+
+                            <View
+                                android:id="@+id/view_progress"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_archive_bar_fill" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/tv_progress_percent"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:textColor="#000000"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            tools:text="0%" />
+                    </RelativeLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tv_kr_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_goal_progress_tag"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="2dp"
+                            android:textColor="#1365EC"
+                            android:textSize="11sp"
+                            tools:text="0/100%" />
+
+                        <TextView
+                            android:id="@+id/tv_approval_status"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:background="@drawable/bg_goal_status_processing"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="2dp"
+                            android:textColor="#00AA60"
+                            android:textSize="11sp"
+                            tools:text="已通过" />
+
+                        <TextView
+                            android:id="@+id/tv_progress_approval"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:background="@drawable/bg_archive_tag_warn"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="2dp"
+                            android:textColor="#EA9300"
+                            android:textSize="11sp"
+                            android:visibility="gone"
+                            tools:text="进度待审批" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_blocked_hint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="12dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_goal_warning"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp"
+                    android:textColor="#EA9300"
+                    android:textSize="13sp"
+                    android:visibility="gone"
+                    tools:text="进度更新已提交，等待目标创建人审批" />
+
+                <!-- 更新记录 -->
+                <LinearLayout
+                    android:id="@+id/section_update_records"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="12dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_personal_menu_card"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:visibility="gone"
+                    tools:visibility="visible">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="当前进度"
-                        android:textColor="#686D79"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/tv_slider_value"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:gravity="end"
-                        android:textColor="#6A2DF6"
+                        android:text="更新记录"
+                        android:textColor="#000000"
                         android:textSize="14sp"
-                        android:textStyle="bold"
-                        tools:text="40%" />
+                        android:textStyle="bold" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rv_update_records"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:nestedScrollingEnabled="false"
+                        tools:itemCount="2"
+                        tools:listitem="@layout/item_kr_update_record" />
                 </LinearLayout>
 
-                <SeekBar
-                    android:id="@+id/seek_progress"
+                <!-- 评论列表 -->
+                <LinearLayout
+                    android:id="@+id/section_comments"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:max="100"
-                    android:progressTint="#6A2DF6"
-                    android:thumbTint="#6A2DF6"
-                    tools:progress="40" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="12dp"
                     android:layout_marginTop="12dp"
-                    android:text="进度说明"
-                    android:textColor="#686D79"
-                    android:textSize="12sp" />
+                    android:background="@drawable/bg_personal_menu_card"
+                    android:orientation="vertical"
+                    android:padding="12dp">
 
-                <EditText
-                    android:id="@+id/et_remark"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_goal_input"
-                    android:gravity="top|start"
-                    android:hint="选填，描述本次进度更新"
-                    android:inputType="textMultiLine"
-                    android:minHeight="72dp"
-                    android:padding="10dp"
-                    android:textColor="#000000"
-                    android:textColorHint="#A7AFC3"
-                    android:textSize="14sp" />
+                    <TextView
+                        android:id="@+id/tv_comment_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="评论"
+                        android:textColor="#000000"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="附件（选填，最多9个）"
-                    android:textColor="#686D79"
-                    android:textSize="12sp" />
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rv_comments"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:nestedScrollingEnabled="false"
+                        tools:itemCount="1"
+                        tools:listitem="@layout/item_kr_comment" />
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rv_attachments"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:nestedScrollingEnabled="false"
-                    tools:itemCount="1"
-                    tools:listitem="@layout/item_add_attachment" />
-
-                <TextView
-                    android:id="@+id/btn_submit"
-                    style="@style/AppButton.Primary"
-                    android:layout_width="match_parent"
-                    android:layout_height="46dp"
-                    android:layout_marginTop="16dp"
-                    android:gravity="center"
-                    android:text="提交进度（待审批）" />
+                    <TextView
+                        android:id="@+id/tv_no_comments"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:paddingVertical="24dp"
+                        android:text="暂无评论，在下方写下第一条吧"
+                        android:textColor="#A7AFC3"
+                        android:textSize="13sp"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+                </LinearLayout>
             </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- 吸底评论输入栏 -->
+        <LinearLayout
+            android:id="@+id/layout_comment_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#FFFFFF"
+            android:elevation="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <EditText
+                android:id="@+id/et_comment"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/bg_goal_input"
+                android:hint="写评论..."
+                android:imeOptions="actionSend"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="4"
+                android:minHeight="40dp"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp"
+                android:textColor="#000000"
+                android:textColorHint="#A7AFC3"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/btn_send_comment"
+                style="@style/AppButton.Primary.Small"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:minWidth="64dp"
+                android:paddingHorizontal="12dp"
+                android:text="发送" />
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
 
     <ProgressBar
         android:id="@+id/progress_loading"
@@ -306,4 +329,4 @@
         android:layout_gravity="center"
         android:visibility="gone" />
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>

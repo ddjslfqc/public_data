@@ -2,17 +2,21 @@ package com.fuusy.hiddendanger.repository
 
 import com.fuusy.common.network.BaseResp
 import com.fuusy.common.network.RetrofitManager
+import com.fuusy.common.network.ServerConfig
 import com.fuusy.common.network.UserIdHeaderInterceptor
 import com.fuusy.hiddendanger.data.AlignOptionsResponse
 import com.fuusy.hiddendanger.data.AlignableKr
 import com.fuusy.hiddendanger.data.CreateObjectiveRequest
 import com.fuusy.hiddendanger.data.CreateUpdateRecordRequest
 import com.fuusy.hiddendanger.data.KrApproveRequest
+import com.fuusy.hiddendanger.data.KrCommentCreateRequest
 import com.fuusy.hiddendanger.data.KrUpdateProgressRequest
 import com.fuusy.hiddendanger.data.MyGoalResponse
 import com.fuusy.hiddendanger.data.OkrApi
 import com.fuusy.hiddendanger.data.OkrAttachmentDto
+import com.fuusy.hiddendanger.data.OkrKrComment
 import com.fuusy.hiddendanger.data.OkrObjective
+import com.fuusy.hiddendanger.data.OkrUpdateRecordItem
 import com.fuusy.hiddendanger.data.PendingKrItem
 import com.fuusy.hiddendanger.data.PendingUpdateRecordItem
 import com.fuusy.hiddendanger.data.UpdateRecordApproveRequest
@@ -30,7 +34,7 @@ class OkrRepository {
             .addInterceptor(UserIdHeaderInterceptor())
             .build()
         Retrofit.Builder()
-            .baseUrl(com.fuusy.common.network.ServerConfig.getBaseUrl())
+            .baseUrl(ServerConfig.getOkrBaseUrl())
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -39,6 +43,9 @@ class OkrRepository {
 
     suspend fun getMyGoal(periodType: String?): Result<MyGoalResponse> =
         safeCall { api.getMyGoal(periodType) }
+
+    suspend fun getObjectiveDetail(objectiveId: Long): Result<OkrObjective> =
+        safeCall { api.getObjectiveDetail(objectiveId) }
 
     suspend fun getAlignOptions(): Result<AlignOptionsResponse> =
         safeCall { api.getAlignOptions() }
@@ -86,7 +93,7 @@ class OkrRepository {
 
     suspend fun approveUpdateRecord(recordId: Long, remark: String?): Result<Unit> = try {
         val resp = api.approveUpdateRecord(
-            UpdateRecordApproveRequest(recordId = recordId, approvalRemark = remark)
+            UpdateRecordApproveRequest(recordId = recordId, remark = remark)
         )
         if (resp.isSuccess) Result.success(Unit)
         else Result.failure(IllegalStateException(resp.errorMsg ?: "审批失败(${resp.errorCode})"))
@@ -96,10 +103,33 @@ class OkrRepository {
 
     suspend fun rejectUpdateRecord(recordId: Long, remark: String?): Result<Unit> = try {
         val resp = api.rejectUpdateRecord(
-            UpdateRecordApproveRequest(recordId = recordId, approvalRemark = remark)
+            UpdateRecordApproveRequest(recordId = recordId, remark = remark)
         )
         if (resp.isSuccess) Result.success(Unit)
         else Result.failure(IllegalStateException(resp.errorMsg ?: "驳回失败(${resp.errorCode})"))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getUpdateRecordList(okrType: String, okrId: Long): Result<List<OkrUpdateRecordItem>> =
+        safeListCall { api.getUpdateRecordList(okrType, okrId) }
+
+    suspend fun createKrComment(krId: Long, content: String): Result<Long> =
+        safeCall { api.createKrComment(KrCommentCreateRequest(krId, content)) }
+
+    suspend fun getKrCommentList(krId: Long): Result<List<OkrKrComment>> =
+        safeListCall { api.getKrCommentList(krId) }
+
+    suspend fun getReceivedComments(): Result<List<OkrKrComment>> =
+        safeListCall { api.getReceivedComments() }
+
+    suspend fun getSentComments(): Result<List<OkrKrComment>> =
+        safeListCall { api.getSentComments() }
+
+    suspend fun deleteKrComment(commentId: Long): Result<Unit> = try {
+        val resp = api.deleteKrComment(commentId)
+        if (resp.isSuccess) Result.success(Unit)
+        else Result.failure(IllegalStateException(resp.errorMsg ?: "删除失败(${resp.errorCode})"))
     } catch (e: Exception) {
         Result.failure(e)
     }

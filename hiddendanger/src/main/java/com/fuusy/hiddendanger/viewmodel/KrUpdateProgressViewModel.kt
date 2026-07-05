@@ -7,6 +7,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.fuusy.hiddendanger.data.CreateUpdateRecordRequest
+import com.fuusy.hiddendanger.data.OkrUpdateRecordAttachment
 import com.fuusy.hiddendanger.repository.OkrRepository
 import com.fuusy.hiddendanger.ui.model.GoalKrItem
 import com.fuusy.hiddendanger.util.OkrFileHelper
@@ -61,9 +62,18 @@ class KrUpdateProgressViewModel(application: Application) : AndroidViewModel(app
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
-            val attachmentIds = mutableListOf<Long>()
+            val attachmentItems = mutableListOf<OkrUpdateRecordAttachment>()
             for (path in _attachments.value.orEmpty()) {
-                if (path.startsWith("http://") || path.startsWith("https://")) continue
+                if (path.startsWith("http://") || path.startsWith("https://")) {
+                    attachmentItems.add(
+                        OkrUpdateRecordAttachment(
+                            type = inferAttachmentType(path),
+                            name = path.substringAfterLast('/'),
+                            url = path
+                        )
+                    )
+                    continue
+                }
                 val file = OkrFileHelper.resolveUploadFile(context, path)
                 if (file == null) {
                     _loading.value = false
@@ -76,16 +86,23 @@ class KrUpdateProgressViewModel(application: Application) : AndroidViewModel(app
                     _error.value = uploadResult.exceptionOrNull()?.message ?: "附件上传失败"
                     return@launch
                 }
-                uploadResult.getOrNull()?.id?.let { attachmentIds.add(it) }
+                uploadResult.getOrNull()?.let { dto ->
+                    attachmentItems.add(
+                        OkrUpdateRecordAttachment(
+                            type = inferAttachmentType(file.name),
+                            name = dto.fileName ?: file.name,
+                            url = dto.fileUrl ?: dto.filePath
+                        )
+                    )
+                }
             }
 
             val body = CreateUpdateRecordRequest(
                 okrType = "kr",
                 okrId = item.id,
-                updateContent = remark?.trim()?.ifBlank { null },
-                oldValue = item.currentValue,
-                newValue = currentValue,
-                attachments = attachmentIds.takeIf { it.isNotEmpty() }
+                currentValue = currentValue,
+                content = remark?.trim()?.ifBlank { null },
+                attachments = attachmentItems.takeIf { it.isNotEmpty() }
             )
             repo.createUpdateRecord(body).fold(
                 onSuccess = {
@@ -103,5 +120,15 @@ class KrUpdateProgressViewModel(application: Application) : AndroidViewModel(app
 
     companion object {
         const val MAX_ATTACHMENTS = 9
+
+        private fun inferAttachmentType(fileName: String): String {
+            val ext = fileName.substringAfterLast('.', "").lowercase()
+            return when (ext) {
+                "jpg", "jpeg", "png", "gif", "webp", "bmp" -> "image"
+                "mp4", "mov", "avi", "mkv" -> "video"
+                "pdf" -> "pdf"
+                else -> "file"
+            }
+        }
     }
 }
