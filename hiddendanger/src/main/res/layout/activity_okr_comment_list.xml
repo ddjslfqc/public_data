@@ -40,34 +40,34 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#FFFFFF"
             android:orientation="horizontal"
             android:paddingHorizontal="12dp"
-            android:paddingBottom="8dp">
+            android:paddingTop="8dp"
+            android:paddingBottom="4dp">
 
             <TextView
                 android:id="@+id/tab_received"
                 android:layout_width="0dp"
                 android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_goal_kr_badge"
+                android:background="@drawable/bg_goal_period_tab_selected"
                 android:gravity="center"
                 android:text="收到的"
-                android:textColor="#6A2DF6"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:textColor="#1365EC"
+                android:textSize="13sp" />
 
             <TextView
                 android:id="@+id/tab_sent"
                 android:layout_width="0dp"
                 android:layout_height="36dp"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="6dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_goal_input"
+                android:background="@drawable/bg_goal_period_tab_normal"
                 android:gravity="center"
                 android:text="发出的"
                 android:textColor="#686D79"
-                android:textSize="14sp" />
+                android:textSize="13sp" />
         </LinearLayout>
 
         <FrameLayout

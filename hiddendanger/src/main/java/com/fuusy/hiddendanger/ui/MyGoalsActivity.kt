@@ -77,6 +77,10 @@ class MyGoalsActivity : AppCompatActivity() {
             binding.tvPendingBadge.text = if (count > 99) "99+" else count.toString()
             binding.tvPendingBadge.isVisible = count > 0
         }
+        viewModel.receivedCommentCount.observe(this) { count ->
+            binding.tvCommentBadge.text = if (count > 99) "99+" else count.toString()
+            binding.tvCommentBadge.isVisible = count > 0
+        }
         viewModel.myGoal.observe(this) { data ->
             if (data == null) return@observe
             cachedPeriods = data.periods.orEmpty()

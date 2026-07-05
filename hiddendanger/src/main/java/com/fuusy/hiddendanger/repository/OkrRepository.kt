@@ -20,6 +20,8 @@ import com.fuusy.hiddendanger.data.OkrUpdateRecordItem
 import com.fuusy.hiddendanger.data.PendingKrItem
 import com.fuusy.hiddendanger.data.PendingUpdateRecordItem
 import com.fuusy.hiddendanger.data.UpdateRecordApproveRequest
+import com.fuusy.hiddendanger.ui.model.GoalKrItem
+import com.fuusy.hiddendanger.ui.model.KrNavHelper
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -132,6 +134,35 @@ class OkrRepository {
         else Result.failure(IllegalStateException(resp.errorMsg ?: "删除失败(${resp.errorCode})"))
     } catch (e: Exception) {
         Result.failure(e)
+    }
+
+    /** 从 my-goal 中按 krId 查找完整 KR，供评论收件箱跳转详情 */
+    suspend fun findKrItem(krId: Long): Result<GoalKrItem> {
+        return try {
+            val resp = api.getMyGoal(null)
+            if (!resp.isSuccess) {
+                Result.failure(IllegalStateException(resp.errorMsg ?: "加载失败(${resp.errorCode})"))
+            } else {
+                val data = resp.data
+                if (data == null) {
+                    Result.failure(IllegalStateException("未找到该 KR"))
+                } else {
+                    val objectives = buildList {
+                        data.currentObjective?.let { add(it) }
+                        addAll(data.objectives.orEmpty())
+                    }.distinctBy { it.id }
+                    val matched = objectives.firstNotNullOfOrNull { objective ->
+                        objective.keyResults.orEmpty()
+                            .find { it.id == krId }
+                            ?.let { kr -> KrNavHelper.goalKrItem(objective, kr) }
+                    }
+                    matched?.let { Result.success(it) }
+                        ?: Result.failure(IllegalStateException("未找到该 KR"))
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     private suspend inline fun <T> safeCall(

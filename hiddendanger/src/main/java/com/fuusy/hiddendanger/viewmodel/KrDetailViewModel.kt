@@ -44,12 +44,24 @@ class KrDetailViewModel(application: Application) : AndroidViewModel(application
             _commentSubmitted.value = false
             _commentDeleted.value = false
 
-            if (krItem.objectiveId > 0) {
-                repo.getObjectiveDetail(krItem.objectiveId).fold(
+            var item = krItem
+            if (item.objectiveId <= 0) {
+                repo.findKrItem(item.id).fold(
+                    onSuccess = { resolved ->
+                        item = resolved
+                        _refreshedKr.value = resolved
+                    },
+                    onFailure = { /* 使用传入的兜底数据 */ }
+                )
+            }
+
+            if (item.objectiveId > 0) {
+                repo.getObjectiveDetail(item.objectiveId).fold(
                     onSuccess = { objective ->
-                        val kr = objective.keyResults.orEmpty().find { it.id == krItem.id }
+                        val kr = objective.keyResults.orEmpty().find { it.id == item.id }
                         if (kr != null) {
-                            _refreshedKr.value = KrNavHelper.goalKrItem(objective, kr)
+                            item = KrNavHelper.goalKrItem(objective, kr)
+                            _refreshedKr.value = item
                             if (!kr.comments.isNullOrEmpty()) {
                                 _comments.value = kr.comments.orEmpty()
                             }
@@ -59,12 +71,12 @@ class KrDetailViewModel(application: Application) : AndroidViewModel(application
                 )
             }
 
-            repo.getKrCommentList(krItem.id).fold(
+            repo.getKrCommentList(item.id).fold(
                 onSuccess = { _comments.value = it },
                 onFailure = { /* 保留详情接口返回的评论 */ }
             )
 
-            repo.getUpdateRecordList("kr", krItem.id).fold(
+            repo.getUpdateRecordList("kr", item.id).fold(
                 onSuccess = { _updateRecords.value = it },
                 onFailure = { _updateRecords.value = emptyList() }
             )

@@ -27,6 +27,9 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
     private val _pendingCount = MutableLiveData(0)
     val pendingCount: LiveData<Int> = _pendingCount
 
+    private val _receivedCommentCount = MutableLiveData(0)
+    val receivedCommentCount: LiveData<Int> = _receivedCommentCount
+
     private var currentPeriod: String? = null
 
     fun load(periodType: String? = null) {
@@ -50,6 +53,10 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
                 onFailure = { progressCount = 0 }
             )
             _pendingCount.value = krCount + progressCount
+            repo.getReceivedComments().fold(
+                onSuccess = { _receivedCommentCount.value = it.size },
+                onFailure = { _receivedCommentCount.value = 0 }
+            )
             _loading.value = false
         }
     }

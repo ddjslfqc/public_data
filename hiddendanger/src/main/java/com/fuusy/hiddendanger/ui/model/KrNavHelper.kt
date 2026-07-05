@@ -2,6 +2,7 @@ package com.fuusy.hiddendanger.ui.model
 
 import android.content.Intent
 import com.fuusy.hiddendanger.data.OkrKeyResult
+import com.fuusy.hiddendanger.data.OkrKrComment
 import com.fuusy.hiddendanger.data.OkrObjective
 import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.google.gson.Gson
@@ -42,4 +43,13 @@ object KrNavHelper {
         val json = intent.getStringExtra(EXTRA_KR_JSON) ?: return null
         return runCatching { gson.fromJson(json, GoalKrItem::class.java) }.getOrNull()
     }
+
+    /** 评论收件箱跳转时的兜底数据（后续详情页会尝试补全） */
+    fun fromComment(comment: OkrKrComment): GoalKrItem = GoalKrItem(
+        id = comment.krId,
+        title = comment.krTitle?.takeIf { it.isNotBlank() } ?: "KR #${comment.krId}",
+        userId = comment.krUserId,
+        valueLabel = "—",
+        progressPercent = 0
+    )
 }

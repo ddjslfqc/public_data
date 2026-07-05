@@ -13,6 +13,7 @@ import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.alibaba.android.arouter.facade.annotation.Route
+import com.fuusy.hiddendanger.R
 import com.fuusy.hiddendanger.databinding.ActivityOkrCommentListBinding
 import com.fuusy.hiddendanger.ui.adapter.OkrInboxCommentAdapter
 import com.fuusy.hiddendanger.viewmodel.OkrCommentListViewModel
@@ -22,8 +23,7 @@ class OkrCommentListActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityOkrCommentListBinding
     private val viewModel: OkrCommentListViewModel by viewModels()
-    private val adapter = OkrInboxCommentAdapter()
-    private var showingReceived = true
+    private lateinit var adapter: OkrInboxCommentAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,6 +37,12 @@ class OkrCommentListActivity : AppCompatActivity() {
         binding.tabReceived.setOnClickListener { switchTab(received = true) }
         binding.tabSent.setOnClickListener { switchTab(received = false) }
 
+        adapter = OkrInboxCommentAdapter(
+            allowReply = { viewModel.isReceivedTab() },
+            onToggleExpand = { viewModel.toggleExpand(it) },
+            onReply = { krId, content -> viewModel.submitReply(krId, content) },
+            onViewDetail = { viewModel.openKrDetail(it) }
+        )
         binding.rvComments.layoutManager = LinearLayoutManager(this)
         binding.rvComments.adapter = adapter
 
@@ -45,22 +51,23 @@ class OkrCommentListActivity : AppCompatActivity() {
     }
 
     private fun switchTab(received: Boolean) {
-        showingReceived = received
-        binding.tabReceived.apply {
-            setBackgroundResource(
-                if (received) com.fuusy.hiddendanger.R.drawable.bg_goal_kr_badge
-                else com.fuusy.hiddendanger.R.drawable.bg_goal_input
-            )
-            setTextColor(if (received) Color.parseColor("#6A2DF6") else Color.parseColor("#686D79"))
-        }
-        binding.tabSent.apply {
-            setBackgroundResource(
-                if (!received) com.fuusy.hiddendanger.R.drawable.bg_goal_kr_badge
-                else com.fuusy.hiddendanger.R.drawable.bg_goal_input
-            )
-            setTextColor(if (!received) Color.parseColor("#6A2DF6") else Color.parseColor("#686D79"))
-        }
+        viewModel.setTab(received)
+        binding.tabReceived.setBackgroundResource(
+            if (received) R.drawable.bg_goal_period_tab_selected
+            else R.drawable.bg_goal_period_tab_normal
+        )
+        binding.tabSent.setBackgroundResource(
+            if (!received) R.drawable.bg_goal_period_tab_selected
+            else R.drawable.bg_goal_period_tab_normal
+        )
+        binding.tabReceived.setTextColor(
+            Color.parseColor(if (received) "#1365EC" else "#686D79")
+        )
+        binding.tabSent.setTextColor(
+            Color.parseColor(if (!received) "#1365EC" else "#686D79")
+        )
         renderList()
+        refreshExpandState()
     }
 
     private fun observeViewModel() {
@@ -71,22 +78,33 @@ class OkrCommentListActivity : AppCompatActivity() {
             msg?.let { Toast.makeText(this, it, Toast.LENGTH_SHORT).show() }
         }
         viewModel.received.observe(this) {
-            if (showingReceived) renderList()
+            if (viewModel.isReceivedTab()) renderList()
         }
         viewModel.sent.observe(this) {
-            if (!showingReceived) renderList()
+            if (!viewModel.isReceivedTab()) renderList()
+        }
+        viewModel.expandedKrId.observe(this) { refreshExpandState() }
+        viewModel.threadStateVersion.observe(this) { refreshExpandState() }
+        viewModel.openKrDetail.observe(this) { item ->
+            item ?: return@observe
+            viewModel.consumeOpenKrDetail()
+            KrDetailActivity.start(this, item)
         }
     }
 
     private fun renderList() {
-        val list = if (showingReceived) {
-            viewModel.received.value.orEmpty()
-        } else {
-            viewModel.sent.value.orEmpty()
-        }
+        val list = viewModel.currentGroups()
         adapter.submitList(list)
         binding.tvEmpty.isVisible = list.isEmpty()
         binding.rvComments.isVisible = list.isNotEmpty()
+    }
+
+    private fun refreshExpandState() {
+        adapter.updateExpandState(
+            expandedKrId = viewModel.expandedKrId.value,
+            threads = viewModel.threadCacheSnapshot(),
+            loadingKrIds = viewModel.loadingThreadsSnapshot()
+        )
     }
 
     private fun applyStatusBarPadding() {
