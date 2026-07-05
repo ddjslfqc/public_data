@@ -7,7 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.fuusy.hiddendanger.data.MyGoalResponse
 import com.fuusy.hiddendanger.data.OkrPeriodOption
-import com.fuusy.hiddendanger.data.PendingKrItem
+import com.fuusy.hiddendanger.data.PeerEvalSummary
 import com.fuusy.hiddendanger.repository.OkrRepository
 import com.fuusy.hiddendanger.repository.PeerEvalRepository
 import com.fuusy.hiddendanger.viewmodel.PeerEvalViewModel
@@ -35,6 +35,12 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
 
     private val _peerEvalPendingCount = MutableLiveData(0)
     val peerEvalPendingCount: LiveData<Int> = _peerEvalPendingCount
+
+    private val _peerEvalCompletedCount = MutableLiveData(0)
+    val peerEvalCompletedCount: LiveData<Int> = _peerEvalCompletedCount
+
+    private val _peerEvalSummary = MutableLiveData<PeerEvalSummary?>()
+    val peerEvalSummary: LiveData<PeerEvalSummary?> = _peerEvalSummary
 
     private var currentPeriod: String? = null
 
@@ -65,8 +71,16 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
             )
             val evalPeriod = PeerEvalViewModel.DEFAULT_PERIOD
             peerEvalRepo.getSummary(evalPeriod).fold(
-                onSuccess = { _peerEvalPendingCount.value = it.pendingCount },
-                onFailure = { _peerEvalPendingCount.value = 0 }
+                onSuccess = { summary ->
+                    _peerEvalSummary.value = summary
+                    _peerEvalPendingCount.value = summary.pendingCount
+                    _peerEvalCompletedCount.value = summary.completedCount
+                },
+                onFailure = {
+                    _peerEvalSummary.value = null
+                    _peerEvalPendingCount.value = 0
+                    _peerEvalCompletedCount.value = 0
+                }
             )
             _loading.value = false
         }

@@ -33,6 +33,7 @@ class MyGoalsActivity : AppCompatActivity() {
     }
     private var selectedPeriod: String? = null
     private var cachedPeriods: List<OkrPeriodOption> = emptyList()
+    private var peerEvalPending = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,14 +53,15 @@ class MyGoalsActivity : AppCompatActivity() {
         binding.cardKrComments.setOnClickListener {
             OkrCommentListActivity.start(this)
         }
-        binding.cardPeerEval.setOnClickListener {
-            OkrPeerEvalActivity.start(this, PeerEvalViewModel.DEFAULT_PERIOD)
+        binding.cardLeaderEval.setOnClickListener {
+            Toast.makeText(this, "领导评价功能即将上线", Toast.LENGTH_SHORT).show()
+        }
+        binding.cardColleagueEval.setOnClickListener {
+            openPeerEval(showEvalTab = peerEvalPending > 0)
         }
 
         binding.rvObjectives.layoutManager = LinearLayoutManager(this)
         binding.rvObjectives.adapter = objectiveAdapter
-
-        binding.section360.isVisible = false
 
         observeViewModel()
         viewModel.load(null)
@@ -85,9 +87,12 @@ class MyGoalsActivity : AppCompatActivity() {
             binding.tvCommentBadge.text = if (count > 99) "99+" else count.toString()
             binding.tvCommentBadge.isVisible = count > 0
         }
-        viewModel.peerEvalPendingCount.observe(this) { count ->
-            binding.tvPeerEvalBadge.text = if (count > 99) "99+" else count.toString()
-            binding.tvPeerEvalBadge.isVisible = count > 0
+        viewModel.peerEvalPendingCount.observe(this) { pending ->
+            peerEvalPending = pending
+            bindColleagueEvalSummary(pending, viewModel.peerEvalCompletedCount.value ?: 0)
+        }
+        viewModel.peerEvalCompletedCount.observe(this) { completed ->
+            bindColleagueEvalSummary(viewModel.peerEvalPendingCount.value ?: 0, completed)
         }
         viewModel.myGoal.observe(this) { data ->
             if (data == null) return@observe
@@ -98,6 +103,34 @@ class MyGoalsActivity : AppCompatActivity() {
             bindHero(highlighted, objectives.size)
             bindObjectives(objectives)
         }
+    }
+
+    private fun bindColleagueEvalSummary(pending: Int, completed: Int) {
+        binding.tvPeerPendingValue.text = "$pending 人"
+        binding.tvPeerCompletedValue.text = "$completed 人"
+        when {
+            pending > 0 -> {
+                binding.tvColleagueEvalTag.isVisible = true
+                binding.tvColleagueEvalTag.text = "待评价 $pending"
+                binding.tvColleagueEvalTag.setBackgroundResource(R.drawable.bg_archive_tag_warn)
+                binding.tvColleagueEvalTag.setTextColor(Color.parseColor("#EA9300"))
+            }
+            completed > 0 -> {
+                binding.tvColleagueEvalTag.isVisible = true
+                binding.tvColleagueEvalTag.text = "已完成"
+                binding.tvColleagueEvalTag.setBackgroundResource(R.drawable.bg_goal_status_processing)
+                binding.tvColleagueEvalTag.setTextColor(Color.parseColor("#00AA60"))
+            }
+            else -> binding.tvColleagueEvalTag.isVisible = false
+        }
+    }
+
+    private fun openPeerEval(showEvalTab: Boolean) {
+        OkrPeerEvalActivity.start(
+            context = this,
+            period = PeerEvalViewModel.DEFAULT_PERIOD,
+            showEvalTab = showEvalTab
+        )
     }
 
     private fun bindHero(highlighted: OkrObjective?, objectiveCount: Int) {

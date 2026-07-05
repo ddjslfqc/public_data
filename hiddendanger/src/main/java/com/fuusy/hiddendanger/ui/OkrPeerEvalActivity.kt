@@ -69,7 +69,8 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         }
 
         observeViewModel()
-        selectTab(review = true)
+        val openEvalTab = intent.getBooleanExtra(EXTRA_SHOW_EVAL_TAB, false)
+        selectTab(review = !openEvalTab)
         viewModel.load()
     }
 
@@ -177,11 +178,13 @@ class OkrPeerEvalActivity : AppCompatActivity() {
 
     companion object {
         private const val EXTRA_PERIOD = "period"
+        private const val EXTRA_SHOW_EVAL_TAB = "show_eval_tab"
 
-        fun start(context: Context, period: String? = null) {
+        fun start(context: Context, period: String? = null, showEvalTab: Boolean = false) {
             context.startActivity(
                 Intent(context, OkrPeerEvalActivity::class.java).apply {
                     period?.let { putExtra(EXTRA_PERIOD, it) }
+                    putExtra(EXTRA_SHOW_EVAL_TAB, showEvalTab)
                 }
             )
         }
