@@ -133,15 +133,10 @@
 
         <TextView
             android:id="@+id/btnSubmit"
+            style="@style/AppButton.Primary"
             android:layout_width="0dp"
-            android:layout_height="48dp"
             android:layout_margin="16dp"
-            android:background="@drawable/bg_filter_btn"
-            android:gravity="center"
             android:text="提交"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent" />

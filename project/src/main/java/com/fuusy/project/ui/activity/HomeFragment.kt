@@ -5,6 +5,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -19,9 +22,7 @@ import com.fuusy.project.ui.model.HomeLeaderItem
 import com.fuusy.project.ui.model.HomePendingOrderItem
 import com.fuusy.project.workorder.MobileWorkOrderRepository
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.Calendar
 
 class HomeFragment : Fragment() {
 
@@ -48,23 +49,25 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        applyStatusBarPadding()
         setupGreeting()
         setupLeaderboard()
         setupPendingOrders()
         setupClicks()
     }
 
-    private fun setupGreeting() {
-        val hour = SimpleDateFormat("HH", Locale.getDefault()).format(Date()).toInt()
-        val greeting = when {
-            hour < 6 -> "凌晨好"
-            hour < 9 -> "早上好"
-            hour < 12 -> "上午好"
-            hour < 14 -> "中午好"
-            hour < 18 -> "下午好"
-            hour < 22 -> "晚上好"
-            else -> "夜深了"
+    private fun applyStatusBarPadding() {
+        val extraTopPx = (12 * resources.displayMetrics.density).toInt()
+        ViewCompat.setOnApplyWindowInsetsListener(binding.headerArea) { v, insets ->
+            val statusBarTop = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            v.updatePadding(top = statusBarTop + extraTopPx)
+            insets
         }
+        ViewCompat.requestApplyInsets(binding.headerArea)
+    }
+
+    private fun setupGreeting() {
+        val greeting = timeGreeting(Calendar.getInstance().get(Calendar.HOUR_OF_DAY))
         binding.tvGreeting.text = "$greeting，欢迎回来"
         val username = SpUtils.getString("user_name", "")?.takeIf { it.isNotBlank() } ?: "常 伟思"
         binding.tvUsername.text = username
@@ -128,14 +131,16 @@ class HomeFragment : Fragment() {
     }
 
     private fun openWorkOrderTab() {
-        (activity as? ProjectDetailActivity)?.switchToWorkOrderTab()
+        (activity as? ProjectDetailActivity)?.switchToWorkOrderTab(showActivePending = true)
             ?: ARouter.getInstance()
                 .build("/project/HistoryOrderActivity")
+                .withBoolean(HistoryOrderActivity.EXTRA_SHOW_ACTIVE_PENDING, true)
                 .navigation()
     }
 
     override fun onResume() {
         super.onResume()
+        setupGreeting()
         refreshPendingOrders()
     }
 
@@ -159,6 +164,13 @@ class HomeFragment : Fragment() {
                     projectId?.let { putString(Constants.KEY_PROJECT_ID, it) }
                 }
             }
+        }
+
+        /** 早上好 5–11 点；中午好 12–17 点；晚上好 其余时段 */
+        fun timeGreeting(hour: Int): String = when (hour) {
+            in 5..11 -> "早上好"
+            in 12..17 -> "中午好"
+            else -> "晚上好"
         }
     }
 }

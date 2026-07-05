@@ -109,8 +109,7 @@ object WorkOrderMockStore {
             time = "2026-06-17 14:20",
             priority = "P1",
             status = WorkOrderStatus.PENDING,
-            project = "B项目",
-            assigner = "王健"
+            project = "B项目"
         ),
         // 驳回
         mock(
@@ -151,8 +150,7 @@ object WorkOrderMockStore {
             time = "2026-06-15 09:00",
             priority = "P0",
             status = WorkOrderStatus.PROCESSING,
-            project = "A项目",
-            stay = "4.2h"
+            project = "A项目"
         ),
         mock(
             id = "WD202606150004",
@@ -164,8 +162,7 @@ object WorkOrderMockStore {
             handler = "王健",
             time = "2026-06-15 14:00",
             priority = "P1",
-            status = WorkOrderStatus.PROCESSING,
-            stay = "2.1h"
+            status = WorkOrderStatus.PROCESSING
         ),
         mock(
             id = "WD202606140005",
@@ -177,8 +174,7 @@ object WorkOrderMockStore {
             handler = "熊洋",
             time = "2026-06-14 16:00",
             priority = "P0",
-            status = WorkOrderStatus.PROCESSING,
-            stay = "6.5h"
+            status = WorkOrderStatus.PROCESSING
         ),
         // 待评价
         mock(
@@ -236,8 +232,6 @@ object WorkOrderMockStore {
         handler: String = "",
         project: String? = null,
         expected: String? = null,
-        stay: String? = null,
-        assigner: String? = null,
         rejectReason: String? = null
     ) = WorkOrderItem(
         id = id,
@@ -246,7 +240,6 @@ object WorkOrderMockStore {
         workOrderType = type,
         hiddenDangerCategory = type,
         submitUser = user,
-        submitDepartment = dept,
         responsibleDepartment = dept,
         responsiblePerson = handler.ifBlank { null },
         submitTime = time,
@@ -255,8 +248,6 @@ object WorkOrderMockStore {
         nodeName = status.displayName,
         projectName = project,
         expectedCompleteTime = expected,
-        stayDuration = stay,
-        assigner = assigner,
         rejectionReason = rejectReason,
         rejectionUser = if (rejectReason != null) "审核员" else null,
         rejectionTime = if (rejectReason != null) time else null

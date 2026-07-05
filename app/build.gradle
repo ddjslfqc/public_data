@@ -11,7 +11,9 @@ android {
         applicationId "com.fuusy.jetpackkt"
         minSdk 24
         targetSdk 33
-        versionCode 1
+        // 与 AppVersionBaseline.VERSION_CODE 保持一致
+        versionCode 101
+        versionName "1.0.1"
     }
 
     signingConfigs {

@@ -8,21 +8,13 @@ import com.fuusy.project.repo.VideoApi
 import com.fuusy.common.network.RetrofitManager
 
 object ApiService {
-	// Retrofit 单例
-	val retrofitByWorkOrder: Retrofit by lazy {
-		Retrofit.Builder().baseUrl(ServerConfig.getWorkOrderBaseUrl()).addConverterFactory(GsonConverterFactory.create())
-			.client(RetrofitManager.client)
-			.build()
-	}
-
-	// Retrofit 单例
+	// 与 workorder-api.md Base URL 一致，项目/工单/视频共用主站
 	val retrofit: Retrofit by lazy {
 		Retrofit.Builder().baseUrl(ServerConfig.getBaseUrl()).addConverterFactory(GsonConverterFactory.create())
 			.client(RetrofitManager.client)
 			.build()
 	}
 
-	// 各种接口
-	val projectApi: ProjectApi by lazy { retrofitByWorkOrder.create(ProjectApi::class.java) }
+	val projectApi: ProjectApi by lazy { retrofit.create(ProjectApi::class.java) }
 	val videoApi: VideoApi by lazy { retrofit.create(VideoApi::class.java) }
 }

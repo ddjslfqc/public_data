@@ -31,14 +31,14 @@ object IpConfigUtils {
      * 获取工单服务器IP
      */
     fun getWorkOrderServerIp(): String {
-        return SpUtils.getString("custom_ip_2") ?: "10.237.25.119"
+        return SpUtils.getString("custom_ip_2") ?: "47.110.156.186"
     }
     
     /**
      * 获取工单服务器端口
      */
     fun getWorkOrderServerPort(): String {
-        return SpUtils.getString("custom_port_2") ?: "8088"
+        return SpUtils.getString("custom_port_2") ?: "9220"
     }
     
     /**

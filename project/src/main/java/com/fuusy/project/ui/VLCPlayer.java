@@ -18,11 +18,20 @@ import org.videolan.libvlc.interfaces.IMedia;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * VLC播放视频工具类
  */
 public class VLCPlayer implements MediaPlayer.EventListener {
+
+    /** 所有 native stop/release 串行执行，避免并发 nativeStop 崩溃 */
+    private static final ExecutorService NATIVE_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "VLC-Native");
+        t.setDaemon(true);
+        return t;
+    });
 
     private static LibVLC sLibVLC;
     private MediaPlayer mediaPlayer;
@@ -38,6 +47,7 @@ public class VLCPlayer implements MediaPlayer.EventListener {
     private int playAttempt = 0; // 0=MediaCodec, 1=软解
     private volatile boolean released = false;
     private volatile boolean decodeStarted = false;
+    private final Object releaseLock = new Object();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private Runnable playTimeoutRunnable;
 
@@ -364,9 +374,9 @@ public class VLCPlayer implements MediaPlayer.EventListener {
         decodeStarted = false;
         Log.w("VLC", "[VLCPlayer] 解码失败，后台降级软解重试");
         final MediaPlayer player = mediaPlayer;
-        new Thread(() -> {
+        NATIVE_EXECUTOR.execute(() -> {
             try {
-                if (player.isPlaying()) {
+                if (!released && player.isPlaying()) {
                     player.stop();
                 }
             } catch (Exception ignored) {
@@ -376,7 +386,7 @@ public class VLCPlayer implements MediaPlayer.EventListener {
                 resetMedia();
                 play();
             });
-        }, "VLC-SwDecodeRetry").start();
+        });
     }
 
     private void cancelPlayTimeout() {
@@ -468,100 +478,88 @@ public class VLCPlayer implements MediaPlayer.EventListener {
     }
 
     /**
-     * 停止播放
+     * 停止播放（不释放实例时少用；退出页面请用 {@link #safeRelease()}）
      */
     public void stop() {
         Log.d("VLC", "stop() called");
-        if (mediaPlayer != null) {
-            try {
-                mediaPlayer.stop();
-                // 将detachViews放到子线程，避免主线程阻塞
-                new Thread(() -> {
-                    try {
-                        if (mediaPlayer != null) {
-                            mediaPlayer.getVLCVout().detachViews();
-                        }
-                    } catch (Exception e) {
-                        Log.e("VLC", "detachViews error: " + e.getMessage());
-                    }
-                }).start();
-            } catch (Exception e) {
-                Log.e("VLC", "stop error: " + e.getMessage());
-            }
-        } else {
-            Log.e("VLCPlayer", "mediaPlayer 为 null，无法停止");
-        }
-    }
-
-    /**
-     * 安全停止播放
-     */
-    public void safeStop() {
         if (released || mediaPlayer == null) return;
         final MediaPlayer player = mediaPlayer;
-        new Thread(() -> {
+        NATIVE_EXECUTOR.execute(() -> {
             try {
                 if (player.isPlaying()) {
                     player.stop();
                 }
-                Log.d("VLC", "safeStop() 播放已停止");
             } catch (Exception e) {
-                Log.e("VLC", "safeStop error: " + e.getMessage());
+                Log.e("VLC", "stop error: " + e.getMessage());
             }
-        }, "VLC-StopThread").start();
+        });
     }
 
     /**
-     * 安全释放资源
-     * <p>
-     * 此方法会同步断开与UI视图的连接，然后异步释放播放器和LibVLC的native资源。
-     * 必须在主线程调用。
+     * 兼容旧调用：不再单独异步 stop，避免与 safeRelease 并发 nativeStop。
+     */
+    public void safeStop() {
+        Log.d("VLC", "safeStop() noop, use safeRelease() for teardown");
+    }
+
+    /**
+     * 安全释放资源：主线程 detachViews，native stop/release 在同一条后台队列串行执行。
      */
     public void safeRelease() {
+        synchronized (releaseLock) {
+            if (released) {
+                return;
+            }
+            released = true;
+        }
         Log.d("VLCPlayer", "safeRelease() called");
-        released = true;
         cancelPlayTimeout();
         callback = null;
-        if (mediaPlayer == null) {
-            Log.w("VLCPlayer", "mediaPlayer is null, no need to release.");
-            return;
-        }
-
-        try {
-            if (mediaPlayer.getVLCVout().areViewsAttached()) {
-                mediaPlayer.getVLCVout().detachViews();
-                Log.d("VLCPlayer", "safeRelease() - Views detached synchronously.");
-            }
-        } catch (Exception e) {
-            Log.e("VLCPlayer", "safeRelease() - detachViews failed: " + e.getMessage(), e);
-        }
 
         final MediaPlayer playerToRelease = mediaPlayer;
+        final Media mediaToRelease = currentMedia;
         mediaPlayer = null;
-
-        if (currentMedia != null) {
-            try {
-                currentMedia.release();
-            } catch (Exception e) {
-                Log.e("VLCPlayer", "safeRelease() - 释放Media失败: " + e.getMessage());
-            }
-            currentMedia = null;
-        }
+        currentMedia = null;
         isMediaPrepared = false;
         isPaused = false;
         decodeStarted = false;
 
-        new Thread(() -> {
+        if (playerToRelease == null) {
+            return;
+        }
+
+        mainHandler.post(() -> {
             try {
-                if (playerToRelease.isPlaying()) {
-                    playerToRelease.stop();
+                if (playerToRelease.getVLCVout().areViewsAttached()) {
+                    playerToRelease.getVLCVout().detachViews();
+                    Log.d("VLCPlayer", "safeRelease() - Views detached.");
                 }
-                playerToRelease.release();
-                Log.d("VLCPlayer", "safeRelease() - MediaPlayer released on background thread.");
             } catch (Exception e) {
-                Log.e("VLCPlayer", "safeRelease() - background release failed: " + e.getMessage(), e);
+                Log.e("VLCPlayer", "safeRelease() - detachViews failed: " + e.getMessage(), e);
             }
-        }, "VLC-ReleaseThread").start();
+            NATIVE_EXECUTOR.execute(() -> releaseNative(playerToRelease, mediaToRelease));
+        });
+    }
+
+    private static void releaseNative(MediaPlayer player, Media media) {
+        try {
+            player.stop();
+        } catch (Exception e) {
+            Log.w("VLCPlayer", "releaseNative stop failed: " + e.getMessage());
+        }
+        if (media != null) {
+            try {
+                media.release();
+            } catch (Exception e) {
+                Log.w("VLCPlayer", "releaseNative media failed: " + e.getMessage());
+            }
+        }
+        try {
+            player.release();
+            Log.d("VLCPlayer", "releaseNative player released.");
+        } catch (Exception e) {
+            Log.w("VLCPlayer", "releaseNative player failed: " + e.getMessage());
+        }
     }
 
     public boolean isPlaying() {

@@ -31,11 +31,44 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:text="KR 待审批"
+                android:text="KR 审批"
                 android:textColor="#000000"
                 android:textSize="16sp"
                 android:textStyle="bold" />
         </RelativeLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:id="@+id/tab_kr_assign"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_goal_period_tab_selected"
+                android:gravity="center"
+                android:text="KR 指派"
+                android:textColor="#1365EC"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tab_progress"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_goal_period_tab_normal"
+                android:gravity="center"
+                android:text="进度更新"
+                android:textColor="#686D79"
+                android:textSize="13sp" />
+        </LinearLayout>
 
         <FrameLayout
             android:layout_width="match_parent"

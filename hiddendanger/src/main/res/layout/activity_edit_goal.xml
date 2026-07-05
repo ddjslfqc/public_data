@@ -524,6 +524,16 @@
                     android:textSize="12sp" />
             </LinearLayout>
 
+            <TextView
+                android:id="@+id/tv_kr_weight_total"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="4dp"
+                android:text="权重合计 100%"
+                android:textColor="#00AA60"
+                android:textSize="12sp" />
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_kr"
                 android:layout_width="match_parent"
@@ -575,42 +585,27 @@
 
         <TextView
             android:id="@+id/btn_cancel"
+            style="@style/AppButton.Secondary"
             android:layout_width="0dp"
-            android:layout_height="46dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_goal_btn_secondary"
-            android:gravity="center"
-            android:text="取消"
-            android:textColor="#7F8495"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:text="取消" />
 
         <TextView
             android:id="@+id/btn_draft"
+            style="@style/AppButton.Secondary"
             android:layout_width="0dp"
-            android:layout_height="46dp"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_goal_btn_secondary"
-            android:gravity="center"
             android:text="暂存草稿"
-            android:textColor="#7F8495"
-            android:textSize="16sp"
-            android:textStyle="bold"
             android:visibility="gone" />
 
         <TextView
             android:id="@+id/btn_submit"
+            style="@style/AppButton.Primary"
             android:layout_width="0dp"
-            android:layout_height="46dp"
             android:layout_marginStart="8dp"
             android:layout_weight="1.5"
-            android:background="@drawable/bg_goal_btn_primary"
-            android:gravity="center"
-            android:text="创建目标"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:text="创建目标" />
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

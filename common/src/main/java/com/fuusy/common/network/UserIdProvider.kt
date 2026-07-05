@@ -16,6 +16,11 @@ object UserIdProvider {
         }
     }
 
+    fun clear() {
+        userId = null
+        SpUtils.removeValue(Constants.SP_KEY_USER_ID)
+    }
+
     /** 从 SharedPreferences 同步恢复，可在 Application.onCreate 主线程调用 */
     fun restoreFromCache() {
         val cached = SpUtils.getLong(Constants.SP_KEY_USER_ID, 0L)

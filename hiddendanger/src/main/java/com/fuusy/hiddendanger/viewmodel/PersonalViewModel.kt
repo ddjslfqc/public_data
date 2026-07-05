@@ -10,8 +10,10 @@ import androidx.lifecycle.viewModelScope
 import com.fuusy.common.data.WorkOrderStatus
 import com.fuusy.common.data.local.AppDatabase
 import com.fuusy.common.data.local.WorkOrderRepository
-import com.fuusy.hiddendanger.repository.WorkOrderNetRepository
+import com.fuusy.common.auth.AuthRepository
+import com.fuusy.hiddendanger.util.SessionHelper
 import com.fuusy.hiddendanger.ui.album.AlbumMediaItem
+import com.fuusy.project.workorder.MobileWorkOrderRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -33,13 +35,10 @@ data class UserInfo(
 class PersonalViewModel(application: Application) : AndroidViewModel(application) {
     private val db = AppDatabase.getInstance(application)
     private val repository = WorkOrderRepository(db)
-    private val netRepo = WorkOrderNetRepository()
+    private val workOrderRepo = MobileWorkOrderRepository()
 
     private val _userInfo = MutableLiveData<UserInfo>()
     val userInfo: LiveData<UserInfo> = _userInfo
-
-    private val _historyCount = MutableLiveData<Int>()
-    val historyCount: LiveData<Int> = _historyCount
 
     private val _completedTaskCount = MutableLiveData<Int>()
     val completedTaskCount: LiveData<Int> = _completedTaskCount
@@ -119,10 +118,11 @@ class PersonalViewModel(application: Application) : AndroidViewModel(application
                 
                 // 从数据库或SharedPreferences获取真实用户信息
                 loadUserInfo()
-                
-                val count = netRepo.getHiddenDangerCount()
-                _historyCount.postValue(count ?: 0)
-                _completedTaskCount.postValue(if ((count ?: 0) > 0) count else 28)
+
+                val completedCount = workOrderRepo.list(WorkOrderStatus.COMPLETED)
+                    .getOrNull()
+                    ?.size ?: 0
+                _completedTaskCount.postValue(completedCount)
                 _averageRating.postValue("4.5")
                 val draftOrders = repository.getWorkOrdersByStatus(WorkOrderStatus.DRAFT)
                 _draftCount.postValue(draftOrders.size)
@@ -304,18 +304,11 @@ class PersonalViewModel(application: Application) : AndroidViewModel(application
 
     fun logout() {
         viewModelScope.launch {
-            try {
-                // 设置loading状态
-                loadingStatus.postValue(LoadingStatus.Loading)
-                
-                val result = netRepo.logoutApi()
-                _logout.postValue(result)
-                
-                // 设置成功状态
-                loadingStatus.postValue(LoadingStatus.Success)
-            } catch (e: Exception) {
-                loadingStatus.postValue(LoadingStatus.Error(e.message ?: "退出登录失败"))
-            }
+            loadingStatus.postValue(LoadingStatus.Loading)
+            AuthRepository.logoutRemote()
+            SessionHelper.clearLocalSession(getApplication())
+            _logout.postValue(true)
+            loadingStatus.postValue(LoadingStatus.Success)
         }
     }
 }

@@ -56,100 +56,93 @@
         android:background="#686D79" />
 
     <LinearLayout
+        android:id="@+id/row_target"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal">
+        android:layout_marginTop="10dp"
+        android:orientation="vertical">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:alpha="0.5"
-                android:text="目标值"
+                android:text="目标进度"
                 android:textColor="#686D79"
                 android:textSize="12sp" />
 
-            <EditText
-                android:id="@+id/et_target_value"
-                android:layout_width="match_parent"
-                android:layout_height="32dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/bg_goal_input"
-                android:gravity="center_vertical"
-                android:hint="0"
-                android:inputType="numberDecimal"
-                android:paddingHorizontal="10dp"
-                android:textColor="#000000"
-                android:textColorHint="#A7AFC3"
-                android:textSize="14sp" />
+            <TextView
+                android:id="@+id/tv_target"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:textColor="#6A2DF6"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="95%" />
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="0dp"
+        <SeekBar
+            android:id="@+id/seek_target"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="7dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_marginTop="4dp"
+            android:max="100"
+            android:progressTint="#6A2DF6"
+            android:thumbTint="#6A2DF6"
+            tools:progress="95" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/row_weight"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:alpha="0.5"
-                android:text="单位"
+                android:text="权重占比"
                 android:textColor="#686D79"
                 android:textSize="12sp" />
-
-            <EditText
-                android:id="@+id/et_unit"
-                android:layout_width="match_parent"
-                android:layout_height="32dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/bg_goal_input"
-                android:gravity="center_vertical"
-                android:hint="如：个、次"
-                android:inputType="text"
-                android:paddingHorizontal="10dp"
-                android:textColor="#000000"
-                android:textColorHint="#A7AFC3"
-                android:textSize="14sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="7dp"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:visibility="gone">
 
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/tv_weight"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:alpha="0.5"
-                android:text="当前值"
-                android:textColor="#686D79"
-                android:textSize="12sp" />
-
-            <EditText
-                android:id="@+id/et_current_value"
-                android:layout_width="match_parent"
-                android:layout_height="32dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/bg_goal_input"
-                android:gravity="center_vertical"
-                android:hint="0"
-                android:inputType="numberDecimal"
-                android:paddingHorizontal="10dp"
-                android:textColor="#000000"
-                android:textColorHint="#A7AFC3"
-                android:textSize="14sp" />
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:textColor="#1365EC"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="50%" />
         </LinearLayout>
+
+        <SeekBar
+            android:id="@+id/seek_weight"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:max="100"
+            android:progressTint="#1365EC"
+            android:thumbTint="#1365EC"
+            tools:progress="50" />
     </LinearLayout>
 
     <LinearLayout

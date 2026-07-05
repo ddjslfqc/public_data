@@ -6,7 +6,10 @@ import com.fuusy.common.network.ServerConfig
 import com.fuusy.common.network.UserIdHeaderInterceptor
 import com.fuusy.common.data.WorkOrderItem
 import com.fuusy.common.data.WorkOrderStatus
+import com.google.gson.Gson
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.Retrofit
@@ -18,7 +21,7 @@ class MobileWorkOrderRepository {
     /** 当前用户工单，需 X-User-Id */
     private val authApi: WorkOrderApi by lazy {
         Retrofit.Builder()
-            .baseUrl(ServerConfig.getBaseUrl())
+            .baseUrl(ServerConfig.getWorkOrderBaseUrl())
             .client(
                 RetrofitManager.client.newBuilder()
                     .addInterceptor(UserIdHeaderInterceptor())
@@ -32,7 +35,7 @@ class MobileWorkOrderRepository {
     /** 全部工单，无需 X-User-Id */
     private val publicApi: WorkOrderApi by lazy {
         Retrofit.Builder()
-            .baseUrl(ServerConfig.getBaseUrl())
+            .baseUrl(ServerConfig.getWorkOrderBaseUrl())
             .client(RetrofitManager.client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -53,11 +56,28 @@ class MobileWorkOrderRepository {
     suspend fun detail(id: String): Result<WorkOrderItem> =
         safeCall { authApi.detail(id) }.map { WorkOrderMapper.detailDtoToItem(it) }
 
-    suspend fun create(body: CreateWorkOrderRequest): Result<CreateWorkOrderResult> =
-        safeCall { authApi.create(body) }
+    suspend fun create(
+        body: CreateWorkOrderRequest,
+        files: List<File> = emptyList()
+    ): Result<CreateWorkOrderResult> = safeCall {
+        val json = Gson().toJson(body)
+        val dataPart = MultipartBody.Part.createFormData(
+            "data",
+            null,
+            json.toRequestBody("application/json; charset=utf-8".toMediaType())
+        )
+        val fileParts = files.map { file ->
+            val partBody = file.asRequestBody("application/octet-stream".toMediaTypeOrNull())
+            MultipartBody.Part.createFormData("files", file.name, partBody)
+        }
+        authApi.create(dataPart, fileParts)
+    }
 
     suspend fun options(): Result<WorkOrderOptionsDto> =
         safeCall { publicApi.options() }
+
+    suspend fun users(deptId: String): Result<List<OptionItemDto>> =
+        safeList { publicApi.users(deptId) }
 
     suspend fun approve(
         workOrderId: String,
@@ -73,6 +93,27 @@ class MobileWorkOrderRepository {
         )
         if (resp.isSuccess) Result.success(Unit)
         else Result.failure(IllegalStateException(resp.errorMsg ?: "审批失败(${resp.errorCode})"))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun claim(workOrderId: String): Result<Unit> = try {
+        val resp = authApi.claim(workOrderId)
+        if (resp.isSuccess) Result.success(Unit)
+        else Result.failure(IllegalStateException(resp.errorMsg ?: "认领失败(${resp.errorCode})"))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun reject(workOrderId: String, reason: String): Result<Unit> = try {
+        val resp = authApi.reject(
+            RejectWorkOrderRequest(
+                workOrderId = workOrderId,
+                rejectReason = reason.trim()
+            )
+        )
+        if (resp.isSuccess) Result.success(Unit)
+        else Result.failure(IllegalStateException(resp.errorMsg ?: "驳回失败(${resp.errorCode})"))
     } catch (e: Exception) {
         Result.failure(e)
     }

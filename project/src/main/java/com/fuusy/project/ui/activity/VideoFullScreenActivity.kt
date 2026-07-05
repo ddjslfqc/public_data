@@ -401,7 +401,7 @@ class VideoFullScreenActivity : BaseVmActivity<ActivityVideoFullScreenBinding>()
 
             override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
                 releaseExoPlayer()
-                vlcPlayer?.safeStop()
+                vlcPlayer?.safeRelease()
                 vlcPlayer = null
                 return true
             }

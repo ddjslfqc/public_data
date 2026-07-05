@@ -1,6 +1,5 @@
 package com.fuusy.common.network
 
-import DetailedLoggingInterceptor
 import android.util.Log
 import com.fuusy.common.network.config.LocalCookieJar
 import okhttp3.OkHttpClient
@@ -13,15 +12,21 @@ private const val TAG = "RetrofitManager"
 
 object RetrofitManager {
 
+    private val cookieJar = LocalCookieJar()
+
     private val mOkClient = OkHttpClient.Builder().callTimeout(10, TimeUnit.SECONDS)
         .connectTimeout(10, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS)
         .writeTimeout(10, TimeUnit.SECONDS).retryOnConnectionFailure(true).followRedirects(false)
-        .cookieJar(LocalCookieJar()).addInterceptor(DetailedLoggingInterceptor()) // 使用自定义拦截器
+        .cookieJar(cookieJar).addInterceptor(DetailedLoggingInterceptor()) // 使用自定义拦截器
         .build()
 
     // 暴露全局 OkHttpClient，供其他模块复用，确保统一的日志与配置
     val client: OkHttpClient
         get() = mOkClient
+
+    fun clearSessionCookies() {
+        cookieJar.clearAll()
+    }
 
     private var mRetrofit: Retrofit? = null
 

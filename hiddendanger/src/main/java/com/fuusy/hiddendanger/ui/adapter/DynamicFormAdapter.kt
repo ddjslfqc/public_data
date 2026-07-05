@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.alibaba.android.arouter.utils.TextUtils
 import com.fuusy.hiddendanger.databinding.ItemFormInputTextBinding
 import com.fuusy.hiddendanger.databinding.ItemFormSelectorBinding
 
@@ -153,12 +152,9 @@ class DynamicFormAdapter(
     inner class SelectorViewHolder(private val binding: ItemFormSelectorBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(item: FormItem) {
-            binding.label.text = if (item.isRequired) item.label else item.label
-            if (TextUtils.isEmpty(item.value)) {
-                item.value = "请输入"
-            }
-            binding.selectedValue.text = item.value
-            updateTextColor()
+            binding.label.text = item.label
+            binding.selectedValue.text = resolveDisplayText(item)
+            updateTextColor(item.placeholder)
             binding.ivStartIcon.visibility = if (item.isRequired) View.VISIBLE else View.INVISIBLE
             binding.linBg.setOnClickListener {
                 onSelectorClick(item, adapterPosition)
@@ -168,15 +164,26 @@ class DynamicFormAdapter(
 
         fun updateValue(newValue: String) {
             binding.selectedValue.text = newValue
-            updateTextColor()
+            updateTextColor(null)
         }
 
-        fun updateTextColor() {
-            if ("请输入".equals(binding.selectedValue.text)) {
-                binding.selectedValue.setTextColor(Color.parseColor("#999999"))
-            } else {
-                binding.selectedValue.setTextColor(Color.parseColor("#e6000000"))
+        private fun resolveDisplayText(item: FormItem): String {
+            val raw = item.value.trim()
+            if (raw.isNotBlank() && raw != "请输入" && raw != "请选择") {
+                return raw
             }
+            return item.placeholder?.takeIf { it.isNotBlank() } ?: "请选择"
+        }
+
+        private fun updateTextColor(placeholder: String?) {
+            val text = binding.selectedValue.text?.toString().orEmpty()
+            val isPlaceholder = text.isBlank() ||
+                text == "请输入" ||
+                text == "请选择" ||
+                text == placeholder
+            binding.selectedValue.setTextColor(
+                Color.parseColor(if (isPlaceholder) "#999999" else "#e6000000")
+            )
         }
     }
 }

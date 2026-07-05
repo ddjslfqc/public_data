@@ -22,7 +22,9 @@ import com.fuusy.common.data.local.WorkOrderRepository
 import com.fuusy.common.network.ServerConfig
 import com.fuusy.common.utils.SpUtils
 import com.fuusy.project.workorder.MobileWorkOrderRepository
+import com.fuusy.project.workorder.OptionItemDto
 import com.fuusy.project.workorder.WorkOrderMapper
+import com.fuusy.project.workorder.WorkOrderOptionsDto
 
 class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -57,13 +59,6 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
 
     // 下拉选择器数据 (这些可以用来填充 FormItem 的 options)
     val categoryOptions = WorkOrderOptions.hiddenDangerCategories
-    val levelOptions = WorkOrderOptions.hiddenDangerLevels
-    val professionOptions = WorkOrderOptions.professions
-    val controlLevelOptions = WorkOrderOptions.controlLevels
-    val unitSystemOptions = WorkOrderOptions.unitSystems
-    val harmConsequenceOptions = WorkOrderOptions.harmConsequences
-    val possibilityOptions = WorkOrderOptions.possibilities
-    val treatmentDifficultyOptions = WorkOrderOptions.treatmentDifficulties
     val responsibleDepartmentOptions = WorkOrderOptions.responsibleDepartments
 
     // 新增：用于保留表单内容的Map
@@ -83,6 +78,7 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
 
     // 新版 mobile/workorder 接口
     private val mobileWorkOrderRepo = MobileWorkOrderRepository()
+    private var cachedOptions: WorkOrderOptionsDto? = null
 
     // 新增：本地数据库Repository
     private val db = AppDatabase.getInstance(application)
@@ -181,6 +177,7 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
             try {
                 _formLoadingStatus.value = FormLoadingStatus.Loading
                 val options = mobileWorkOrderRepo.options().getOrNull()
+                cachedOptions = options
                 val userInfo = getUserInfo()
                 val projectInfo = getCurrentProject()
                 val filledItems = fillFormWithUserAndProjectData(
@@ -190,18 +187,20 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
                 ).map { item ->
                     when {
                         item.key == "priority" && item.value.isBlank() -> {
-                            val defaultPriority = options?.priorities?.firstOrNull()?.value ?: "P1"
-                            item.copy(value = defaultPriority).also { formValueMap["priority"] = defaultPriority }
+                            val defaultPriority = options?.priorities?.firstOrNull()
+                            val code = defaultPriority?.value ?: "P1"
+                            val label = defaultPriority?.label ?: code
+                            item.copy(value = label).also { formValueMap["priority"] = code }
                         }
-                        item.key == "controlLevel" && item.value.isBlank() -> {
-                            val defaultLevel = options?.hazardLevels?.firstOrNull()
-                            val code = defaultLevel?.value ?: "GENERAL"
-                            val label = defaultLevel?.label ?: code
-                            item.copy(value = label).also { formValueMap["controlLevel"] = code }
+                        item.key == "rectificationPerson" && !formValueMap.containsKey("rectificationPerson") -> {
+                            item.copy(value = "不指定处理人（公开抢单）").also {
+                                formValueMap["rectificationPerson"] = WorkOrderOptions.PUBLIC_GRAB_PERSON_ID
+                            }
                         }
                         else -> item
                     }
                 }
+                projectInfo["itemName"]?.takeIf { it.isNotBlank() }?.let { formValueMap["project"] = it }
                 _formItemsLiveData.value = filledItems
                 _formLoadingStatus.value = FormLoadingStatus.Success
             } catch (e: Exception) {
@@ -230,7 +229,7 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
                 "公司", "company", "company_name" -> userInfo["company"] ?: ""
                 "发现时间", "discovery_time", "found_time", "foundtime" -> getCurrentTime()
                 "填报部门", "department", "submit_department" -> userInfo["department"] ?: ""
-                "项目名称", "project_name", "projectname" -> projectInfo["itemName"] ?: ""
+                "项目名称", "project_name", "projectname", "project" -> projectInfo["itemName"] ?: ""
                 "项目编号", "project_id", "projectid" -> projectInfo["item"] ?: ""
                 "项目单位", "project_unit", "projectunit" -> projectInfo["projectUnit"] ?: ""
                 "地址", "address", "location" -> projectInfo["address"] ?: ""
@@ -257,6 +256,67 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
     // 更新表单项的值
     fun updateFormItemValue(key: String, value: String) {
         formValueMap[key] = value
+    }
+
+    /** 下拉选择：formValueMap 存 code，表单项 value 存展示文案 */
+    fun onSelectorChanged(key: String, code: String, displayLabel: String) {
+        formValueMap[key] = code
+        val items = _formItemsLiveData.value?.toMutableList() ?: return
+        val idx = items.indexOfFirst { it.key == key }
+        if (idx == -1) return
+        items[idx] = items[idx].copy(value = displayLabel)
+        _formItemsLiveData.value = items
+        if (key == "responsibleDepartment") {
+            onDepartmentSelected(code)
+        }
+    }
+
+    fun onDepartmentSelected(deptId: String) {
+        viewModelScope.launch {
+            val users = if (deptId.isNotBlank()) {
+                mobileWorkOrderRepo.users(deptId).getOrNull().orEmpty()
+            } else {
+                emptyList()
+            }
+            val personOptions = listOf(
+                OptionItemDto(WorkOrderOptions.PUBLIC_GRAB_PERSON_ID, "不指定处理人（公开抢单）")
+            ) + users
+            updateFormItemOptions("rectificationPerson", personOptions)
+        }
+    }
+
+    private fun updateFormItemOptions(key: String, options: List<OptionItemDto>) {
+        val items = _formItemsLiveData.value?.toMutableList() ?: return
+        val idx = items.indexOfFirst { it.key == key }
+        if (idx == -1) return
+        val old = items[idx]
+        val defaultLabel = options.firstOrNull()?.label ?: ""
+        items[idx] = old.copy(
+            options = options.map { DynamicFormAdapter.OptionItem(it.value, it.label) },
+            value = defaultLabel
+        )
+        formValueMap[key] = options.firstOrNull()?.value.orEmpty()
+        _formItemsLiveData.value = items
+    }
+
+    private fun normalizeDateTimeDisplay(raw: String): String {
+        if (raw.isBlank()) return ""
+        val patterns = listOf(
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd HH:mm",
+            "yyyy/MM/dd HH:mm"
+        )
+        for (pattern in patterns) {
+            try {
+                val date = java.text.SimpleDateFormat(pattern, Locale.getDefault()).parse(raw.trim())
+                if (date != null) {
+                    return java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(date)
+                }
+            } catch (_: Exception) {
+            }
+        }
+        return raw
     }
 
     private fun refreshFormFieldValue(key: String, value: String) {
@@ -491,24 +551,13 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
         // 创建字段名到标签的映射
         val labelMap = mapOf(
             "hiddenDangerName" to "工单名称",
-            "workOrderType" to "类型",
+            "workOrderType" to "类别",
             "hiddenDangerDescription" to "需求说明",
-            "responsibleDepartment" to "处理人部门",
-            "responsiblePerson" to "处理人",
+            "responsibleDepartment" to "处理部门",
+            "rectificationPerson" to "处理人",
             "priority" to "优先级",
-            "reasonAnalysis" to "原因简析",
-            "treatmentRequirement" to "治理要求",
-            "hiddenDangerCategory" to "类型",
-            "hiddenDangerLevel" to "隐患等级",
-            "affiliatedMajor" to "所属专业",
-            "controlLevel" to "管控等级",
-            "unitSystem" to "机组/系统",
-            "hazardConsequence" to "危害后果",
-            "possibility" to "可能性",
-            "treatmentDifficulty" to "治理难度",
-            "responsibleDepartment" to "负责部门",
-            "responsiblePerson" to "负责人",
-            "approvalModel" to "审批类型"
+            "project" to "隶属项目",
+            "expectedCompletionTime" to "期望完成时间"
         )
         
         // 根据表单的实际配置验证必填字段
@@ -530,23 +579,14 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
     }
 
     private fun createWorkOrderFromFormItems(): WorkOrderItem? {
-        // 直接用formValueMap组装WorkOrderItem
         val currentDate = SimpleDateFormat("yyyy/MM/dd").format(Date())
         return WorkOrderItem(
             hiddenDangerName = formValueMap["hiddenDangerName"] ?: "",
             hiddenDangerDescription = formValueMap["hiddenDangerDescription"] ?: "",
-            reasonAnalysis = formValueMap["reasonAnalysis"] ?: "",
-            treatmentRequirement = formValueMap["treatmentRequirement"] ?: "",
-            hiddenDangerCategory = formValueMap["hiddenDangerCategory"] ?: "",
-            hiddenDangerLevel = formValueMap["hiddenDangerLevel"] ?: "",
-            profession = formValueMap["affiliatedMajor"] ?: "",
-            controlLevel = formValueMap["controlLevel"] ?: "",
-            unitSystem = formValueMap["unitSystem"] ?: "",
-            hazardConsequence = formValueMap["hazardConsequence"] ?: "",
-            possibility = formValueMap["possibility"] ?: "",
-            treatmentDifficulty = formValueMap["treatmentDifficulty"] ?: "",
+            hiddenDangerCategory = formValueMap["workOrderType"] ?: "",
             responsibleDepartment = formValueMap["responsibleDepartment"] ?: "",
-            responsiblePerson = formValueMap["responsiblePerson"] ?: "",
+            rectificationPersonId = formValueMap["rectificationPerson"] ?: "",
+            projectName = formValueMap["project"] ?: "",
             submitTime = currentDate,
             status = WorkOrderStatus.PROCESSING
         )
@@ -570,30 +610,13 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
     }
 
     private fun createWorkOrderFromFormItems(isDraft: Boolean = false): WorkOrderItem? {
-        val currentDate = SimpleDateFormat("yyyy/MM/dd").format(Date())
         return WorkOrderItem(
             hiddenDangerName = formValueMap["hiddenDangerName"] ?: "",
             hiddenDangerDescription = formValueMap["hiddenDangerDescription"] ?: "",
-            reasonAnalysis = formValueMap["reasonAnalysis"] ?: "",
-            treatmentRequirement = formValueMap["treatmentRequirement"] ?: "",
-            hiddenDangerCategory = formValueMap["hiddenDangerCategory"] ?: "",
-            hiddenDangerLevel = formValueMap["hiddenDangerLevel"] ?: "",
-            // profession 参数在接口返回数据中不存在，注释掉
-            // profession = formValueMap["profession"] ?: "",
-            controlLevel = formValueMap["controlLevel"] ?: "",
-            unitSystem = formValueMap["unitSystem"] ?: "",
-            // 将 harmConsequence 修正为 hazardConsequence
-            hazardConsequence = formValueMap["hazardConsequence"] ?: "",
-            possibility = formValueMap["possibility"] ?: "",
-            treatmentDifficulty = formValueMap["treatmentDifficulty"] ?: "",
+            hiddenDangerCategory = formValueMap["workOrderType"] ?: "",
             responsibleDepartment = formValueMap["responsibleDepartment"] ?: "",
-            responsiblePerson = formValueMap["responsiblePerson"] ?: "",
-            // submitTime 参数在接口返回数据中不存在，注释掉
-            // submitTime = currentDate,
-            // status 参数在接口返回数据中不存在，注释掉
-            // status = if (isDraft) WorkOrderStatus.DRAFT else WorkOrderStatus.PROCESSING
-            // 添加接口返回的 affiliatedMajor 参数
-            affiliatedMajor = formValueMap["affiliatedMajor"] ?: "",
+            rectificationPersonId = formValueMap["rectificationPerson"] ?: "",
+            projectName = formValueMap["project"] ?: ""
         )
     }
 
@@ -601,35 +624,81 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
         viewModelScope.launch {
             draftEditId = draft.id.takeIf { it.isNotBlank() }
             val options = mobileWorkOrderRepo.options().getOrNull()
-            val items = WorkOrderMockForm.formItems(options)
-            
+            cachedOptions = options
+
+            val deptId = draft.responsibleDeptId ?: draft.responsibleDepartment.orEmpty()
+            val users = if (deptId.isNotBlank()) {
+                mobileWorkOrderRepo.users(deptId).getOrNull().orEmpty()
+            } else {
+                emptyList()
+            }
+            val personOptions = listOf(
+                OptionItemDto(WorkOrderOptions.PUBLIC_GRAB_PERSON_ID, "不指定处理人（公开抢单）")
+            ) + users
+            val items = WorkOrderMockForm.formItems(options, personOptions)
+
             val userInfo = getUserInfo()
             val projectInfo = getCurrentProject()
-            
+
             formValueMap["hiddenDangerName"] = draft.hiddenDangerName ?: ""
             formValueMap["workOrderType"] = draft.typeCode ?: draft.workOrderType ?: draft.hiddenDangerCategory ?: ""
             formValueMap["hiddenDangerDescription"] = draft.hiddenDangerDescription ?: ""
-            formValueMap["responsibleDepartment"] = draft.responsibleDeptId ?: draft.responsibleDepartment ?: ""
-            formValueMap["responsiblePerson"] = draft.responsiblePerson ?: ""
+            formValueMap["responsibleDepartment"] = deptId
+            formValueMap["rectificationPerson"] = when {
+                WorkOrderOptions.isPublicGrabPerson(draft.rectificationPersonId) &&
+                    WorkOrderOptions.isPublicGrabPerson(draft.responsiblePerson) ->
+                    WorkOrderOptions.PUBLIC_GRAB_PERSON_ID
+                draft.rectificationPersonId?.isNotBlank() == true &&
+                    !WorkOrderOptions.isPublicGrabPerson(draft.rectificationPersonId) ->
+                    draft.rectificationPersonId!!
+                draft.responsiblePerson?.isNotBlank() == true &&
+                    !WorkOrderOptions.isPublicGrabPerson(draft.responsiblePerson) ->
+                    draft.responsiblePerson!!
+                else -> WorkOrderOptions.PUBLIC_GRAB_PERSON_ID
+            }
+            formValueMap["project"] = draft.projectName ?: projectInfo["itemName"].orEmpty()
             formValueMap["priority"] = draft.priority?.takeIf { it.startsWith("P") }
                 ?: WorkOrderOptions.priorityLabelToCode(draft.priority.orEmpty())
             formValueMap["expectedCompletionTime"] = draft.expectedCompleteTime ?: ""
-            formValueMap["reasonAnalysis"] = draft.reasonAnalysis ?: ""
-            formValueMap["treatmentRequirement"] = draft.treatmentRequirement ?: ""
-            formValueMap["hiddenDangerCategory"] = draft.hiddenDangerCategory ?: ""
-            formValueMap["hiddenDangerLevel"] = draft.hiddenDangerLevel ?: ""
-            formValueMap["affiliatedMajor"] = draft.profession ?: draft.affiliatedMajor ?: ""
-            formValueMap["controlLevel"] = draft.controlLevel ?: ""
-            formValueMap["unitSystem"] = draft.unitSystem ?: ""
-            formValueMap["hazardConsequence"] = draft.hazardConsequence ?: ""
-            formValueMap["possibility"] = draft.possibility ?: ""
-            formValueMap["treatmentDifficulty"] = draft.treatmentDifficulty ?: ""
-            
+
             loadAttachmentsFromDraft(draft)
-            
+
             val filledItems = fillFormWithUserAndProjectData(items, userInfo, projectInfo)
             val finalItems = filledItems.map { item ->
-                formValueMap[item.key]?.takeIf { it.isNotEmpty() }?.let { item.copy(value = it) } ?: item
+                when (item.key) {
+                    "workOrderType" -> {
+                        val code = formValueMap["workOrderType"].orEmpty()
+                        val label = options?.types?.find { it.value == code }?.label ?: code
+                        item.copy(value = label)
+                    }
+                    "responsibleDepartment" -> {
+                        val code = formValueMap["responsibleDepartment"].orEmpty()
+                        val label = options?.departments?.find { it.value == code }?.label ?: code
+                        item.copy(value = label)
+                    }
+                    "rectificationPerson" -> {
+                        val code = formValueMap["rectificationPerson"].orEmpty()
+                        val label = personOptions.find { it.value == code }?.label
+                            ?: if (code == WorkOrderOptions.PUBLIC_GRAB_PERSON_ID) {
+                                "不指定处理人（公开抢单）"
+                            } else {
+                                code
+                            }
+                        item.copy(value = label)
+                    }
+                    "priority" -> {
+                        val code = formValueMap["priority"].orEmpty()
+                        val label = options?.priorities?.find { it.value == code }?.label
+                            ?: WorkOrderOptions.priorityCodeToLabel(code)
+                        item.copy(value = label)
+                    }
+                    "expectedCompletionTime" -> {
+                        val raw = formValueMap["expectedCompletionTime"].orEmpty()
+                        val display = normalizeDateTimeDisplay(raw)
+                        item.copy(value = display)
+                    }
+                    else -> formValueMap[item.key]?.takeIf { it.isNotEmpty() }?.let { item.copy(value = it) } ?: item
+                }
             }
             _formItemsLiveData.value = finalItems
         }
@@ -755,23 +824,42 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
         onResult: (Boolean, String?) -> Unit
     ) {
         val projectInfo = getCurrentProject()
+        if (formValueMap["project"].isNullOrBlank()) {
+            projectInfo["itemName"]?.takeIf { it.isNotBlank() }?.let { formValueMap["project"] = it }
+        }
         val createBody = WorkOrderMapper.buildCreateRequest(
             form = formValueMap,
-            projectName = projectInfo["itemName"],
-            projectDevice = projectInfo["device"]
+            projectName = projectInfo["itemName"]
         )
-        if (createBody.typeCode.isBlank() || createBody.responsibleDept.isBlank()) {
-            _submitStatus.value = SubmitStatus.Error("请选择类型和处理部门")
-            onResult(false, "请选择类型和处理部门")
+        if (createBody.title.isBlank()) {
+            _submitStatus.value = SubmitStatus.Error("工单名称不能为空")
+            onResult(false, "工单名称不能为空")
             return
         }
-        if (createBody.controlLevel.isNullOrBlank()) {
-            _submitStatus.value = SubmitStatus.Error("请选择隐患等级")
-            onResult(false, "请选择隐患等级")
+        if (createBody.brief.isBlank()) {
+            _submitStatus.value = SubmitStatus.Error("需求说明不能为空")
+            onResult(false, "需求说明不能为空")
+            return
+        }
+        if (createBody.typeCode.isBlank() || createBody.responsibleDept.isBlank()) {
+            _submitStatus.value = SubmitStatus.Error("请选择类别和处理部门")
+            onResult(false, "请选择类别和处理部门")
             return
         }
 
-        val createResult = mobileWorkOrderRepo.create(createBody)
+        val attachmentFiles = mutableListOf<java.io.File>()
+        val allAttachments = getAllAttachments().take(9)
+        for (path in allAttachments.filterNotNull()) {
+            if (path.startsWith("http://") || path.startsWith("https://")) continue
+            val file = if (path.startsWith("content://")) {
+                copyUriToTempFile(context, android.net.Uri.parse(path))
+            } else {
+                java.io.File(path).takeIf { it.exists() }
+            }
+            if (file != null) attachmentFiles.add(file)
+        }
+
+        val createResult = mobileWorkOrderRepo.create(createBody, attachmentFiles)
         if (createResult.isFailure) {
             val msg = createResult.exceptionOrNull()?.message ?: "创建失败"
             _submitStatus.value = SubmitStatus.Error(msg)
@@ -785,25 +873,8 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
             return
         }
 
-        val allAttachments = getAllAttachments().take(9)
-        var uploadFailed = 0
-        for (path in allAttachments.filterNotNull()) {
-            if (path.startsWith("http://") || path.startsWith("https://")) continue
-            val file = if (path.startsWith("content://")) {
-                copyUriToTempFile(context, android.net.Uri.parse(path))
-            } else {
-                java.io.File(path).takeIf { it.exists() }
-            }
-            if (file == null) {
-                uploadFailed++
-                continue
-            }
-            val uploaded = mobileWorkOrderRepo.uploadAttachment(workOrderId, file).isSuccess
-            if (!uploaded) uploadFailed++
-        }
-
         _submitStatus.value = SubmitStatus.Success
-        val msg = if (uploadFailed > 0) "工单已创建，${uploadFailed} 个附件上传失败" else "工单提交成功"
+        val msg = if (attachmentFiles.isEmpty()) "工单提交成功" else "工单提交成功（含 ${attachmentFiles.size} 个附件）"
         ToastUtil.showCustomToast(context, msg)
         onResult(true, null)
     }

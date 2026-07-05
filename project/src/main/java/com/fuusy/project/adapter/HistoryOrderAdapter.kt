@@ -32,7 +32,7 @@ class HistoryOrderAdapter(
         binding.tvDesc.text = item.hiddenDangerDescription.orEmpty()
         binding.tvMetaId.text = item.id
 
-        val dept = item.submitDepartment ?: item.responsibleDepartment.orEmpty()
+        val dept = item.responsibleDepartment.orEmpty()
         binding.tvMetaUser.text = item.submitUser
         binding.tvMetaDept.text = dept
         binding.tvMetaTime.text = item.submitTime
@@ -119,7 +119,7 @@ class HistoryOrderAdapter(
 
     private fun footerText(item: WorkOrderItem): String = when (item.status) {
         WorkOrderStatus.PENDING -> "期望：${item.expectedCompleteTime ?: item.submitTime}"
-        WorkOrderStatus.PROCESSING -> "滞留：${item.stayDuration ?: "--"}"
+        WorkOrderStatus.PROCESSING -> "期望：${item.expectedCompleteTime ?: "--"}"
         WorkOrderStatus.COMPLETED -> "完成于 ${item.submitTime}"
         WorkOrderStatus.REJECT -> "↩ 撤回修改后重新提交"
         WorkOrderStatus.DRAFT -> "隶属项目：${item.projectName ?: "--"}"

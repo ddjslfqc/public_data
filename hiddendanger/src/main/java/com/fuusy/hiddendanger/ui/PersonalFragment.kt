@@ -17,6 +17,7 @@ import com.fuusy.common.base.BaseVmFragment
 import com.fuusy.hiddendanger.BR
 import com.fuusy.hiddendanger.R
 import com.fuusy.hiddendanger.databinding.FragmentPersonalBinding
+import com.fuusy.hiddendanger.util.AppDialogHelper
 import com.fuusy.hiddendanger.viewmodel.PersonalViewModel
 
 @Route(path = "/hiddendanger/PersonalFragment")
@@ -55,19 +56,26 @@ class PersonalFragment : BaseVmFragment<FragmentPersonalBinding, PersonalViewMod
 
         mViewModel.logout.observe(viewLifecycleOwner, Observer {
             if (it) {
-                showToast("退出登录成功")
-                ARouter.getInstance().build("/login/LoginActivity").navigation()
+                showToast("已退出登录")
+                ARouter.getInstance()
+                    .build("/login/LoginActivity")
+                    .withFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                    .navigation()
                 activity?.finish()
-            } else {
-                showToast("退出登录失败")
             }
         })
 
         setupMenuItems()
-        setupTopActions()
 
         mDataBinding.btnLogout.setOnClickListener {
-            mViewModel.logout()
+            AppDialogHelper.showConfirm(
+                context = requireContext(),
+                title = "退出登录",
+                message = "确定要退出当前账号吗？",
+                confirmText = "退出"
+            ) {
+                mViewModel.logout()
+            }
         }
 
         mViewModel.loadData()
@@ -107,9 +115,12 @@ class PersonalFragment : BaseVmFragment<FragmentPersonalBinding, PersonalViewMod
         bindMenu(
             binding = mDataBinding.menuSetting,
             icon = R.drawable.ic_personal_setting,
-            title = "设置"
+            title = "检查更新"
         ) {
-            showToast("设置即将上线")
+            com.fuusy.common.update.AppUpdateChecker.checkManually(
+                activity = requireActivity(),
+                smallIcon = R.drawable.ic_personal_setting
+            )
         }
     }
 
@@ -122,15 +133,6 @@ class PersonalFragment : BaseVmFragment<FragmentPersonalBinding, PersonalViewMod
         binding.ivIcon.setImageResource(icon)
         binding.tvTitle.text = title
         binding.rootMenuItem.setOnClickListener { onClick() }
-    }
-
-    private fun setupTopActions() {
-        mDataBinding.btnTopSetting.setOnClickListener {
-            showToast("设置即将上线")
-        }
-        mDataBinding.btnTopLink.setOnClickListener {
-            showToast("关联功能即将上线")
-        }
     }
 
     /** 预留系统状态栏高度，避免头像/功能菜单顶到屏幕最上方 */

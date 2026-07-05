@@ -30,7 +30,10 @@ import android.widget.TextView
 import android.content.Context
 import android.app.Dialog
 import android.view.View
+import android.graphics.Color
 import android.widget.LinearLayout
+import com.bigkoo.pickerview.builder.TimePickerBuilder
+import java.text.SimpleDateFormat
 
 @Route(path = "/hiddendanger/CreateWorkOrderActivity")
 class CreateWorkOrderActivity : BaseVmActivity<ActivityCreateWorkOrderBinding>() {
@@ -161,7 +164,12 @@ class CreateWorkOrderActivity : BaseVmActivity<ActivityCreateWorkOrderBinding>()
         }
 
         formAdapter = DynamicFormAdapter(mutableListOf(),
-            onSelectorClick = { formItem, _ -> showSelectorDialog(formItem) },
+            onSelectorClick = { formItem, _ ->
+                when (formItem.key) {
+                    "expectedCompletionTime" -> showDateTimePicker(formItem)
+                    else -> showSelectorDialog(formItem)
+                }
+            },
             onInputChanged = { key, value -> viewModel.updateFormItemValue(key, value) })
         mBinding.rvDynamicForm.apply {
             layoutManager = LinearLayoutManager(this@CreateWorkOrderActivity)
@@ -670,6 +678,74 @@ class CreateWorkOrderActivity : BaseVmActivity<ActivityCreateWorkOrderBinding>()
         android.util.Log.d("handleBackAction", "=== 处理返回操作结束 ===")
     }
 
+    private fun showDateTimePicker(formItem: DynamicFormAdapter.FormItem) {
+        val calendar = parseDateTime(formItem.value)
+        buildWheelDateTimePicker(
+            title = "选择期望完成时间",
+            calendar = calendar
+        ) { picked ->
+            val formatted = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                .format(picked.time)
+            viewModel.onSelectorChanged(formItem.key, formatted, formatted)
+        }.show()
+    }
+
+    private fun buildWheelDateTimePicker(
+        title: String,
+        calendar: Calendar,
+        onConfirm: (Calendar) -> Unit
+    ) = TimePickerBuilder(this) { date, _ ->
+        val picked = Calendar.getInstance().apply {
+            time = date
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        onConfirm(picked)
+    }
+        .setType(booleanArrayOf(true, true, true, true, true, false))
+        .setLabel("年", "月", "日", "时", "分", "")
+        .setCancelText("取消")
+        .setSubmitText("确定")
+        .setTitleText(title)
+        .setOutSideCancelable(true)
+        .isCyclic(true)
+        .setTitleColor(Color.BLACK)
+        .setSubmitColor(Color.parseColor("#1465EB"))
+        .setCancelColor(Color.parseColor("#666666"))
+        .setTitleBgColor(Color.WHITE)
+        .setBgColor(Color.WHITE)
+        .setDate(calendar)
+        .isCenterLabel(false)
+        .setTextColorCenter(Color.parseColor("#1465EB"))
+        .setTextColorOut(Color.parseColor("#999999"))
+        .setContentTextSize(20)
+        .setSubCalSize(14)
+        .setTitleSize(17)
+        .setLineSpacingMultiplier(2.2f)
+        .build()
+
+    private fun parseDateTime(raw: String): Calendar {
+        val calendar = Calendar.getInstance()
+        val value = raw.trim()
+        if (value.isBlank() || value == "请选择期望完成时间") return calendar
+        val patterns = listOf(
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd HH:mm",
+            "yyyy/MM/dd HH:mm"
+        )
+        for (pattern in patterns) {
+            try {
+                SimpleDateFormat(pattern, Locale.getDefault()).parse(value)?.let {
+                    calendar.time = it
+                    return calendar
+                }
+            } catch (_: Exception) {
+            }
+        }
+        return calendar
+    }
+
     private fun showSelectorDialog(formItem: DynamicFormAdapter.FormItem) {
         if (formItem.options.isNullOrEmpty()) {
             ToastUtil.showCustomToast(this, "暂无选项")
@@ -706,35 +782,11 @@ class CreateWorkOrderActivity : BaseVmActivity<ActivityCreateWorkOrderBinding>()
         val adapter = SimpleOptionAdapter(options = formItem.options,
             selectedValue = formItem.options.firstOrNull { it.value == formItem.value || it.label == formItem.value },
             onItemClick = { selectedOption ->
-                // 用 label 显示在 UI 上
-                val displayLabel = selectedOption.label
-                // 存 code 到 ViewModel，用于提交
-                viewModel.updateFormItemValue(formItem.key, selectedOption.value)
-                // 直接操作RecyclerView的ViewHolder，避免滚动
-                val currentItems = viewModel.formItemsLiveData.value?.toMutableList()
-                currentItems?.let { items ->
-                    val itemIndex = items.indexOfFirst { it.key == formItem.key }
-                    if (itemIndex != -1) {
-                        val updatedItem = items[itemIndex].copy(value = displayLabel)
-                        items[itemIndex] = updatedItem
-                        formAdapter.updateSingleItem(itemIndex, updatedItem)
-
-                        // 直接获取并更新ViewHolder，不触发滚动
-                        val holder =
-                            mBinding.rvDynamicForm.findViewHolderForAdapterPosition(itemIndex)
-                        holder?.let {
-                            when (it) {
-                                is DynamicFormAdapter.InputTextViewHolder -> it.updateValue(
-                                    displayLabel
-                                )
-
-                                is DynamicFormAdapter.SelectorViewHolder -> it.updateValue(
-                                    displayLabel
-                                )
-                            }
-                        }
-                    }
-                }
+                viewModel.onSelectorChanged(
+                    formItem.key,
+                    selectedOption.value,
+                    selectedOption.label
+                )
                 dialog.dismiss()
             })
 

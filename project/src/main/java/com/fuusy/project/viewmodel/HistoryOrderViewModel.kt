@@ -8,14 +8,12 @@ import com.fuusy.common.data.local.AppDatabase
 import com.fuusy.common.data.local.WorkOrderRepository
 import com.fuusy.common.data.WorkOrderItem
 import com.fuusy.common.data.WorkOrderStatus
+import com.fuusy.common.utils.LoadingStatus
+import com.fuusy.project.workorder.MobileWorkOrderRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
-import com.fuusy.project.bean.WorkOrderNetItem
-import com.fuusy.project.bean.WorkOrderListResponse
-import com.fuusy.project.bean.toWorkOrderItem
 import java.text.SimpleDateFormat
 import java.util.Locale
-import com.fuusy.common.utils.LoadingStatus
 
 class HistoryOrderViewModel(application: Application) : AndroidViewModel(application) {
     val orderList = MutableLiveData<List<WorkOrderItem>>()
@@ -31,6 +29,7 @@ class HistoryOrderViewModel(application: Application) : AndroidViewModel(applica
 
     private val db = AppDatabase.getInstance(application)
     private val repository = WorkOrderRepository(db)
+    private val mobileWorkOrderRepo = MobileWorkOrderRepository()
     private val gson = Gson()
 
     // 新增：全量数据缓存
@@ -64,34 +63,23 @@ class HistoryOrderViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
-    // 历史工单：只用网络数据
+    /** 历史工单：workorder-api.md §3.1 GET /mobile/workorder/list */
     fun fetchOrderListFromNet() {
         viewModelScope.launch {
-            try {
-                // 设置loading状态
-                loadingStatus.postValue(LoadingStatus.Loading)
-                
-                val projectRepo = com.fuusy.project.repo.ProjectNetRepo()
-                val result = projectRepo.getWorkOrderList()
-                if (result.isSuccess && result.getOrNull()?.code == 200 && result.getOrNull()?.data != null) {
-                    val items = result.getOrNull()?.data?.map { it.toWorkOrderItem() } ?: emptyList()
+            loadingStatus.postValue(LoadingStatus.Loading)
+            mobileWorkOrderRepo.list(null).fold(
+                onSuccess = { items ->
                     allOrders.clear()
                     allOrders.addAll(items)
-                    searchOrders() // 让筛选生效
-                    
-                    // 设置成功状态
+                    searchOrders()
                     loadingStatus.postValue(LoadingStatus.Success)
-                } else {
+                },
+                onFailure = { e ->
                     allOrders.clear()
                     searchOrders()
-                    loadingStatus.postValue(LoadingStatus.Error("获取工单列表失败"))
+                    loadingStatus.postValue(LoadingStatus.Error(e.message ?: "获取工单列表失败"))
                 }
-            } catch (e: Exception) {
-                println(e.stackTrace)
-                allOrders.clear()
-                searchOrders()
-                loadingStatus.postValue(LoadingStatus.Error(e.message ?: "网络请求失败"))
-            }
+            )
         }
     }
 
@@ -141,6 +129,7 @@ class HistoryOrderViewModel(application: Application) : AndroidViewModel(applica
                     || order.hiddenDangerName?.contains(key) == true
                     || order.hiddenDangerDescription?.contains(key)==true
                     || order.id?.contains(key)==true
+                    || order.workOrderNo?.contains(key) == true
                     || order.hiddenDangerCategory?.contains(key) == true
                     || order.responsiblePerson?.contains(key) == true
                     )

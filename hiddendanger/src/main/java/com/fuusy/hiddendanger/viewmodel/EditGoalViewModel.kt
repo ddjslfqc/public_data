@@ -11,8 +11,10 @@ import com.fuusy.hiddendanger.data.AlignableKr
 import com.fuusy.hiddendanger.data.CreateKrRequest
 import com.fuusy.hiddendanger.data.CreateObjectiveRequest
 import com.fuusy.hiddendanger.data.OkrDepartment
+import com.fuusy.hiddendanger.data.OkrObjective
 import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.data.OkrUser
+import com.fuusy.hiddendanger.data.toAlignableKrs
 import com.fuusy.hiddendanger.repository.OkrRepository
 import com.fuusy.hiddendanger.ui.model.GoalAlignType
 import com.fuusy.hiddendanger.ui.model.GoalKrEditItem
@@ -67,17 +69,29 @@ class EditGoalViewModel(application: Application) : AndroidViewModel(application
 
     fun refreshAlignableKrs() {
         viewModelScope.launch {
-            val deptId = if (alignType == GoalAlignType.DEPARTMENT) selectedDept?.id else null
-            val userId = if (alignType == GoalAlignType.SUPERVISOR) selectedUser?.id else null
-            repo.getAlignableKrs(deptId, userId).fold(
-                onSuccess = { list ->
-                    _alignableKrs.value = list
-                    if (selectedParentKr != null && list.none { it.id == selectedParentKr?.id }) {
-                        selectedParentKr = null
-                    }
-                },
-                onFailure = { _error.value = it.message }
-            )
+            when (alignType) {
+                GoalAlignType.DEPARTMENT -> {
+                    val deptId = selectedDept?.id ?: return@launch
+                    repo.getAlignObjectives(deptId = deptId, targetUserId = null).fold(
+                        onSuccess = { objectives -> applyAlignableList(objectives.toAlignableKrs()) },
+                        onFailure = { _error.value = it.message }
+                    )
+                }
+                GoalAlignType.SUPERVISOR -> {
+                    val userId = selectedUser?.id ?: return@launch
+                    repo.getAlignableKrs(userId).fold(
+                        onSuccess = { applyAlignableList(it) },
+                        onFailure = { _error.value = it.message }
+                    )
+                }
+            }
+        }
+    }
+
+    private fun applyAlignableList(list: List<AlignableKr>) {
+        _alignableKrs.value = list
+        if (selectedParentKr != null && list.none { it.id == selectedParentKr?.id }) {
+            selectedParentKr = null
         }
     }
 
@@ -98,15 +112,13 @@ class EditGoalViewModel(application: Application) : AndroidViewModel(application
             _error.value = "请至少填写一条关键结果"
             return
         }
-        val weightEach = 100 / filled.size
-        val remainder = 100 - weightEach * filled.size
         val currentUserId = UserIdProvider.userId
         val krRequests = filled.mapIndexed { index, item ->
             CreateKrRequest(
                 title = item.title.trim(),
-                targetValue = item.targetValue.toDoubleOrNull() ?: 0.0,
-                weight = weightEach + if (index == 0) remainder else 0,
-                unit = item.unit.trim().ifBlank { null },
+                targetValue = item.targetPercent.toDouble(),
+                weight = item.weight,
+                unit = GoalKrEditItem.UNIT_PERCENT,
                 sortOrder = index,
                 userId = item.assigneeUserId ?: currentUserId
             )

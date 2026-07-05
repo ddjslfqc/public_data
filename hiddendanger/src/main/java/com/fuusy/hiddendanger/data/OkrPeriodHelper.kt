@@ -28,12 +28,23 @@ object OkrPeriodHelper {
 
     fun formatPeriodRange(objective: OkrObjective?): String {
         if (objective == null) return ""
-        val start = objective.startDate.orEmpty()
-        val end = objective.endDate.orEmpty()
-        if (start.isNotBlank() && end.isNotBlank()) {
-            return "${objective.periodLabel.orEmpty()} $start — $end".trim()
-        }
-        return objective.periodLabel.orEmpty()
+        return formatShortDateRange(objective.startDate, objective.endDate)
+            .ifBlank { objective.periodLabel.orEmpty() }
+    }
+
+    private fun formatShortDateRange(startDate: String?, endDate: String?): String {
+        val start = toShortDate(startDate) ?: return ""
+        val end = toShortDate(endDate) ?: return ""
+        return "$start—$end"
+    }
+
+    private fun toShortDate(iso: String?): String? {
+        if (iso.isNullOrBlank() || iso.length < 10) return null
+        val parts = iso.substring(0, 10).split("-")
+        if (parts.size != 3) return null
+        val month = parts[1].trimStart('0').toIntOrNull() ?: return null
+        val day = parts[2].trimStart('0').toIntOrNull() ?: return null
+        return "${month}月${day}日"
     }
 
     fun krProgressPercent(kr: OkrKeyResult): Int {
@@ -56,6 +67,13 @@ object OkrPeriodHelper {
         0 -> "待审批"
         1 -> "已通过"
         2 -> "已拒绝"
+        else -> null
+    }
+
+    fun progressApprovalLabel(status: Int?): String? = when (status) {
+        0 -> "进度待审批"
+        1 -> "进度已通过"
+        2 -> "进度已拒绝"
         else -> null
     }
 

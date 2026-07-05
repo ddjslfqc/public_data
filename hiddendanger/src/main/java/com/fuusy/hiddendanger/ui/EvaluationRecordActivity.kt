@@ -112,7 +112,6 @@ private object EvaluationRecordMockData {
             hiddenDangerName = name,
             hiddenDangerDescription = "巡检现场发现的设备维护工单，已完成处理。",
             hiddenDangerCategory = "设备安全隐患",
-            hiddenDangerLevel = "一般隐患",
             submitUser = "常伟思",
             responsiblePerson = "常伟思",
             submitTime = "2026-06-15 10:30",

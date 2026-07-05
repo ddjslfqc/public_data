@@ -65,27 +65,6 @@
                     android:textColor="#686D79"
                     android:textSize="12sp"
                     tools:text="软件研发部 丨研发工程师 丨 EMP001" />
-
-                <ImageView
-                    android:id="@+id/btn_top_link"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_marginEnd="48dp"
-                    android:background="@drawable/bg_personal_icon_btn"
-                    android:contentDescription="@null"
-                    android:padding="9dp"
-                    android:src="@drawable/ic_personal_link" />
-
-                <ImageView
-                    android:id="@+id/btn_top_setting"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_alignParentEnd="true"
-                    android:background="@drawable/bg_personal_icon_btn"
-                    android:contentDescription="@null"
-                    android:padding="9dp"
-                    android:src="@drawable/ic_personal_setting_small" />
             </RelativeLayout>
 
             <!-- 统计卡片 -->

@@ -444,25 +444,15 @@ class CloudControlActivity : BaseVmActivity<ActivityCloudControlBinding>() {
      */
     private fun releasePlayerAsync(player: VLCPlayer) {
         // 1. 主线程解绑 Surface，判空
-        runOnUiThread {
+        lifecycleScope.launch(Dispatchers.Main) {
             try {
-                if (textureView != null && textureView.isAvailable) {
+                if (textureView.isAvailable) {
                     player.setVideoSurface(null)
                 }
             } catch (e: Exception) {
                 Log.e("VLCPlayer", "releasePlayerAsync: setVideoSurface null error: ${e.message}")
             }
-        }
-        // 2. 子线程释放 native 资源
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                withTimeout(5000) { // 5秒超时
-                    player.safeStop()
-                    player.safeRelease()
-                }
-            } catch (e: Exception) {
-                Log.e("VLCPlayer", "releasePlayerAsync: 异步释放异常: ${e.message}")
-            }
+            player.safeRelease()
         }
     }
 

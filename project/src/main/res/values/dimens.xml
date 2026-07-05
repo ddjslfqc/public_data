@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="wo_filter_tab_height">32dp</dimen>
+    <dimen name="wo_filter_tab_radius">16dp</dimen>
+    <dimen name="wo_filter_tab_padding_h">14dp</dimen>
+</resources>

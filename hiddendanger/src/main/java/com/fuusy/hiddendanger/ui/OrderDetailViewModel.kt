@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.fuusy.common.data.WorkOrderItem
+import com.fuusy.common.data.WorkOrderOptions
 import com.fuusy.common.data.WorkOrderStatus
 import com.fuusy.project.workorder.MobileWorkOrderRepository
 import kotlinx.coroutines.launch
@@ -28,8 +29,6 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
     val metaCode = MutableLiveData<String>()
     val metaDept = MutableLiveData<String>()
     val metaPriority = MutableLiveData<String>()
-    val metaStay = MutableLiveData<String>()
-    val showMetaStay = MutableLiveData(false)
 
     val basicCode = MutableLiveData<String>()
     val basicName = MutableLiveData<String>()
@@ -39,16 +38,15 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
     val basicHandler = MutableLiveData<String>()
 
     val submitUserName = MutableLiveData<String>()
-    val submitUserDept = MutableLiveData<String>()
     val dispatchTime = MutableLiveData<String>()
     val projectName = MutableLiveData<String>()
     val expectedCompleteTime = MutableLiveData<String>()
 
     val desc = MutableLiveData<String>()
-    val remark = MutableLiveData<String>()
 
     val rejectReason = MutableLiveData<String>()
     val showRejectTip = MutableLiveData(false)
+    val hasOperationRecords = MutableLiveData(false)
 
     fun loadDetail(id: String) {
         viewModelScope.launch {
@@ -81,6 +79,34 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    fun claim(workOrderId: String, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            _loading.value = true
+            repo.claim(workOrderId).fold(
+                onSuccess = {
+                    loadDetail(workOrderId)
+                    onResult(true, null)
+                },
+                onFailure = { onResult(false, it.message) }
+            )
+            _loading.value = false
+        }
+    }
+
+    fun reject(workOrderId: String, reason: String, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            _loading.value = true
+            repo.reject(workOrderId, reason).fold(
+                onSuccess = {
+                    loadDetail(workOrderId)
+                    onResult(true, null)
+                },
+                onFailure = { onResult(false, it.message) }
+            )
+            _loading.value = false
+        }
+    }
+
     fun deleteAttachment(workOrderId: String, attachmentId: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             _loading.value = true
@@ -103,26 +129,22 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
 
         metaCode.value = item.workOrderNo?.takeIf { it.isNotBlank() } ?: item.id
         metaDept.value = item.responsibleDepartment?.takeIf { it.isNotBlank() } ?: "--"
-        metaPriority.value = item.priority.orEmpty()
-        val stay = item.stayDuration?.takeIf { it.isNotBlank() }
-        showMetaStay.value = item.status == WorkOrderStatus.PROCESSING && stay != null
-        metaStay.value = stay?.let { "滞留 $it" }.orEmpty()
+        val priorityLabel = formatPriority(item.priority)
+        metaPriority.value = priorityLabel
 
         basicCode.value = item.workOrderNo?.takeIf { it.isNotBlank() } ?: item.id
         basicName.value = formatEmptyValue(item.hiddenDangerName)
         basicType.value = formatEmptyValue(item.workOrderType ?: item.hiddenDangerCategory)
-        basicPriority.value = formatEmptyValue(item.priority)
+        basicPriority.value = formatEmptyValue(priorityLabel)
         basicHandlerDept.value = formatEmptyValue(item.responsibleDepartment)
         basicHandler.value = formatHandler(item.responsiblePerson)
 
         submitUserName.value = formatEmptyValue(item.submitUser)
-        submitUserDept.value = formatEmptyValue(item.submitDepartment)
         dispatchTime.value = formatEmptyValue(item.submitTime)
         projectName.value = formatEmptyValue(item.projectName)
         expectedCompleteTime.value = formatEmptyValue(item.expectedCompleteTime)
 
         desc.value = formatEmptyValue(item.hiddenDangerDescription)
-        remark.value = "暂无备注"
 
         val rejected = item.status == WorkOrderStatus.REJECT
         showRejectTip.value = rejected
@@ -131,11 +153,21 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
         } else {
             ""
         }
+        hasOperationRecords.value = item.operationRecords.isNotEmpty()
+    }
+
+    fun operationRecords(): List<com.fuusy.common.data.WorkOrderOperationRecord> =
+        _workOrder.value?.operationRecords.orEmpty()
+
+    private fun formatPriority(code: String?): String {
+        if (code.isNullOrBlank()) return ""
+        val label = WorkOrderOptions.priorityCodeToLabel(code)
+        return if (label.isNotBlank() && label != code) "$code $label" else code
     }
 
     private fun formatHandler(person: String?): String {
-        if (person.isNullOrBlank() || person == "公共") return "公开抢单"
-        return person
+        if (WorkOrderOptions.isPublicGrabPerson(person)) return "公开抢单"
+        return person.orEmpty()
     }
 
     private fun formatEmptyValue(value: String?): String {

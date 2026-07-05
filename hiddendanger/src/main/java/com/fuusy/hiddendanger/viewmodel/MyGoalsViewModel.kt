@@ -39,10 +39,17 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
                 onSuccess = { _myGoal.value = it },
                 onFailure = { _error.value = it.message ?: "加载失败" }
             )
+            var krCount = 0
+            var progressCount = 0
             repo.getPendingKrs().fold(
-                onSuccess = { _pendingCount.value = it.size },
-                onFailure = { /* 非关键 */ }
+                onSuccess = { krPending -> krCount = krPending.size },
+                onFailure = { krCount = 0 }
             )
+            repo.getPendingUpdateRecords().fold(
+                onSuccess = { progressPending -> progressCount = progressPending.size },
+                onFailure = { progressCount = 0 }
+            )
+            _pendingCount.value = krCount + progressCount
             _loading.value = false
         }
     }

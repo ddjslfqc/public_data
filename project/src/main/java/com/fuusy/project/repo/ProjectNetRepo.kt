@@ -2,12 +2,9 @@ package com.fuusy.project.repo
 
 import android.os.Parcelable
 import com.fuusy.common.network.ServerConfig
-import com.fuusy.project.bean.WorkOrderListResponse
 import com.fuusy.project.ui.model.VideoChannelInfo
 import com.fuusy.project.network.ApiService
 import kotlinx.parcelize.Parcelize
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.POST
 import retrofit2.http.Body
 import android.util.Log
@@ -19,15 +16,6 @@ class ProjectNetRepo {
 
     companion object {
         private const val TAG = "VideoList"
-    }
-
-    suspend fun getWorkOrderList(): Result<WorkOrderListResponse> {
-        return try {
-            val resp = projectApi.getWorkOrderList()
-            Result.success(resp)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
     }
 
     suspend fun fetchVideoList(): Result<List<VideoInfo>> {

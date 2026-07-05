@@ -1,6 +1,7 @@
 package com.fuusy.service.repo
 
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -34,7 +35,11 @@ object DbHelper {
      */
     fun insertUserInfo(context: Context, user: LoginResp) {
         GlobalScope.launch(Dispatchers.IO) {
-            UserDB.get(context).userDao.insertUser(user)
+            try {
+                UserDB.get(context).userDao.insertUser(user.sanitizeForDb())
+            } catch (e: Exception) {
+                Log.e("DbHelper", "insertUserInfo failed: userId=${user.id}", e)
+            }
         }
     }
 }

@@ -12,7 +12,13 @@ object WorkOrderOptions {
         "市场部", "产品部", "软件研发部", "硬件研发部", "交付部", "售后部"
     )
 
-    /** 处理人 */
+    /** 未指定处理人时提交，表示公开抢单 */
+    const val PUBLIC_GRAB_PERSON_ID = "0"
+
+    fun isPublicGrabPerson(id: String?): Boolean =
+        id.isNullOrBlank() || id == PUBLIC_GRAB_PERSON_ID || id == "公共"
+
+    /** 处理人（Mock 数据） */
     val handlers = listOf("张家豪", "王健", "李阳", "熊洋", "公共")
 
     /** 优先级 */
@@ -40,10 +46,10 @@ object WorkOrderOptions {
     }
 
     fun priorityCodeToLabel(code: String?): String = when (code) {
+        "P1" -> "一般隐患"
+        "P2" -> "较大隐患"
+        "P3" -> "重大隐患"
         "P0" -> "非常紧急"
-        "P1" -> "较紧急"
-        "P2" -> "一般"
-        "P3" -> "较低"
         else -> code.orEmpty()
     }
 

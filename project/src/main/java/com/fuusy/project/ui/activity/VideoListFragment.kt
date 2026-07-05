@@ -9,16 +9,27 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.view.ViewOutlineProvider
+import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.fuusy.project.R
+import com.fuusy.project.ui.FlvThumbnailLoader
 import com.fuusy.project.databinding.FragmentVideoListBinding
 import com.fuusy.project.repo.ProjectNetRepo
 import com.fuusy.project.repo.VideoInfo
 import com.fuusy.project.ui.adapter.VideoListAdapter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class VideoListFragment : Fragment() {
 
@@ -45,6 +56,7 @@ class VideoListFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        applyStatusBarPadding()
         setupRecyclerView()
         setupSwipeRefresh()
         setupTabs()
@@ -54,8 +66,29 @@ class VideoListFragment : Fragment() {
         loadVideoList()
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (!isHidden) {
+            FlvThumbnailLoader.setPaused(false)
+        }
+    }
+
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
+        FlvThumbnailLoader.setPaused(hidden)
+        if (hidden) {
+            FlvThumbnailLoader.cancelAll()
+        }
+    }
+
+    override fun onPause() {
+        FlvThumbnailLoader.setPaused(true)
+        super.onPause()
+    }
+
     private fun setupRecyclerView() {
         adapter = VideoListAdapter(
+            scope = viewLifecycleOwner.lifecycleScope,
             onItemClick = { videoInfo -> openCloudControl(videoInfo) },
             onActionClick = { videoInfo ->
                 when (videoInfo.type) {
@@ -66,6 +99,11 @@ class VideoListFragment : Fragment() {
         )
         binding.rvVideoList.layoutManager = LinearLayoutManager(requireContext())
         binding.rvVideoList.adapter = adapter
+        binding.rvVideoList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                FlvThumbnailLoader.setPaused(newState != RecyclerView.SCROLL_STATE_IDLE)
+            }
+        })
     }
 
     private fun setupSwipeRefresh() {
@@ -115,30 +153,51 @@ class VideoListFragment : Fragment() {
     }
 
     private fun updateTabStyle() {
-        val selectedBg = R.drawable.bg_tab_selected
-        val normalBg = R.drawable.bg_tab_normal
-        val alarmNormalBg = R.drawable.bg_tab_alarm
-        val alarmSelectedBg = R.drawable.bg_tab_alarm_selected
-        val selectedColor = ContextCompat.getColor(requireContext(), R.color.color_ffffff)
-        val normalColor = ContextCompat.getColor(requireContext(), R.color.home_text_secondary)
-        val alarmColor = ContextCompat.getColor(requireContext(), R.color.home_red)
+        val normalBgColor = Color.parseColor("#F3F4F6")
+        val normalTextColor = ContextCompat.getColor(requireContext(), R.color.home_text_normal)
+        val selectedTextColor = ContextCompat.getColor(requireContext(), R.color.color_ffffff)
+        val cornerRadiusPx = resources.getDimension(R.dimen.wo_filter_tab_radius)
+        val alarmUnselectedTextColor = ContextCompat.getColor(requireContext(), R.color.home_red)
 
-        binding.tabAll.apply {
-            setBackgroundResource(if (currentFilter == FilterType.ALL) selectedBg else normalBg)
-            setTextColor(if (currentFilter == FilterType.ALL) selectedColor else normalColor)
+        val tabs = listOf(
+            binding.tabAll to FilterType.ALL,
+            binding.tabOnline to FilterType.ONLINE,
+            binding.tabAlarm to FilterType.ALARM,
+            binding.tabOffline to FilterType.OFFLINE
+        )
+        tabs.forEach { (tab, type) ->
+            val selected = currentFilter == type
+            val bgColor = if (selected) {
+                selectedTabColor(type)
+            } else {
+                if (type == FilterType.ALARM) Color.parseColor("#14EB1919") else normalBgColor
+            }
+            applyTabBackground(tab, bgColor, cornerRadiusPx)
+            tab.setTextColor(
+                when {
+                    selected -> selectedTextColor
+                    type == FilterType.ALARM -> alarmUnselectedTextColor
+                    else -> normalTextColor
+                }
+            )
         }
-        binding.tabOnline.apply {
-            setBackgroundResource(if (currentFilter == FilterType.ONLINE) selectedBg else normalBg)
-            setTextColor(if (currentFilter == FilterType.ONLINE) selectedColor else normalColor)
+    }
+
+    private fun applyTabBackground(tab: TextView, color: Int, cornerRadiusPx: Float) {
+        tab.background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = cornerRadiusPx
+            setColor(color)
         }
-        binding.tabAlarm.apply {
-            setBackgroundResource(if (currentFilter == FilterType.ALARM) alarmSelectedBg else alarmNormalBg)
-            setTextColor(if (currentFilter == FilterType.ALARM) selectedColor else alarmColor)
-        }
-        binding.tabOffline.apply {
-            setBackgroundResource(if (currentFilter == FilterType.OFFLINE) selectedBg else normalBg)
-            setTextColor(if (currentFilter == FilterType.OFFLINE) selectedColor else normalColor)
-        }
+        tab.clipToOutline = true
+        tab.outlineProvider = ViewOutlineProvider.BACKGROUND
+    }
+
+    private fun selectedTabColor(type: FilterType): Int = when (type) {
+        FilterType.ALL -> ContextCompat.getColor(requireContext(), R.color.home_blue)
+        FilterType.ONLINE -> Color.parseColor("#00AA60")
+        FilterType.ALARM -> ContextCompat.getColor(requireContext(), R.color.home_red)
+        FilterType.OFFLINE -> Color.parseColor("#898FA0")
     }
 
     private fun applyFilter() {
@@ -151,12 +210,7 @@ class VideoListFragment : Fragment() {
         val filtered = if (searchQuery.isEmpty()) {
             filteredByTab
         } else {
-            filteredByTab.filter { video ->
-                video.show_name?.contains(searchQuery, ignoreCase = true) == true ||
-                    video.location?.contains(searchQuery, ignoreCase = true) == true ||
-                    video.channel_label?.contains(searchQuery, ignoreCase = true) == true ||
-                    video.danger_label?.contains(searchQuery, ignoreCase = true) == true
-            }
+            filteredByTab.filter { it.matchesSearch(searchQuery) }
         }
         Log.d(TAG, "筛选结果: tab=$currentFilter, search=$searchQuery, count=${filtered.size}")
         adapter.submitList(filtered)
@@ -169,7 +223,9 @@ class VideoListFragment : Fragment() {
             binding.swipeRefresh.isRefreshing = true
         }
         viewLifecycleOwner.lifecycleScope.launch {
-            val result = ProjectNetRepo().fetchVideoList()
+            val result = withContext(Dispatchers.IO) {
+                ProjectNetRepo().fetchVideoList()
+            }
             binding.swipeRefresh.isRefreshing = false
             allVideos = if (result.isSuccess) {
                 result.getOrNull().orEmpty()
@@ -180,10 +236,10 @@ class VideoListFragment : Fragment() {
             if (allVideos.isEmpty() && result.isSuccess) {
                 showToast("暂无视频数据")
             }
-            logVideoList(allVideos)
             updateTabCounts()
             updateTabStyle()
             applyFilter()
+            launch(Dispatchers.Default) { logVideoList(allVideos) }
         }
     }
 
@@ -199,12 +255,24 @@ class VideoListFragment : Fragment() {
         }
     }
 
+    private fun applyStatusBarPadding() {
+        val extraTopPx = (8 * resources.displayMetrics.density).toInt()
+        ViewCompat.setOnApplyWindowInsetsListener(binding.topArea) { view, insets ->
+            val statusBarTop = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            view.updatePadding(top = statusBarTop + extraTopPx)
+            insets
+        }
+        ViewCompat.requestApplyInsets(binding.topArea)
+    }
+
     private fun showToast(msg: String) {
         Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
     }
 
     private fun openCloudControl(videoInfo: VideoInfo) {
         Log.d(TAG, "打开视频: name=${videoInfo.show_name}, path=${videoInfo.videoPath}")
+        FlvThumbnailLoader.setPaused(true)
+        FlvThumbnailLoader.cancelAll()
         val intent = Intent(requireContext(), CloudControlActivity::class.java).apply {
             putExtra("streamUrl", videoInfo.videoPath)
             putExtra("videoPath", videoInfo.videoPath)
@@ -217,6 +285,7 @@ class VideoListFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        FlvThumbnailLoader.cancelAll()
         super.onDestroyView()
         _binding = null
     }
@@ -226,4 +295,10 @@ class VideoListFragment : Fragment() {
 
         fun newInstance() = VideoListFragment()
     }
+}
+
+/** 按摄像头名称、位置、通道名搜索（不含隐患类型标签） */
+private fun VideoInfo.matchesSearch(query: String): Boolean {
+    val fields = listOfNotNull(show_name, location, channel_label)
+    return fields.any { it.contains(query, ignoreCase = true) }
 }

@@ -1,12 +1,15 @@
 package com.fuusy.project.ui.activity
 
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewOutlineProvider
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -36,6 +39,8 @@ class WorkOrderListFragment : Fragment() {
 
     private enum class FilterType(val status: WorkOrderStatus?) {
         ALL(null),
+        /** 与首页「待处理工单」一致：待提交 / 待认领 / 处理中 / 待评价 */
+        ACTIVE(null),
         DRAFT(WorkOrderStatus.DRAFT),
         PENDING(WorkOrderStatus.PENDING),
         REJECT(WorkOrderStatus.REJECT),
@@ -43,6 +48,8 @@ class WorkOrderListFragment : Fragment() {
         EVAL(WorkOrderStatus.EVAL),
         COMPLETED(WorkOrderStatus.COMPLETED)
     }
+
+    private var pendingShowActive = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -71,7 +78,21 @@ class WorkOrderListFragment : Fragment() {
         setupFab()
         setupStatClicks()
         observeViewModel()
+        updateTabStyle()
         reload()
+        if (arguments?.getBoolean(ARG_SHOW_ACTIVE_PENDING) == true || pendingShowActive) {
+            pendingShowActive = false
+            switchTab(FilterType.ACTIVE)
+        }
+    }
+
+    /** 从首页「待处理工单 · 查看更多」进入时调用 */
+    fun showActivePendingOrders() {
+        if (_binding == null) {
+            pendingShowActive = true
+            return
+        }
+        switchTab(FilterType.ACTIVE)
     }
 
     override fun onResume() {
@@ -81,12 +102,15 @@ class WorkOrderListFragment : Fragment() {
 
     private fun reload() {
         viewModel.refreshTabCounts()
-        viewModel.load(currentFilter.status)
+        when (currentFilter) {
+            FilterType.ACTIVE -> viewModel.load(null)
+            else -> viewModel.load(currentFilter.status)
+        }
     }
 
     private fun observeViewModel() {
         viewModel.orders.observe(viewLifecycleOwner) { list ->
-            displayOrders = list
+            displayOrders = applyStatusFilter(list)
             applySearchFilter()
         }
         viewModel.allForCount.observe(viewLifecycleOwner) { list ->
@@ -142,8 +166,18 @@ class WorkOrderListFragment : Fragment() {
     private fun switchTab(filter: FilterType) {
         currentFilter = filter
         updateTabStyle()
-        viewModel.load(filter.status)
+        when (filter) {
+            FilterType.ACTIVE -> viewModel.load(null)
+            else -> viewModel.load(filter.status)
+        }
     }
+
+    private fun applyStatusFilter(list: List<com.fuusy.common.data.WorkOrderItem>): List<com.fuusy.common.data.WorkOrderItem> =
+        when (currentFilter) {
+            FilterType.ACTIVE -> list.filter { it.status in ACTIVE_PENDING_STATUSES }
+            FilterType.ALL -> list
+            else -> list.filter { it.status == currentFilter.status }
+        }
 
     private fun updateTabCounts() {
         val tabs = listOf(
@@ -166,6 +200,7 @@ class WorkOrderListFragment : Fragment() {
 
     private fun tabLabel(type: FilterType): String = when (type) {
         FilterType.ALL -> "全部"
+        FilterType.ACTIVE -> "待处理"
         FilterType.DRAFT -> "待提交"
         FilterType.PENDING -> "待认领"
         FilterType.REJECT -> "驳回"
@@ -182,9 +217,10 @@ class WorkOrderListFragment : Fragment() {
     }
 
     private fun updateTabStyle() {
-        val normalBg = R.drawable.bg_tab_normal
-        val normalColor = ContextCompat.getColor(requireContext(), R.color.home_text_normal)
-        val white = ContextCompat.getColor(requireContext(), R.color.color_ffffff)
+        val normalColor = Color.parseColor("#F3F4F6")
+        val normalTextColor = ContextCompat.getColor(requireContext(), R.color.home_text_normal)
+        val selectedTextColor = ContextCompat.getColor(requireContext(), R.color.color_ffffff)
+        val cornerRadiusPx = resources.getDimension(R.dimen.wo_filter_tab_radius)
 
         val tabs = listOf(
             binding.tabAll to FilterType.ALL,
@@ -196,36 +232,37 @@ class WorkOrderListFragment : Fragment() {
             binding.tabCompleted to FilterType.COMPLETED
         )
         tabs.forEach { (tab, type) ->
-            val selected = currentFilter == type
-            if (selected) {
-                if (type == FilterType.ALL) {
-                    tab.setBackgroundResource(R.drawable.bg_tab_selected)
-                    tab.setTextColor(white)
-                } else {
-                    tab.background = selectedTabDrawable(type)
-                    tab.setTextColor(white)
-                }
-            } else {
-                tab.setBackgroundResource(normalBg)
-                tab.setTextColor(normalColor)
+            val selected = when (currentFilter) {
+                FilterType.ACTIVE -> type == FilterType.ALL
+                else -> currentFilter == type
             }
+            applyTabBackground(
+                tab = tab,
+                color = if (selected) selectedTabColor(type) else normalColor,
+                cornerRadiusPx = cornerRadiusPx
+            )
+            tab.setTextColor(if (selected) selectedTextColor else normalTextColor)
         }
     }
 
-    private fun selectedTabDrawable(type: FilterType): android.graphics.drawable.GradientDrawable {
-        val color = when (type) {
-            FilterType.ALL -> android.graphics.Color.parseColor("#1465EB")
-            FilterType.DRAFT -> android.graphics.Color.parseColor("#898FA0")
-            FilterType.PENDING -> android.graphics.Color.parseColor("#F97316")
-            FilterType.REJECT -> android.graphics.Color.parseColor("#EB1919")
-            FilterType.PROCESSING -> android.graphics.Color.parseColor("#6366F1")
-            FilterType.EVAL -> android.graphics.Color.parseColor("#8B5CF6")
-            FilterType.COMPLETED -> android.graphics.Color.parseColor("#00AA60")
-        }
-        return android.graphics.drawable.GradientDrawable().apply {
-            cornerRadius = dp(16).toFloat()
+    private fun applyTabBackground(tab: TextView, color: Int, cornerRadiusPx: Float) {
+        tab.background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = cornerRadiusPx
             setColor(color)
         }
+        tab.clipToOutline = true
+        tab.outlineProvider = ViewOutlineProvider.BACKGROUND
+    }
+
+    private fun selectedTabColor(type: FilterType): Int = when (type) {
+        FilterType.ALL, FilterType.ACTIVE -> ContextCompat.getColor(requireContext(), R.color.home_blue)
+        FilterType.DRAFT -> Color.parseColor("#898FA0")
+        FilterType.PENDING -> Color.parseColor("#F97316")
+        FilterType.REJECT -> Color.parseColor("#EB1919")
+        FilterType.PROCESSING -> Color.parseColor("#6366F1")
+        FilterType.EVAL -> Color.parseColor("#8B5CF6")
+        FilterType.COMPLETED -> Color.parseColor("#00AA60")
     }
 
     private fun applyStatusBarPadding() {
@@ -237,13 +274,6 @@ class WorkOrderListFragment : Fragment() {
         }
         ViewCompat.requestApplyInsets(binding.topArea)
     }
-
-    private fun dp(value: Int): Int =
-        TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            value.toFloat(),
-            resources.displayMetrics
-        ).toInt()
 
     private fun applySearchFilter() {
         val key = binding.etSearch.text?.toString().orEmpty()
@@ -265,6 +295,20 @@ class WorkOrderListFragment : Fragment() {
     }
 
     companion object {
-        fun newInstance(): WorkOrderListFragment = WorkOrderListFragment()
+        private const val ARG_SHOW_ACTIVE_PENDING = "show_active_pending"
+
+        val ACTIVE_PENDING_STATUSES = setOf(
+            WorkOrderStatus.PENDING,
+            WorkOrderStatus.PROCESSING,
+            WorkOrderStatus.DRAFT,
+            WorkOrderStatus.EVAL
+        )
+
+        fun newInstance(showActivePending: Boolean = false): WorkOrderListFragment =
+            WorkOrderListFragment().apply {
+                arguments = Bundle().apply {
+                    putBoolean(ARG_SHOW_ACTIVE_PENDING, showActivePending)
+                }
+            }
     }
 }

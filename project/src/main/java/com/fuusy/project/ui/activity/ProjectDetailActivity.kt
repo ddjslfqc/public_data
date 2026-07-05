@@ -8,7 +8,6 @@ import androidx.core.view.GravityCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.room.Room
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.google.android.material.navigation.NavigationBarView
 import com.alibaba.android.arouter.launcher.ARouter
@@ -17,6 +16,7 @@ import com.fuusy.common.support.Constants
 import com.fuusy.project.R
 import com.fuusy.project.adapter.ProjectItemAdapter
 import com.fuusy.project.repo.VideoInfo
+import com.fuusy.project.ui.FlvThumbnailLoader
 import com.fuusy.project.bean.AppDatabase
 import com.fuusy.project.bean.ProjectItem
 import com.fuusy.project.databinding.ActivityProjectDetailContainerBinding
@@ -45,12 +45,24 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
     private val TAG_PERSONAL = "personal_fragment"
 
     override fun initData(savedInstanceState: Bundle?) {
+        FlvThumbnailLoader.init(applicationContext)
         getSelectedProjectsFromIntent()
         initFragments(savedInstanceState)
         initBottomNavigation()
         initClickListeners()
         initDrawer()
         switchToFragment(homeFragment)
+    }
+
+    override fun onStop() {
+        FlvThumbnailLoader.setPaused(true)
+        FlvThumbnailLoader.cancelAll()
+        super.onStop()
+    }
+
+    override fun onDestroy() {
+        FlvThumbnailLoader.release()
+        super.onDestroy()
     }
 
     private fun getSelectedProjectsFromIntent() {
@@ -77,10 +89,7 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
             Log.d("ProjectSwitch", "处理项目切换: ${selectedProject.item} (${selectedProject.itemName})")
             lifecycleScope.launch {
                 withContext(Dispatchers.IO) {
-                    val db = Room.databaseBuilder(
-                        applicationContext,
-                        AppDatabase::class.java, "app_database"
-                    ).build()
+                    val db = AppDatabase.getInstance(applicationContext)
                     val allProjects = db.projectItemDao().getAll()
                     val updatedList =
                         allProjects.map { it.copy(isSelected = (it.item == selectedProject.item && it.device == selectedProject.device)) }
@@ -137,8 +146,12 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
         selectBottomTab(R.id.navigation_video)
     }
 
-    fun switchToWorkOrderTab() {
+    /** 切到工单 Tab；[showActivePending] 为 true 时展示与首页「待处理工单」一致的列表 */
+    fun switchToWorkOrderTab(showActivePending: Boolean = false) {
         selectBottomTab(R.id.navigation_work_order)
+        if (showActivePending) {
+            (workOrderFragment as? WorkOrderListFragment)?.showActivePendingOrders()
+        }
     }
 
     private fun selectBottomTab(itemId: Int) {
@@ -146,6 +159,13 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
         bottomNav.setOnItemSelectedListener(null)
         bottomNav.selectedItemId = itemId
         bottomNav.setOnItemSelectedListener(bottomNavListener())
+        // selectedItemId 在 listener 为 null 时不会触发切换，需显式切 Fragment
+        when (itemId) {
+            R.id.navigation_home -> switchToFragment(homeFragment)
+            R.id.navigation_video -> showVideoFragment()
+            R.id.navigation_work_order -> showWorkOrderFragment()
+            R.id.navigation_profile -> showPersonalFragment()
+        }
     }
 
     private fun bottomNavListener() = NavigationBarView.OnItemSelectedListener { item ->
@@ -223,11 +243,9 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
         }
 
         lifecycleScope.launch {
-            val db = Room.databaseBuilder(
-                applicationContext,
-                AppDatabase::class.java, "app_database"
-            ).build()
-            val allProjects = db.projectItemDao().getAll()
+            val allProjects = withContext(Dispatchers.IO) {
+                AppDatabase.getInstance(applicationContext).projectItemDao().getAll()
+            }
             drawerProjectAdapter.setItems(allProjects)
             val selected = allProjects.filter { it.isSelected }
             if (selected.isNotEmpty()) {
@@ -256,7 +274,15 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
         } else {
             transaction.show(target)
         }
-        transaction.commitNow()
+        transaction.commit()
+
+        if (currentFragment === videoFragment && target !== videoFragment) {
+            FlvThumbnailLoader.setPaused(true)
+            FlvThumbnailLoader.cancelAll()
+        }
+        if (tag == TAG_VIDEO) {
+            FlvThumbnailLoader.setPaused(false)
+        }
 
         when (tag) {
             TAG_VIDEO -> videoFragment = target as? VideoListFragment
@@ -265,11 +291,8 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
         }
         currentFragment = target
 
-        val topBar = findViewById<ConstraintLayout>(R.id.topBar)
-        when (target) {
-            homeFragment, personalFragment -> topBar?.visibility = View.GONE
-            else -> topBar?.visibility = View.VISIBLE
-        }
+        // topBar 内容已隐藏，各 Tab Fragment 自行处理状态栏间距
+        findViewById<ConstraintLayout>(R.id.topBar)?.visibility = View.GONE
     }
 
     private fun switchToFragment(fragment: Fragment) {

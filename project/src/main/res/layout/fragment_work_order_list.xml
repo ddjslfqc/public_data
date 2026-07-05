@@ -71,98 +71,51 @@
 
                 <TextView
                     android:id="@+id/tab_all"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
-                    android:background="@drawable/bg_tab_selected"
-                    android:gravity="center"
-                    android:paddingHorizontal="14dp"
-                    android:text="全部 12"
-                    android:textColor="@color/color_ffffff"
-                    android:textSize="12sp" />
+                    style="@style/WorkOrderFilterTab"
+                    android:text="全部 12" />
 
                 <TextView
                     android:id="@+id/tab_draft"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    style="@style/WorkOrderFilterTab"
                     android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_tab_normal"
-                    android:gravity="center"
-                    android:paddingHorizontal="14dp"
-                    android:text="待提交"
-                    android:textColor="@color/home_text_normal"
-                    android:textSize="12sp" />
+                    android:text="待提交" />
 
                 <TextView
                     android:id="@+id/tab_pending"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    style="@style/WorkOrderFilterTab"
                     android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_tab_normal"
-                    android:gravity="center"
-                    android:paddingHorizontal="14dp"
-                    android:text="待认领"
-                    android:textColor="@color/home_text_normal"
-                    android:textSize="12sp" />
+                    android:text="待认领" />
 
                 <TextView
                     android:id="@+id/tab_submitted"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    style="@style/WorkOrderFilterTab"
                     android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_tab_normal"
-                    android:gravity="center"
-                    android:paddingHorizontal="14dp"
                     android:text="已提交"
-                    android:textColor="@color/home_text_normal"
-                    android:textSize="12sp" />
+                    android:visibility="gone" />
 
                 <TextView
                     android:id="@+id/tab_reject"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    style="@style/WorkOrderFilterTab"
                     android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_tab_normal"
-                    android:gravity="center"
-                    android:paddingHorizontal="14dp"
-                    android:text="驳回"
-                    android:textColor="@color/home_text_normal"
-                    android:textSize="12sp" />
+                    android:text="驳回" />
 
                 <TextView
                     android:id="@+id/tab_processing"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    style="@style/WorkOrderFilterTab"
                     android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_tab_normal"
-                    android:gravity="center"
-                    android:paddingHorizontal="14dp"
-                    android:text="处理中"
-                    android:textColor="@color/home_text_normal"
-                    android:textSize="12sp" />
+                    android:text="处理中" />
 
                 <TextView
                     android:id="@+id/tab_eval"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    style="@style/WorkOrderFilterTab"
                     android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_tab_normal"
-                    android:gravity="center"
-                    android:paddingHorizontal="14dp"
-                    android:text="待评价"
-                    android:textColor="@color/home_text_normal"
-                    android:textSize="12sp" />
+                    android:text="待评价" />
 
                 <TextView
                     android:id="@+id/tab_completed"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    style="@style/WorkOrderFilterTab"
                     android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_tab_normal"
-                    android:gravity="center"
-                    android:paddingHorizontal="14dp"
-                    android:text="已完成"
-                    android:textColor="@color/home_text_normal"
-                    android:textSize="12sp" />
+                    android:text="已完成" />
             </LinearLayout>
         </HorizontalScrollView>
     </LinearLayout>

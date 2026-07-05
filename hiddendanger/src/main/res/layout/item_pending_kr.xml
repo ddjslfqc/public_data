@@ -47,28 +47,18 @@
 
         <TextView
             android:id="@+id/btn_reject"
+            style="@style/AppButton.Secondary.Small"
             android:layout_width="0dp"
-            android:layout_height="40dp"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_goal_btn_secondary"
-            android:gravity="center"
-            android:text="拒绝"
-            android:textColor="#7F8495"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:text="拒绝" />
 
         <TextView
             android:id="@+id/btn_approve"
+            style="@style/AppButton.Primary.Small"
             android:layout_width="0dp"
-            android:layout_height="40dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_goal_btn_primary"
-            android:gravity="center"
-            android:text="通过"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:text="通过" />
     </LinearLayout>
 
 </LinearLayout>

@@ -34,4 +34,7 @@ class LocalCookieJar : CookieJar {
         cache.addAll(cookies)
     }
 
+    fun clearAll() {
+        cache.clear()
+    }
 }

@@ -4,32 +4,38 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.SeekBar
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.fuusy.hiddendanger.databinding.ItemGoalKrEditBinding
 import com.fuusy.hiddendanger.ui.model.GoalKrEditItem
+import com.fuusy.hiddendanger.ui.model.GoalKrWeightHelper
 
 class GoalKrEditAdapter(
     private val onDelete: (Int) -> Unit,
     private val onChanged: () -> Unit,
     private val onItemAdded: (Int) -> Unit = {},
-    private val onAssigneeClick: (Int) -> Unit = {}
+    private val onAssigneeClick: (Int) -> Unit = {},
+    private val onWeightChanged: (Int, Int) -> Unit = { _, _ -> }
 ) : RecyclerView.Adapter<GoalKrEditAdapter.VH>() {
 
     private val items = mutableListOf(GoalKrEditItem())
     private var nextId = 1L
+    private var showWeightSliders = false
 
     fun submitItems(newItems: List<GoalKrEditItem>) {
         items.clear()
         items.addAll(newItems.ifEmpty { listOf(createEmptyItem()) })
         nextId = (items.maxOfOrNull { it.id } ?: 0L) + 1
+        showWeightSliders = items.size > 1
         notifyDataSetChanged()
     }
 
     fun addItem(): Boolean {
         items.add(createEmptyItem())
+        redistributeWeightsEqually()
         val index = items.lastIndex
-        notifyItemInserted(index)
+        notifyDataSetChanged()
         onChanged()
         onItemAdded(index)
         return true
@@ -38,10 +44,8 @@ class GoalKrEditAdapter(
     fun removeItem(position: Int) {
         if (items.size <= MIN_KR_COUNT || position !in items.indices) return
         items.removeAt(position)
-        notifyItemRemoved(position)
-        if (position < items.size) {
-            notifyItemRangeChanged(position, items.size - position)
-        }
+        redistributeWeightsEqually()
+        notifyDataSetChanged()
         onChanged()
     }
 
@@ -52,6 +56,28 @@ class GoalKrEditAdapter(
     fun canAddMore(): Boolean = items.size < MAX_KR_COUNT
 
     fun canRemove(): Boolean = items.size > MIN_KR_COUNT
+
+    fun totalWeight(): Int = GoalKrWeightHelper.total(items.map { it.weight })
+
+    fun applyLinkedWeights(changedIndex: Int, newWeight: Int) {
+        if (changedIndex !in items.indices) return
+        val weights = items.map { it.weight }.toIntArray()
+        val adjusted = GoalKrWeightHelper.adjustLinked(weights, changedIndex, newWeight)
+        adjusted.forEachIndexed { index, weight ->
+            items[index] = items[index].copy(weight = weight)
+        }
+        showWeightSliders = items.size > 1
+        notifyDataSetChanged()
+        onChanged()
+    }
+
+    private fun redistributeWeightsEqually() {
+        val distributed = GoalKrWeightHelper.distributeEqually(items.size)
+        distributed.forEachIndexed { index, weight ->
+            items[index] = items[index].copy(weight = weight)
+        }
+        showWeightSliders = items.size > 1
+    }
 
     private fun createEmptyItem(): GoalKrEditItem {
         return GoalKrEditItem(id = nextId++)
@@ -76,9 +102,12 @@ class GoalKrEditAdapter(
         RecyclerView.ViewHolder(binding.root) {
 
         private val watchers = mutableListOf<Pair<android.widget.EditText, TextWatcher>>()
+        private var weightListener: SeekBar.OnSeekBarChangeListener? = null
+        private var targetListener: SeekBar.OnSeekBarChangeListener? = null
 
         fun bind(item: GoalKrEditItem, position: Int) {
             clearWatchers()
+            clearSeekListeners()
 
             binding.tvKrIndex.text = (position + 1).toString()
             binding.btnDelete.isVisible = canRemove()
@@ -90,26 +119,70 @@ class GoalKrEditAdapter(
             }
 
             binding.etKrTitle.setText(item.title)
-            binding.etTargetValue.setText(item.targetValue)
-            binding.etUnit.setText(item.unit)
             binding.tvAssignee.text = item.assigneeName.ifBlank { "本人" }
+
             binding.rowAssignee.setOnClickListener {
                 val pos = bindingAdapterPosition
                 if (pos != RecyclerView.NO_POSITION) onAssigneeClick(pos)
             }
 
+            bindTargetUi(item)
+            bindWeightUi(item)
+
             addWatcher(binding.etKrTitle) { syncCurrentItem() }
-            addWatcher(binding.etTargetValue) { syncCurrentItem() }
-            addWatcher(binding.etUnit) { syncCurrentItem() }
+        }
+
+        private fun bindTargetUi(item: GoalKrEditItem) {
+            val percent = item.targetPercent.coerceIn(0, 100)
+            binding.tvTarget.text = "$percent%"
+            binding.seekTarget.max = 100
+            binding.seekTarget.progress = percent
+
+            targetListener = object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    binding.tvTarget.text = "$progress%"
+                    if (!fromUser) return
+                    val pos = bindingAdapterPosition
+                    if (pos == RecyclerView.NO_POSITION) return
+                    items[pos] = items[pos].copy(targetPercent = progress)
+                    onChanged()
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+            }
+            binding.seekTarget.setOnSeekBarChangeListener(targetListener)
+        }
+
+        private fun bindWeightUi(item: GoalKrEditItem) {
+            val multi = showWeightSliders
+            binding.rowWeight.isVisible = multi
+            if (!multi) return
+
+            binding.tvWeight.text = "${item.weight}%"
+            binding.seekWeight.max = 100
+            binding.seekWeight.progress = item.weight
+
+            weightListener = object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    if (!fromUser) return
+                    val pos = bindingAdapterPosition
+                    if (pos == RecyclerView.NO_POSITION) return
+                    val weight = progress.coerceAtLeast(GoalKrWeightHelper.MIN_WEIGHT)
+                    onWeightChanged(pos, weight)
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+            }
+            binding.seekWeight.setOnSeekBarChangeListener(weightListener)
         }
 
         private fun syncCurrentItem() {
             val pos = bindingAdapterPosition
             if (pos == RecyclerView.NO_POSITION || pos !in items.indices) return
             items[pos] = items[pos].copy(
-                title = binding.etKrTitle.text?.toString().orEmpty(),
-                targetValue = binding.etTargetValue.text?.toString().orEmpty(),
-                unit = binding.etUnit.text?.toString().orEmpty()
+                title = binding.etKrTitle.text?.toString().orEmpty()
             )
             onChanged()
         }
@@ -136,6 +209,13 @@ class GoalKrEditAdapter(
                 editText.removeTextChangedListener(watcher)
             }
             watchers.clear()
+        }
+
+        private fun clearSeekListeners() {
+            binding.seekWeight.setOnSeekBarChangeListener(null)
+            binding.seekTarget.setOnSeekBarChangeListener(null)
+            weightListener = null
+            targetListener = null
         }
     }
 

@@ -8,13 +8,10 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.Gravity
-import android.view.LayoutInflater
 import android.view.View
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.alibaba.android.arouter.facade.annotation.Route
@@ -27,6 +24,8 @@ import com.fuusy.hiddendanger.R
 import com.fuusy.hiddendanger.data.SimpleAttachment
 import com.fuusy.hiddendanger.databinding.ActivityOrderDetailBinding
 import com.fuusy.hiddendanger.ui.adapter.SimpleAttachmentAdapter
+import com.fuusy.hiddendanger.ui.adapter.WorkOrderOperationAdapter
+import com.fuusy.hiddendanger.util.AppDialogHelper
 import com.luck.picture.lib.basic.PictureSelector
 import com.luck.picture.lib.entity.LocalMedia
 import java.text.SimpleDateFormat
@@ -39,6 +38,7 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
     private lateinit var binding: ActivityOrderDetailBinding
     private val viewModel: OrderDetailViewModel by viewModels()
     private var simpleAttachmentAdapter: SimpleAttachmentAdapter? = null
+    private val operationAdapter = WorkOrderOperationAdapter()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +58,7 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
             bindStatusStyle(item.status)
             bindPriorityTags(item.priority)
             bindAttachments(item)
+            bindOperationRecords()
             renderBottomActions(item)
         }
         viewModel.error.observe(this) { msg ->
@@ -155,19 +156,32 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
             },
             onLongClick = { att ->
                 val attachmentId = att.id ?: return@SimpleAttachmentAdapter
-                androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setMessage("删除该附件？")
-                    .setPositiveButton("删除") { _, _ ->
-                        viewModel.deleteAttachment(item.id, attachmentId) { ok, msg ->
-                            if (!ok) ToastUtil.showCustomToast(this@OrderDetailActivity, msg ?: "删除失败")
-                        }
+                AppDialogHelper.showConfirm(
+                    this,
+                    title = "删除附件",
+                    message = "确定删除该附件吗？",
+                    confirmText = "删除"
+                ) {
+                    viewModel.deleteAttachment(item.id, attachmentId) { ok, msg ->
+                        if (!ok) ToastUtil.showCustomToast(this@OrderDetailActivity, msg ?: "删除失败")
                     }
-                    .setNegativeButton("取消", null)
-                    .show()
+                }
             }
         )
         binding.rvSimpleAttachments.layoutManager = LinearLayoutManager(this)
         binding.rvSimpleAttachments.adapter = simpleAttachmentAdapter
+    }
+
+    private fun bindOperationRecords() {
+        val records = viewModel.operationRecords()
+        val hasRecords = records.isNotEmpty()
+        binding.cardOperationRecords.isVisible = hasRecords
+        if (!hasRecords) return
+        if (binding.rvOperationRecords.adapter == null) {
+            binding.rvOperationRecords.layoutManager = LinearLayoutManager(this)
+            binding.rvOperationRecords.adapter = operationAdapter
+        }
+        operationAdapter.submitList(records)
     }
 
     private fun renderBottomActions(item: WorkOrderItem) {
@@ -175,12 +189,12 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
         when (item.status) {
             WorkOrderStatus.DRAFT -> {
                 binding.bottomBar.isVisible = true
-                addActionButton("撤回", style = ButtonStyle.GHOST) { confirmWithdraw(item) }
+                addActionButton("撤回", style = ButtonStyle.SECONDARY) { confirmWithdraw(item) }
                 addActionButton("提交", style = ButtonStyle.PRIMARY) { confirmSubmit(item) }
             }
             WorkOrderStatus.PENDING -> {
                 binding.bottomBar.isVisible = true
-                addActionButton("认领工单", style = ButtonStyle.ORANGE, fullWidth = true) {
+                addActionButton("认领工单", style = ButtonStyle.PRIMARY, fullWidth = true) {
                     confirmClaim(item)
                 }
             }
@@ -192,12 +206,12 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
             }
             WorkOrderStatus.PROCESSING -> {
                 binding.bottomBar.isVisible = true
-                addActionButton("驳回", style = ButtonStyle.GHOST) { showRejectDialog(item) }
-                addActionButton("完成", style = ButtonStyle.SUCCESS) { showCompleteDialog(item) }
+                addActionButton("驳回", style = ButtonStyle.SECONDARY) { showRejectDialog(item) }
+                addActionButton("完成", style = ButtonStyle.PRIMARY) { showCompleteDialog(item) }
             }
             WorkOrderStatus.EVAL -> {
                 binding.bottomBar.isVisible = true
-                addActionButton("去评价", style = ButtonStyle.PURPLE, fullWidth = true) {
+                addActionButton("去评价", style = ButtonStyle.PRIMARY, fullWidth = true) {
                     showEvaluateDialog(item)
                 }
             }
@@ -207,7 +221,7 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
         }
     }
 
-    private enum class ButtonStyle { GHOST, PRIMARY, ORANGE, SUCCESS, PURPLE }
+    private enum class ButtonStyle { SECONDARY, PRIMARY }
 
     private fun addActionButton(
         text: String,
@@ -215,44 +229,31 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
         fullWidth: Boolean = false,
         onClick: () -> Unit
     ) {
+        val isPrimary = style == ButtonStyle.PRIMARY
         val btn = TextView(this).apply {
             this.text = text
             gravity = Gravity.CENTER
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            isClickable = true
+            isFocusable = true
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
             typeface = Typeface.DEFAULT_BOLD
-            setPadding(dp(16), dp(13), dp(16), dp(13))
             layoutParams = LinearLayout.LayoutParams(
                 0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                if (fullWidth) 1f else 1f
+                dp(46),
+                when {
+                    fullWidth -> 1f
+                    isPrimary -> 1.5f
+                    else -> 1f
+                }
             ).apply {
                 if (binding.bottomBar.childCount > 0) marginStart = dp(8)
             }
-            background = GradientDrawable().apply {
-                cornerRadius = dp(22).toFloat()
-                when (style) {
-                    ButtonStyle.GHOST -> {
-                        setColor(Color.WHITE)
-                        setStroke(dp(1), Color.parseColor("#E5E7EB"))
-                        setTextColor(Color.parseColor("#666666"))
-                    }
-                    ButtonStyle.PRIMARY -> {
-                        setColor(Color.parseColor("#1465EB"))
-                        setTextColor(Color.WHITE)
-                    }
-                    ButtonStyle.ORANGE -> {
-                        setColor(Color.parseColor("#F97316"))
-                        setTextColor(Color.WHITE)
-                    }
-                    ButtonStyle.SUCCESS -> {
-                        setColor(Color.parseColor("#00AA60"))
-                        setTextColor(Color.WHITE)
-                    }
-                    ButtonStyle.PURPLE -> {
-                        setColor(Color.parseColor("#8B5CF6"))
-                        setTextColor(Color.WHITE)
-                    }
-                }
+            if (isPrimary) {
+                setBackgroundResource(R.drawable.bg_goal_btn_primary)
+                setTextColor(Color.WHITE)
+            } else {
+                setBackgroundResource(R.drawable.bg_goal_btn_secondary)
+                setTextColor(Color.parseColor("#7F8495"))
             }
             setOnClickListener { onClick() }
         }
@@ -268,37 +269,63 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
     }
 
     private fun confirmClaim(item: WorkOrderItem) {
-        AlertDialog.Builder(this)
-            .setTitle("确认认领工单？")
-            .setMessage("认领后将进入处理中状态，请及时处理")
-            .setNegativeButton("取消", null)
-            .setPositiveButton("确认认领") { _, _ ->
-                runApprove(item, pass = true, opinion = "认领工单")
+        AppDialogHelper.showConfirm(
+            this,
+            title = "确认认领工单？",
+            message = "认领后将进入处理中状态，请及时处理",
+            confirmText = "确认认领"
+        ) {
+            viewModel.claim(item.id) { ok, msg ->
+                if (ok) {
+                    ToastUtil.showCustomToast(this@OrderDetailActivity, "认领成功")
+                } else {
+                    ToastUtil.showCustomToast(this@OrderDetailActivity, msg ?: "认领失败")
+                }
             }
-            .show()
+        }
     }
 
     private fun showRejectDialog(item: WorkOrderItem) {
-        showInputDialog("驳回工单", "驳回原因", required = true) { reason ->
-            runApprove(item, pass = false, opinion = reason)
+        AppDialogHelper.showInput(
+            context = this,
+            title = "驳回工单",
+            label = "请输入驳回原因：",
+            hint = "请输入驳回原因...",
+            required = true,
+            confirmText = "确认"
+        ) { reason ->
+            viewModel.reject(item.id, reason) { ok, msg ->
+                if (ok) {
+                    ToastUtil.showCustomToast(this@OrderDetailActivity, "已驳回")
+                } else {
+                    ToastUtil.showCustomToast(this@OrderDetailActivity, msg ?: "驳回失败")
+                }
+            }
         }
     }
 
     private fun showCompleteDialog(item: WorkOrderItem) {
-        showInputDialog("完成工单", "完成说明", required = true) { desc ->
+        AppDialogHelper.showInput(
+            context = this,
+            title = "完成工单",
+            label = "请输入完成说明：",
+            hint = "请输入完成说明...",
+            required = true,
+            confirmText = "确认"
+        ) { desc ->
             runApprove(item, pass = true, opinion = desc)
         }
     }
 
     private fun showEvaluateDialog(item: WorkOrderItem) {
-        AlertDialog.Builder(this)
-            .setTitle("评价工单")
-            .setMessage("确认提交评价？")
-            .setNegativeButton("取消", null)
-            .setPositiveButton("提交评价") { _, _ ->
-                runApprove(item, pass = true, opinion = "评价通过")
-            }
-            .show()
+        AppDialogHelper.showConfirm(
+            this,
+            title = "评价工单",
+            message = "确认提交评价？",
+            confirmText = "提交评价"
+        ) {
+            runApprove(item, pass = true, opinion = "评价通过")
+        }
     }
 
     private fun runApprove(item: WorkOrderItem, pass: Boolean, opinion: String?) {
@@ -317,29 +344,6 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
         intent.putExtra("is_resubmit", true)
         intent.putExtra("resubmit_id", item.id)
         startActivity(intent)
-    }
-
-    private fun showInputDialog(
-        title: String,
-        label: String,
-        required: Boolean = false,
-        onConfirm: (String) -> Unit
-    ) {
-        val view = LayoutInflater.from(this).inflate(R.layout.dialog_reject_reason, null)
-        val editText = view.findViewById<EditText>(R.id.et_reject_reason)
-        AlertDialog.Builder(this)
-            .setTitle(title)
-            .setView(view)
-            .setNegativeButton("取消", null)
-            .setPositiveButton("确认") { _, _ ->
-                val text = editText.text?.toString()?.trim().orEmpty()
-                if (required && text.isBlank()) {
-                    ToastUtil.showCustomToast(this, "请填写内容")
-                    return@setPositiveButton
-                }
-                onConfirm(text)
-            }
-            .show()
     }
 
     private fun now(): String =

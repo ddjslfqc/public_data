@@ -1,5 +1,7 @@
 package com.fuusy.project.workorder
 
+import com.google.gson.annotations.SerializedName
+
 data class WorkOrderListDto(
     val id: String,
     val no: String? = null,
@@ -40,13 +42,25 @@ data class WorkOrderDetailDto(
     val responsibleDeptName: String? = null,
     val rectificationPerson: String? = null,
     val rectificationPersonName: String? = null,
-    val reason: String? = null,
-    val consequences: String? = null,
-    val controlLevel: String? = null,
-    val rectificationScheme: String? = null,
-    val device: String? = null,
     val attachments: List<WorkOrderAttachmentDto>? = null,
-    val approvalRecords: List<Any>? = null
+    val approvalRecords: List<Any>? = null,
+    val rejectRecords: List<WorkOrderOperationRecordDto>? = null
+)
+
+/** 操作记录（驳回 / 认领），见 workorder-operation-api.md §2.6 */
+data class WorkOrderOperationRecordDto(
+    val id: Long? = null,
+    val workOrderNo: String? = null,
+    val operationType: String? = null,
+    val rejectBy: String? = null,
+    val rejectByName: String? = null,
+    val rejectTime: String? = null,
+    val rejectReason: String? = null
+)
+
+data class RejectWorkOrderRequest(
+    val workOrderId: String,
+    val rejectReason: String
 )
 
 data class WorkOrderAttachmentDto(
@@ -61,15 +75,10 @@ data class CreateWorkOrderRequest(
     val brief: String,
     val typeCode: String,
     val responsibleDept: String,
-    val rectificationPerson: String? = null,
+    val rectificationPerson: String,
     val priority: String? = null,
     val project: String? = null,
-    val expectedCompletionTime: String? = null,
-    val reason: String? = null,
-    val consequences: String? = null,
-    val controlLevel: String? = null,
-    val rectificationScheme: String? = null,
-    val device: String? = null
+    val expectedCompletionTime: String? = null
 )
 
 data class CreateWorkOrderResult(
@@ -89,8 +98,8 @@ data class OptionItemDto(
 )
 
 data class WorkOrderOptionsDto(
-    val hazardLevels: List<OptionItemDto>? = null,
-    val hazardTypes: List<OptionItemDto>? = null,
+    @SerializedName("types")
+    val types: List<OptionItemDto>? = null,
     val priorities: List<OptionItemDto>? = null,
     val departments: List<OptionItemDto>? = null
 )

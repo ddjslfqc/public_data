@@ -101,15 +101,17 @@
                     android:layout_marginStart="12dp"
                     android:layout_marginTop="16dp"
                     android:layout_marginEnd="12dp"
+                    android:baselineAligned="false"
                     android:orientation="horizontal">
 
                     <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_marginEnd="4dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_goal_info_card"
-                        android:minHeight="50dp"
+                        android:gravity="center_vertical"
+                        android:minHeight="56dp"
                         android:orientation="vertical"
                         android:padding="12dp">
 
@@ -129,18 +131,18 @@
                             android:ellipsize="end"
                             android:maxLines="2"
                             android:textColor="#FFFFFF"
-                            android:textSize="12sp"
-                            tools:text="Q2 2026 4月1日—6月30日" />
+                            android:textSize="13sp"
+                            tools:text="4月1日—6月30日" />
                     </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_marginStart="4dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_goal_info_card"
                         android:gravity="center_vertical"
-                        android:minHeight="50dp"
+                        android:minHeight="56dp"
                         android:orientation="horizontal"
                         android:padding="12dp">
 
@@ -195,7 +197,7 @@
                 android:lineSpacingExtra="3dp"
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="12dp"
-                android:text="目标创建后无需审批；若 KR 指派给其他同事，需由你审批通过后对方方可更新进度。"
+                android:text="目标创建后无需审批；KR 指派给他人需审批；进度更新提交后需目标创建人审批通过方可生效。"
                 android:textColor="#EA9300"
                 android:textSize="13sp" />
 
@@ -231,7 +233,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="查看并处理待审批的关键结果"
+                        android:text="查看并处理待审批的 KR 与进度更新"
                         android:textColor="#686D79"
                         android:textSize="12sp" />
                 </LinearLayout>

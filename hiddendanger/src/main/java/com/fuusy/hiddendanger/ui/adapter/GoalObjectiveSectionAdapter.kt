@@ -7,14 +7,14 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.fuusy.hiddendanger.data.OkrKeyResult
 import com.fuusy.hiddendanger.data.OkrObjective
-import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.databinding.ItemGoalObjectiveSectionBinding
 import com.fuusy.hiddendanger.ui.model.GoalKrItem
+import com.fuusy.hiddendanger.ui.model.KrNavHelper
 
-class GoalObjectiveSectionAdapter :
-    ListAdapter<OkrObjective, GoalObjectiveSectionAdapter.VH>(DiffCallback()) {
+class GoalObjectiveSectionAdapter(
+    private val onKrClick: (GoalKrItem) -> Unit = {}
+) : ListAdapter<OkrObjective, GoalObjectiveSectionAdapter.VH>(DiffCallback()) {
 
     class VH(val binding: ItemGoalObjectiveSectionBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -47,21 +47,17 @@ class GoalObjectiveSectionAdapter :
                 tvAlignInfo.isVisible = false
             }
 
-            val krAdapter = (rvKr.adapter as? GoalKrAdapter) ?: GoalKrAdapter().also {
+            val krAdapter = (rvKr.adapter as? GoalKrAdapter) ?: GoalKrAdapter(onItemClick = onKrClick).also {
                 rvKr.layoutManager = LinearLayoutManager(root.context)
                 rvKr.adapter = it
             }
-            krAdapter.submitList(objective.keyResults.orEmpty().map { it.toUiItem() })
+            krAdapter.submitList(
+                objective.keyResults.orEmpty().map { kr ->
+                    KrNavHelper.goalKrItem(objective, kr)
+                }
+            )
         }
     }
-
-    private fun OkrKeyResult.toUiItem() = GoalKrItem(
-        title = title,
-        valueLabel = OkrPeriodHelper.krValueLabel(this),
-        progressPercent = OkrPeriodHelper.krProgressPercent(this),
-        achieved = achieved || status == 1,
-        approvalLabel = OkrPeriodHelper.approvalLabel(approvalStatus)
-    )
 
     class DiffCallback : DiffUtil.ItemCallback<OkrObjective>() {
         override fun areItemsTheSame(oldItem: OkrObjective, newItem: OkrObjective) =

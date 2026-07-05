@@ -20,6 +20,7 @@ import com.fuusy.hiddendanger.databinding.ActivityEditGoalBinding
 import com.fuusy.hiddendanger.ui.adapter.GoalKrEditAdapter
 import com.fuusy.hiddendanger.ui.model.GoalAlignType
 import com.fuusy.hiddendanger.ui.model.GoalKrEditItem
+import com.fuusy.hiddendanger.ui.model.GoalKrWeightHelper
 import com.fuusy.hiddendanger.viewmodel.EditGoalViewModel
 
 @Route(path = "/hiddendanger/EditGoalActivity")
@@ -54,7 +55,8 @@ class EditGoalActivity : AppCompatActivity() {
             onDelete = { position -> krAdapter.removeItem(position) },
             onChanged = { updateKrUiState() },
             onItemAdded = { index -> scrollToKrAndFocus(index) },
-            onAssigneeClick = { position -> showAssigneePicker(position) }
+            onAssigneeClick = { position -> showAssigneePicker(position) },
+            onWeightChanged = { index, weight -> krAdapter.applyLinkedWeights(index, weight) }
         )
 
         binding.rvKr.layoutManager = LinearLayoutManager(this)
@@ -156,7 +158,7 @@ class EditGoalActivity : AppCompatActivity() {
     private fun updateScopeLabel() {
         val text = when (viewModel.alignType) {
             GoalAlignType.DEPARTMENT -> viewModel.selectedDept?.name ?: "请选择部门"
-            GoalAlignType.SUPERVISOR -> viewModel.selectedUser?.name ?: "请选择人员"
+            GoalAlignType.SUPERVISOR -> viewModel.selectedUser?.displayName ?: "请选择人员"
         }
         binding.tvAlignLevel.text = text
     }
@@ -193,7 +195,7 @@ class EditGoalActivity : AppCompatActivity() {
             GoalAlignType.SUPERVISOR -> {
                 val users = viewModel.alignOptions.value?.users.orEmpty()
                 if (users.isEmpty()) return
-                showEntityPicker("选择人员", users.map { it.name }) { index ->
+                showEntityPicker("选择人员", users.map { it.displayName }) { index ->
                     viewModel.selectedUser = users[index]
                     viewModel.selectedParentKr = null
                     binding.tvAlignTarget.text = "请选择要对齐的 KR"
@@ -224,7 +226,7 @@ class EditGoalActivity : AppCompatActivity() {
     private fun showAssigneePicker(position: Int) {
         val users = viewModel.alignOptions.value?.users.orEmpty()
         val selfName = "本人"
-        val names = listOf(selfName) + users.map { it.name }
+        val names = listOf(selfName) + users.map { it.displayName }
         AlertDialog.Builder(this)
             .setTitle("KR 负责人")
             .setItems(names.toTypedArray()) { dialog, which ->
@@ -239,7 +241,7 @@ class EditGoalActivity : AppCompatActivity() {
                     val user = users[which - 1]
                     items[position] = items[position].copy(
                         assigneeUserId = user.id,
-                        assigneeName = user.name
+                        assigneeName = user.displayName
                     )
                 }
                 krAdapter.submitItems(items)
@@ -288,6 +290,15 @@ class EditGoalActivity : AppCompatActivity() {
     private fun updateKrUiState() {
         binding.btnAddKr.alpha = if (krAdapter.canAddMore()) 1f else 0.45f
         binding.tvKrCount.text = "已添加 ${krAdapter.itemCount()} 条"
+        val total = krAdapter.totalWeight()
+        binding.tvKrWeightTotal.text = if (krAdapter.itemCount() > 1) {
+            "权重合计 ${total}%（拖动滑块调整，其余 KR 自动联动）"
+        } else {
+            "权重合计 100%（单条 KR 默认占满）"
+        }
+        binding.tvKrWeightTotal.setTextColor(
+            Color.parseColor(if (total == GoalKrWeightHelper.TOTAL) "#00AA60" else "#EB1919")
+        )
     }
 
     private fun setupPeriodTabs() {
@@ -336,16 +347,8 @@ class EditGoalActivity : AppCompatActivity() {
             Toast.makeText(this, "请至少填写一条关键结果", Toast.LENGTH_SHORT).show()
             return false
         }
-        val incomplete = filledKrs.indexOfFirst {
-            it.targetValue.isBlank() || it.unit.isBlank()
-        }
-        if (incomplete >= 0) {
-            Toast.makeText(
-                this,
-                "请完善第 ${incomplete + 1} 条 KR 的目标值和单位",
-                Toast.LENGTH_SHORT
-            ).show()
-            scrollToKrAndFocus(incomplete)
+        if (filledKrs.sumOf { it.weight } != GoalKrWeightHelper.TOTAL) {
+            Toast.makeText(this, "KR 权重合计必须为 100%", Toast.LENGTH_SHORT).show()
             return false
         }
         return true

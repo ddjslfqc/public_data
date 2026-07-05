@@ -1,11 +1,19 @@
 package com.fuusy.hiddendanger.data
 
 import com.fuusy.common.network.BaseResp
+import okhttp3.MultipartBody
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Query
 
+/**
+ * OKR 移动端接口，基础路径 `/mobile/okr`。
+ * 与后端 OkrController 文档保持一致。
+ */
 interface OkrApi {
 
     @GET("mobile/okr/my-goal")
@@ -16,11 +24,18 @@ interface OkrApi {
     @GET("mobile/okr/align-options")
     suspend fun getAlignOptions(): BaseResp<AlignOptionsResponse>
 
+    /** 获取指定用户可对齐的 KR 列表 */
     @GET("mobile/okr/alignable-krs")
     suspend fun getAlignableKrs(
+        @Query("userId") userId: Long
+    ): BaseResp<List<AlignableKr>>
+
+    /** 按部门/人员筛选可对齐目标（含 KR） */
+    @GET("mobile/okr/align-objectives")
+    suspend fun getAlignObjectives(
         @Query("deptId") deptId: Long? = null,
         @Query("targetUserId") targetUserId: Long? = null
-    ): BaseResp<List<AlignableKr>>
+    ): BaseResp<List<OkrObjective>>
 
     @POST("mobile/okr/create")
     suspend fun createObjective(
@@ -33,5 +48,37 @@ interface OkrApi {
     @POST("mobile/okr/kr/approve")
     suspend fun approveKr(
         @Body body: KrApproveRequest
+    ): BaseResp<Any?>
+
+    /** 直接更新 KR 进度（无需审核时使用） */
+    @PUT("mobile/okr/kr/progress")
+    suspend fun updateKrProgress(
+        @Body body: KrUpdateProgressRequest
+    ): BaseResp<Any?>
+
+    @Multipart
+    @POST("mobile/okr/kr/attachment/upload")
+    suspend fun uploadKrAttachment(
+        @Query("krId") krId: Long,
+        @Part file: MultipartBody.Part
+    ): BaseResp<OkrAttachmentDto>
+
+    /** 创建进度更新记录（需上级审核） */
+    @POST("mobile/okr/update-record/create")
+    suspend fun createUpdateRecord(
+        @Body body: CreateUpdateRecordRequest
+    ): BaseResp<Long>
+
+    @GET("mobile/okr/update-record/pending")
+    suspend fun getPendingUpdateRecords(): BaseResp<List<PendingUpdateRecordItem>>
+
+    @POST("mobile/okr/update-record/approve")
+    suspend fun approveUpdateRecord(
+        @Body body: UpdateRecordApproveRequest
+    ): BaseResp<Any?>
+
+    @POST("mobile/okr/update-record/reject")
+    suspend fun rejectUpdateRecord(
+        @Body body: UpdateRecordApproveRequest
     ): BaseResp<Any?>
 }

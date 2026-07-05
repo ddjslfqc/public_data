@@ -27,7 +27,9 @@ class MyGoalsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMyGoalsBinding
     private val viewModel: MyGoalsViewModel by viewModels()
-    private val objectiveAdapter = GoalObjectiveSectionAdapter()
+    private val objectiveAdapter = GoalObjectiveSectionAdapter { item ->
+        KrDetailActivity.start(this, item)
+    }
     private var selectedPeriod: String? = null
     private var cachedPeriods: List<OkrPeriodOption> = emptyList()
 

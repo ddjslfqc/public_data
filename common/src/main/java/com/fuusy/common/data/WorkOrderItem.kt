@@ -2,44 +2,49 @@ package com.fuusy.common.data
 
 import java.io.Serializable
 
-// 工单主数据
-
+/** 工单主数据，字段与 workorder-api.md 列表/详情响应对齐 */
 data class WorkOrderItem(
     var id: String = "",
     val workOrderNo: String? = null,
-    val hiddenDangerName: String? = "", // 隐患名称
-    val hiddenDangerDescription: String? = "", // 隐患简述
-    val reasonAnalysis: String? = "", // 原因解析
-    val treatmentRequirement: String? = "", // 隐患治理要求
-    val hiddenDangerCategory: String? = "", // 隐患类别
+    val hiddenDangerName: String? = "", // title
+    val hiddenDangerDescription: String? = "", // brief
+    val hiddenDangerCategory: String? = "", // typeName
     val typeCode: String? = null,
-    val hiddenDangerLevel: String? = "", // 隐患等级
-    val profession: String? = "", // 所属专业
-    val controlLevel: String? = "", // 管控等级
-    val unitSystem: String? = "", // 机组/系统
-    val hazardConsequence: String? = "", // 危害后果
-    val possibility: String? = "", // 可能性
-    val treatmentDifficulty: String? = "", // 治理难度
-    val responsibleDepartment: String? = "", // 负责部门
-    val responsibleDeptId: String? = null,
-    val responsiblePerson: String? = "", // 负责人
+    val responsibleDepartment: String? = "", // responsibleDeptName
+    val responsibleDeptId: String? = null, // responsibleDept
+    val responsiblePerson: String? = "", // rectificationPersonName
+    val rectificationPersonId: String? = null, // rectificationPerson
     val attachments: List<Attachment?>? = emptyList(),
-    val affiliatedMajor: String? = "",// 生产
-    val submitUser: String = "",
-    val submitTime: String = "",
+    val submitUser: String = "", // recordCreatorName
+    val submitTime: String = "", // recordTime
     val status: WorkOrderStatus = WorkOrderStatus.PROCESSING,
-    var rejectionReason: String? = null, // 驳回理由
-    var rejectionUser: String? = null, // 驳回人
-    var rejectionTime: String? = null, // 驳回时间
-    val nodeName: String? = "", // 节点名称，用于显示工单状态
-    val priority: String? = null, // P0 / P1 / P2 / P3
-    val submitDepartment: String? = null,
-    val projectName: String? = null,
-    val expectedCompleteTime: String? = null,
-    val stayDuration: String? = null,
-    val workOrderType: String? = null, // 工单类型：软件研发 / 产品设计 等
-    val assigner: String? = null // 派单人
+    var rejectionReason: String? = null,
+    var rejectionUser: String? = null,
+    var rejectionTime: String? = null,
+    val nodeName: String? = "", // statusLabel
+    val priority: String? = null,
+    val projectName: String? = null, // project
+    val expectedCompleteTime: String? = null, // expectedCompletionTime
+    val workOrderType: String? = null, // typeName
+    val operationRecords: List<WorkOrderOperationRecord> = emptyList()
 ) : Serializable
+
+/** 工单操作记录（认领 / 驳回），见 workorder-operation-api.md */
+data class WorkOrderOperationRecord(
+    val id: Long = 0,
+    val operationType: String = "",
+    val operatorName: String = "",
+    val operationTime: String = "",
+    val content: String = ""
+) : Serializable {
+    val isClaim: Boolean get() = operationType.equals("CLAIM", ignoreCase = true)
+    val isReject: Boolean get() = operationType.equals("REJECT", ignoreCase = true)
+    val typeLabel: String get() = when {
+        isClaim -> "认领"
+        isReject -> "驳回"
+        else -> operationType
+    }
+}
 
 data class Attachment(
     val id: String? = null,
@@ -69,4 +74,4 @@ enum class WorkOrderStatus(val displayName: String) : Serializable {
             else -> PENDING
         }
     }
-} 
+}

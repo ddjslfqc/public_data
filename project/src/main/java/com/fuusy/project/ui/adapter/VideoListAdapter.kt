@@ -11,8 +11,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.fuusy.project.R
 import com.fuusy.project.databinding.ItemVideoListBinding
 import com.fuusy.project.repo.VideoInfo
+import com.fuusy.project.ui.FlvThumbnailLoader
+import kotlinx.coroutines.CoroutineScope
 
 class VideoListAdapter(
+    private val scope: CoroutineScope,
     private val onItemClick: (VideoInfo) -> Unit,
     private val onActionClick: (VideoInfo) -> Unit
 ) : ListAdapter<VideoInfo, VideoListAdapter.VideoViewHolder>(VideoDiffCallback()) {
@@ -28,9 +31,18 @@ class VideoListAdapter(
         holder.bind(getItem(position))
     }
 
+    override fun onViewRecycled(holder: VideoViewHolder) {
+        holder.cancelCover()
+        super.onViewRecycled(holder)
+    }
+
     inner class VideoViewHolder(
         private val binding: ItemVideoListBinding
     ) : RecyclerView.ViewHolder(binding.root) {
+
+        fun cancelCover() {
+            FlvThumbnailLoader.cancel(binding.ivCover)
+        }
 
         fun bind(item: VideoInfo) {
             binding.tvCameraName.text = item.show_name ?: "未知摄像头"
@@ -44,8 +56,27 @@ class VideoListAdapter(
                 else -> bindAlarm()
             }
 
+            bindCover(item)
+
             binding.root.setOnClickListener { onItemClick(item) }
             binding.tvActionBtn.setOnClickListener { onActionClick(item) }
+        }
+
+        private fun bindCover(item: VideoInfo) {
+            val cacheKey = "${item.device_id.orEmpty()}_${item.channel_id.orEmpty()}"
+                .ifBlank { item.videoPath.orEmpty() }
+            if (item.type == 0 && !item.videoPath.isNullOrBlank()) {
+                FlvThumbnailLoader.bindCover(
+                    context = binding.root.context,
+                    imageView = binding.ivCover,
+                    cacheKey = cacheKey,
+                    streamUrl = item.videoPath,
+                    scope = scope
+                )
+            } else {
+                FlvThumbnailLoader.cancel(binding.ivCover)
+                binding.ivCover.setImageDrawable(null)
+            }
         }
 
         private fun bindOnline(item: VideoInfo) {

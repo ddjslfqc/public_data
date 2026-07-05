@@ -146,17 +146,6 @@
                                 android:textSize="11sp"
                                 android:textStyle="bold"
                                 tools:text="P1" />
-
-                            <TextView
-                                android:id="@+id/tvMetaStay"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:text="@{viewModel.metaStay}"
-                                android:textColor="#EA9300"
-                                android:textSize="11sp"
-                                android:visibility="@{viewModel.showMetaStay ? View.VISIBLE : View.GONE}"
-                                tools:text="滞留 2.5h" />
                         </LinearLayout>
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
@@ -230,7 +219,7 @@
                         </LinearLayout>
 
                         <LinearLayout style="@style/OrderDetailRow">
-                            <TextView style="@style/OrderDetailLabel" android:text="类型" />
+                            <TextView style="@style/OrderDetailLabel" android:text="类别" />
                             <TextView style="@style/OrderDetailValue" android:text="@{viewModel.basicType}" tools:text="软件研发" />
                         </LinearLayout>
 
@@ -244,7 +233,7 @@
                         </LinearLayout>
 
                         <LinearLayout style="@style/OrderDetailRow">
-                            <TextView style="@style/OrderDetailLabel" android:text="处理人部门" />
+                            <TextView style="@style/OrderDetailLabel" android:text="处理部门" />
                             <TextView style="@style/OrderDetailValue" android:text="@{viewModel.basicHandlerDept}" tools:text="软件研发部" />
                         </LinearLayout>
 
@@ -283,11 +272,6 @@
                         </LinearLayout>
 
                         <LinearLayout style="@style/OrderDetailRow">
-                            <TextView style="@style/OrderDetailLabel" android:text="所属部门" />
-                            <TextView style="@style/OrderDetailValue" android:text="@{viewModel.submitUserDept}" tools:text="软件研发部" />
-                        </LinearLayout>
-
-                        <LinearLayout style="@style/OrderDetailRow">
                             <TextView style="@style/OrderDetailLabel" android:text="派单时间" />
                             <TextView style="@style/OrderDetailValue" android:text="@{viewModel.dispatchTime}" tools:text="2026-06-18 09:30:00" />
                         </LinearLayout>
@@ -298,7 +282,7 @@
                         </LinearLayout>
 
                         <LinearLayout style="@style/OrderDetailRow">
-                            <TextView style="@style/OrderDetailLabel" android:text="期望完成" />
+                            <TextView style="@style/OrderDetailLabel" android:text="期望完成时间" />
                             <TextView style="@style/OrderDetailValue" android:text="@{viewModel.expectedCompleteTime}" tools:text="2026-06-20 18:00:00" />
                         </LinearLayout>
                     </LinearLayout>
@@ -368,12 +352,15 @@
                 </androidx.cardview.widget.CardView>
 
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/card_operation_records"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="10dp"
+                    android:visibility="gone"
                     app:cardBackgroundColor="#A3FFFFFF"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp">
+                    app:cardElevation="0dp"
+                    tools:visibility="visible">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -384,19 +371,19 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="备注"
+                            android:text="操作记录"
                             android:textColor="#000000"
                             android:textSize="14sp"
                             android:textStyle="bold" />
 
-                        <TextView
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rv_operation_records"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="@{viewModel.remark}"
-                            android:textColor="#898FA0"
-                            android:textSize="13sp"
-                            tools:text="暂无备注" />
+                            android:layout_marginTop="8dp"
+                            android:nestedScrollingEnabled="false"
+                            tools:itemCount="2"
+                            tools:listitem="@layout/item_work_order_operation" />
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 

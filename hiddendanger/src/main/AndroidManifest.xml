@@ -77,6 +77,13 @@
             android:theme="@style/HiddenDangerTheme"
             android:label="KR待审批" />
 
+        <activity
+            android:name=".ui.KrDetailActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="KR详情"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity android:name="com.fuusy.hiddendanger.ui.DraftBoxActivity" />
 
         <provider

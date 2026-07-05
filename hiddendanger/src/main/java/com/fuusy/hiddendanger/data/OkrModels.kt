@@ -32,7 +32,9 @@ data class OkrKeyResult(
     val approvalStatus: Int? = null,
     val achieved: Boolean = false,
     val sortOrder: Int? = null,
-    val userId: Long? = null
+    val userId: Long? = null,
+    val progressApprovalStatus: Int? = null,
+    val pendingProgressValue: Double? = null
 )
 
 data class OkrObjective(
@@ -69,8 +71,15 @@ data class OkrDepartment(
 
 data class OkrUser(
     val id: Long,
-    val name: String
-)
+    @SerializedName("nickName") val nickName: String? = null,
+    @SerializedName("userName") val userName: String? = null,
+    val deptId: Long? = null
+) {
+    val displayName: String
+        get() = nickName?.takeIf { it.isNotBlank() }
+            ?: userName?.takeIf { it.isNotBlank() }
+            ?: "用户$id"
+}
 
 data class AlignOptionsResponse(
     val departments: List<OkrDepartment>? = null,
@@ -126,7 +135,74 @@ data class PendingKrItem(
 )
 
 data class KrApproveRequest(
-    val id: Long,
+    val krId: Long,
     val approvalStatus: Int,
     val approvalRemark: String? = null
 )
+
+data class KrUpdateProgressRequest(
+    val krId: Long,
+    val currentValue: Double,
+    val progressDescription: String? = null
+)
+
+data class CreateUpdateRecordRequest(
+    val okrType: String = "kr",
+    val okrId: Long,
+    val updateContent: String? = null,
+    val oldValue: Double? = null,
+    val newValue: Double? = null,
+    val attachments: List<Long>? = null
+)
+
+data class UpdateRecordApproveRequest(
+    val recordId: Long,
+    val approvalRemark: String? = null
+)
+
+/** GET /update-record/pending 返回项 */
+data class PendingUpdateRecordItem(
+    val id: Long,
+    val krId: Long? = null,
+    val objectiveId: Long? = null,
+    val title: String? = null,
+    val currentValue: Double? = null,
+    val newValue: Double? = null,
+    val targetValue: Double? = null,
+    val unit: String? = null,
+    val updateContent: String? = null,
+    val objectiveTitle: String? = null,
+    val userId: Long? = null,
+    val createTime: String? = null
+) {
+    val remark: String?
+        get() = updateContent
+}
+
+data class OkrAttachmentDto(
+    val id: Long? = null,
+    val fileName: String? = null,
+    @SerializedName("fileUrl") val fileUrl: String? = null,
+    @SerializedName("filePath") val filePath: String? = null,
+    val fileSize: Long? = null,
+    val fileType: String? = null
+)
+
+/** 将 align-objectives 返回的目标列表展平为可对齐 KR 列表 */
+fun List<OkrObjective>.toAlignableKrs(): List<AlignableKr> =
+    flatMap { objective ->
+        objective.keyResults.orEmpty().map { kr ->
+            AlignableKr(
+                id = kr.id,
+                title = kr.title,
+                targetValue = kr.targetValue,
+                currentValue = kr.currentValue,
+                unit = kr.unit,
+                status = kr.status,
+                objective = OkrObjectiveBrief(
+                    id = objective.id,
+                    title = objective.title
+                )
+            )
+        }
+    }

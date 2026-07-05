@@ -86,6 +86,10 @@
 | 4 | POST | `/create` | 创建目标 |
 | 5 | GET | `/pending/kr/user` | 我的待审批 KR 列表 |
 | 6 | POST | `/kr/approve` | 审批 KR |
+| 7 | POST | `/kr/update-progress` | 提交 KR 进度（待审批） |
+| 8 | POST | `/attachment/upload` | 上传 KR 进度附件 |
+| 9 | GET | `/pending/progress/user` | 待审批进度列表 |
+| 10 | POST | `/kr/progress/approve` | 审批进度更新 |
 
 ---
 
@@ -494,6 +498,154 @@ POST /mobile/okr/kr/approve
 - 只有目标创建人才能审批该目标下的 KR
 - 已审批过的 KR（`approvalStatus != 0`）不可重复审批
 - 审批通过后，KR 创建人才能更新进度
+
+---
+
+## 7. 更新 KR 进度
+
+KR 负责人（`userId`）在审批通过后更新当前进度，可附带说明与附件。
+
+```
+POST /mobile/okr/kr/update-progress
+```
+
+**请求头**: `X-User-Id`（必须是 KR 负责人）
+
+**请求体**:
+```json
+{
+  "id": 7,
+  "currentValue": 40.0,
+  "remark": "本周完成阶段性目标",
+  "attachmentIds": ["101", "102"]
+}
+```
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | Long | 是 | KR ID |
+| `currentValue` | Double | 是 | 当前进度值 |
+| `remark` | String | 否 | 进度说明 |
+| `attachmentIds` | Array | 否 | 附件 ID 列表（先调用上传接口获取） |
+
+**响应**:
+```json
+{
+  "code": 200,
+  "data": {
+    "id": 7,
+    "title": "我的KR1",
+    "targetValue": 100.0,
+    "currentValue": 0.0,
+    "pendingProgressValue": 40.0,
+    "unit": "%",
+    "status": 0,
+    "approvalStatus": 1,
+    "progressApprovalStatus": 0,
+    "achieved": false
+  }
+}
+```
+
+**说明**: 提交后 `progressApprovalStatus=0`（进度待审批），`currentValue` 仍为审批前值；审批通过后 `currentValue` 更新为 `pendingProgressValue`。
+
+**约束**:
+- 只有 KR 负责人（`userId`）可更新；`userId` 为空时视为本人
+- `approvalStatus` 必须为 `1`（KR 已通过）
+- 存在 `progressApprovalStatus=0` 时不可重复提交
+- `currentValue` 不应超过 `targetValue`（具体规则由后端校验）
+
+---
+
+## 8. 上传 KR 进度附件
+
+更新进度前，先上传附件获取 `attachmentIds`。
+
+```
+POST /mobile/okr/attachment/upload?krId=7
+```
+
+**请求头**: `X-User-Id`
+
+**请求参数**:
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `krId` | Long | 是 | KR ID |
+| `file` | File | 是 | multipart 文件字段 |
+
+**响应**:
+```json
+{
+  "code": 200,
+  "data": {
+    "id": "101",
+    "fileName": "progress.jpg",
+    "filePath": "http://.../progress.jpg",
+    "fileType": "image"
+  }
+}
+```
+
+---
+
+## 9. 进度更新审批
+
+目标创建人审批 KR 负责人提交的进度更新。
+
+### 9.1 待审批进度列表
+
+```
+GET /mobile/okr/pending/progress/user
+```
+
+**请求头**: `X-User-Id`（目标创建人）
+
+**响应**:
+```json
+{
+  "code": 200,
+  "data": [
+    {
+      "id": 12,
+      "krId": 7,
+      "objectiveId": 3,
+      "title": "我的KR1",
+      "currentValue": 40.0,
+      "targetValue": 100.0,
+      "unit": "%",
+      "remark": "本周完成阶段性目标",
+      "objectiveTitle": "王健的O",
+      "userId": 5,
+      "createTime": "2026-06-30T10:00:00"
+    }
+  ]
+}
+```
+
+### 9.2 审批进度更新
+
+```
+POST /mobile/okr/kr/progress/approve
+```
+
+**请求体**:
+```json
+{
+  "id": 12,
+  "approvalStatus": 1,
+  "approvalRemark": "同意"
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `id` | 进度更新记录 ID（非 KR ID） |
+| `approvalStatus` | 1-通过，2-拒绝 |
+
+**约束**: 审批通过后 KR 的 `currentValue` 更新，`progressApprovalStatus=1`。
 
 ---
 

@@ -1,7 +1,19 @@
 package com.fuusy.hiddendanger.ui.model
 
 data class GoalKrItem(
+    val id: Long = 0,
+    val objectiveId: Long = 0,
+    val objectiveTitle: String = "",
     val title: String,
+    val targetValue: Double = 0.0,
+    val currentValue: Double = 0.0,
+    val unit: String? = null,
+    val weight: Int? = null,
+    val status: Int = 0,
+    val approvalStatus: Int? = null,
+    val userId: Long? = null,
+    val progressApprovalStatus: Int? = null,
+    val pendingProgressValue: Double? = null,
     val valueLabel: String,
     val progressPercent: Int,
     val achieved: Boolean = false,
