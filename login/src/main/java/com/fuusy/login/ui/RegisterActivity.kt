@@ -1,5 +1,6 @@
 package com.fuusy.login.ui
 
+import android.text.InputType
 import androidx.appcompat.app.AlertDialog
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.fuusy.common.base.BaseVmActivity
@@ -17,14 +18,18 @@ class RegisterActivity : BaseVmActivity<ActivityRegisterBinding>() {
     private val mViewModel: LoginViewModel by viewModel()
     private var selectedDeptId: Long = 0
     private var selectedDeptLabel: String = ""
+    private var passwordVisible = false
+    private var passwordSureVisible = false
 
     override fun initData() {
-        initToolbar()
         mViewModel.loadDeptList()
         observeRegisterState()
+        setupPasswordToggles()
 
         mBinding?.run {
+            btnBack.setOnClickListener { finish() }
             rowDept.setOnClickListener { showDeptPicker() }
+            tvGoLogin.setOnClickListener { finish() }
             btRegister.setOnClickListener {
                 val username = etUserName.text.toString().trim()
                 val password = etPassword.text.toString()
@@ -48,6 +53,34 @@ class RegisterActivity : BaseVmActivity<ActivityRegisterBinding>() {
                 selectedDeptId = list.first().first
                 selectedDeptLabel = list.first().second
                 mBinding?.tvDept?.text = selectedDeptLabel
+            }
+        }
+    }
+
+    private fun setupPasswordToggles() {
+        mBinding?.run {
+            ivPasswordToggle.setOnClickListener {
+                passwordVisible = !passwordVisible
+                if (passwordVisible) {
+                    etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                    ivPasswordToggle.setImageResource(R.mipmap.ic_public_password_visible)
+                } else {
+                    etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    ivPasswordToggle.setImageResource(R.mipmap.ic_public_password_invisible)
+                }
+                etPassword.setSelection(etPassword.text.length)
+            }
+
+            ivPasswordSureToggle.setOnClickListener {
+                passwordSureVisible = !passwordSureVisible
+                if (passwordSureVisible) {
+                    etIvPasswordSure.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                    ivPasswordSureToggle.setImageResource(R.mipmap.ic_public_password_visible)
+                } else {
+                    etIvPasswordSure.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    ivPasswordSureToggle.setImageResource(R.mipmap.ic_public_password_invisible)
+                }
+                etIvPasswordSure.setSelection(etIvPasswordSure.text.length)
             }
         }
     }
@@ -93,12 +126,4 @@ class RegisterActivity : BaseVmActivity<ActivityRegisterBinding>() {
     }
 
     override fun getLayoutId(): Int = R.layout.activity_register
-
-    private fun initToolbar() {
-        mBinding?.run {
-            setToolbarBackIcon(llToolbarLogin.ivBack, com.fuusy.common.R.drawable.ic_back_clear)
-            setToolbarTitle(llToolbarLogin.tvTitle, "注册")
-            llToolbarLogin.ivBack.setOnClickListener { finish() }
-        }
-    }
 }
