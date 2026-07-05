@@ -9,11 +9,14 @@ import com.fuusy.hiddendanger.data.MyGoalResponse
 import com.fuusy.hiddendanger.data.OkrPeriodOption
 import com.fuusy.hiddendanger.data.PendingKrItem
 import com.fuusy.hiddendanger.repository.OkrRepository
+import com.fuusy.hiddendanger.repository.PeerEvalRepository
+import com.fuusy.hiddendanger.viewmodel.PeerEvalViewModel
 import kotlinx.coroutines.launch
 
 class MyGoalsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repo = OkrRepository()
+    private val peerEvalRepo = PeerEvalRepository(application)
 
     private val _loading = MutableLiveData(false)
     val loading: LiveData<Boolean> = _loading
@@ -29,6 +32,9 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
 
     private val _receivedCommentCount = MutableLiveData(0)
     val receivedCommentCount: LiveData<Int> = _receivedCommentCount
+
+    private val _peerEvalPendingCount = MutableLiveData(0)
+    val peerEvalPendingCount: LiveData<Int> = _peerEvalPendingCount
 
     private var currentPeriod: String? = null
 
@@ -56,6 +62,11 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
             repo.getReceivedComments().fold(
                 onSuccess = { _receivedCommentCount.value = it.size },
                 onFailure = { _receivedCommentCount.value = 0 }
+            )
+            val evalPeriod = PeerEvalViewModel.DEFAULT_PERIOD
+            peerEvalRepo.getSummary(evalPeriod).fold(
+                onSuccess = { _peerEvalPendingCount.value = it.pendingCount },
+                onFailure = { _peerEvalPendingCount.value = 0 }
             )
             _loading.value = false
         }

@@ -21,6 +21,7 @@ import com.fuusy.hiddendanger.data.OkrPeriodOption
 import com.fuusy.hiddendanger.databinding.ActivityMyGoalsBinding
 import com.fuusy.hiddendanger.ui.adapter.GoalObjectiveSectionAdapter
 import com.fuusy.hiddendanger.viewmodel.MyGoalsViewModel
+import com.fuusy.hiddendanger.viewmodel.PeerEvalViewModel
 
 @Route(path = "/hiddendanger/MyGoalsActivity")
 class MyGoalsActivity : AppCompatActivity() {
@@ -51,6 +52,9 @@ class MyGoalsActivity : AppCompatActivity() {
         binding.cardKrComments.setOnClickListener {
             OkrCommentListActivity.start(this)
         }
+        binding.cardPeerEval.setOnClickListener {
+            OkrPeerEvalActivity.start(this, PeerEvalViewModel.DEFAULT_PERIOD)
+        }
 
         binding.rvObjectives.layoutManager = LinearLayoutManager(this)
         binding.rvObjectives.adapter = objectiveAdapter
@@ -80,6 +84,10 @@ class MyGoalsActivity : AppCompatActivity() {
         viewModel.receivedCommentCount.observe(this) { count ->
             binding.tvCommentBadge.text = if (count > 99) "99+" else count.toString()
             binding.tvCommentBadge.isVisible = count > 0
+        }
+        viewModel.peerEvalPendingCount.observe(this) { count ->
+            binding.tvPeerEvalBadge.text = if (count > 99) "99+" else count.toString()
+            binding.tvPeerEvalBadge.isVisible = count > 0
         }
         viewModel.myGoal.observe(this) { data ->
             if (data == null) return@observe

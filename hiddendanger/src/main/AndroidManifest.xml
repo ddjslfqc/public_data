@@ -97,6 +97,20 @@
             android:theme="@style/HiddenDangerTheme"
             android:label="KR评论" />
 
+        <activity
+            android:name=".ui.OkrPeerEvalActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="360互评"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.OkrPeerEvalSubmitActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="填写评价"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity android:name="com.fuusy.hiddendanger.ui.DraftBoxActivity" />
 
         <provider

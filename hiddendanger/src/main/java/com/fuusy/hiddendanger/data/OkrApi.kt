@@ -115,4 +115,36 @@ interface OkrApi {
     suspend fun deleteKrComment(
         @Path("commentId") commentId: Long
     ): BaseResp<Any?>
+
+    // --- 360 互评 / 周会复盘 ---
+
+    @GET("mobile/okr/peer-eval/summary")
+    suspend fun getPeerEvalSummary(
+        @Query("period") period: String
+    ): BaseResp<PeerEvalSummary>
+
+    @GET("mobile/okr/peer-eval/review-prep")
+    suspend fun getReviewPrep(
+        @Query("period") period: String
+    ): BaseResp<OkrReviewPrep>
+
+    @PUT("mobile/okr/peer-eval/review-prep")
+    suspend fun saveReviewPrep(
+        @Body body: OkrReviewPrepRequest
+    ): BaseResp<OkrReviewPrep>
+
+    @GET("mobile/okr/peer-eval/tasks")
+    suspend fun getPeerEvalTasks(
+        @Query("period") period: String
+    ): BaseResp<List<PeerEvalTask>>
+
+    @POST("mobile/okr/peer-eval/submit")
+    suspend fun submitPeerEval(
+        @Body body: PeerEvalSubmitRequest
+    ): BaseResp<Long>
+
+    @POST("mobile/okr/peer-eval/add-collaborator")
+    suspend fun addPeerCollaborator(
+        @Body body: AddCollaboratorRequest
+    ): BaseResp<Any?>
 }
