@@ -100,7 +100,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="当前进度"
+                android:text="KR 完成"
                 android:textColor="#686D79"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -141,7 +141,7 @@
                 android:layout_marginTop="8dp"
                 android:textColor="#000000"
                 android:textSize="12sp"
-                tools:text="60%" />
+                tools:text="1/2" />
         </LinearLayout>
     </LinearLayout>
 

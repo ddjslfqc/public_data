@@ -8,6 +8,7 @@
     android:orientation="vertical"
     android:padding="10dp">
 
+    <!-- 标题行：KR + 标题 + 状态标签 + 进入详情 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -29,82 +30,78 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginEnd="4dp"
             android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="2"
             android:textColor="#000000"
             android:textSize="14sp"
             android:textStyle="bold"
-            tools:text="完成20个功能模块开发" />
-
-        <ImageView
-            android:id="@+id/iv_kr_arrow"
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:contentDescription="@null"
-            android:src="@drawable/ic_dropdown_arrow" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/tv_kr_value"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_goal_progress_tag"
-            android:ellipsize="end"
-            android:gravity="center"
-            android:maxLines="1"
-            android:maxWidth="140dp"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="2dp"
-            android:textColor="#1365EC"
-            android:textSize="11sp"
-            tools:text="12/20" />
+            tools:text="测试kr2" />
 
         <TextView
             android:id="@+id/tv_kr_approval"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
-            android:background="@drawable/bg_goal_progress_tag"
-            android:paddingHorizontal="8dp"
+            android:background="@drawable/bg_archive_tag_warn"
+            android:paddingHorizontal="6dp"
             android:paddingVertical="2dp"
-            android:textColor="#1365EC"
+            android:textColor="#EA9300"
             android:textSize="11sp"
             android:visibility="gone"
-            tools:text="待审批" />
+            tools:text="进度待审批"
+            tools:visibility="visible" />
 
         <TextView
             android:id="@+id/tv_achieved"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
             android:background="@drawable/bg_goal_status_processing"
-            android:paddingHorizontal="8dp"
+            android:paddingHorizontal="6dp"
             android:paddingVertical="2dp"
             android:text="已达成"
             android:textColor="#00AA60"
             android:textSize="11sp"
-            android:visibility="gone" />
+            android:visibility="gone"
+            tools:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/iv_kr_arrow"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginStart="6dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_arrow_right" />
     </LinearLayout>
 
+    <!-- 进行中：进度条 + 百分比（非 % 单位时左侧补充数值） -->
     <RelativeLayout
+        android:id="@+id/row_progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp">
+
+        <TextView
+            android:id="@+id/tv_kr_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="8dp"
+            android:textColor="#686D79"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:text="12/20个"
+            tools:visibility="visible" />
 
         <FrameLayout
             android:id="@+id/fl_progress"
             android:layout_width="match_parent"
             android:layout_height="6dp"
             android:layout_centerVertical="true"
-            android:layout_marginEnd="48dp"
+            android:layout_marginEnd="40dp"
+            android:layout_toEndOf="@id/tv_kr_value"
             android:background="@drawable/bg_goal_kr_track">
 
             <View
@@ -121,9 +118,9 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:textColor="#000000"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:textStyle="bold"
-            tools:text="60%" />
+            tools:text="0%" />
     </RelativeLayout>
 
 </LinearLayout>

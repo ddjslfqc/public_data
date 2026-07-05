@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.fuusy.hiddendanger.data.OkrObjective
+import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.databinding.ItemGoalObjectiveSectionBinding
 import com.fuusy.hiddendanger.ui.model.GoalKrItem
 import com.fuusy.hiddendanger.ui.model.KrNavHelper
@@ -35,7 +36,8 @@ class GoalObjectiveSectionAdapter(
             tvObjectiveStatus.isVisible = !objective.statusLabel.isNullOrBlank()
             tvCreatedAt.text = objective.createTime?.take(10).orEmpty().ifBlank { "—" }
             tvPeriodLabel.text = objective.periodLabel.orEmpty().ifBlank { "—" }
-            tvCurrentProgress.text = "${objective.progress}%"
+            val (completed, total) = OkrPeriodHelper.krCompletionStats(objective)
+            tvCurrentProgress.text = if (total > 0) "$completed/$total" else "—"
 
             val parentKr = objective.parentKr
             if (parentKr != null) {

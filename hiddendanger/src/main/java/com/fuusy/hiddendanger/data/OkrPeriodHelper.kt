@@ -77,6 +77,18 @@ object OkrPeriodHelper {
         else -> null
     }
 
+    /** 从 keyResults 统计 KR 完成数，与列表「已达成」展示保持一致 */
+    fun krCompletionStats(objective: OkrObjective): Pair<Int, Int> {
+        val krs = objective.keyResults.orEmpty()
+        if (krs.isNotEmpty()) {
+            val completed = krs.count { it.achieved || it.status == 1 }
+            return completed to krs.size
+        }
+        val total = objective.totalKrCount ?: 0
+        val completed = objective.completedKrCount ?: 0
+        return completed to total
+    }
+
     private fun Double.toDisplay(): String =
         if (this == toLong().toDouble()) toLong().toString() else toString()
 }

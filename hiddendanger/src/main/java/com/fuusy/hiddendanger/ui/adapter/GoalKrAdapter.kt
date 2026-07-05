@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.fuusy.hiddendanger.databinding.ItemGoalKrBinding
 import com.fuusy.hiddendanger.ui.model.GoalKrItem
+import com.fuusy.hiddendanger.ui.model.KrProgressHelper
 
 class GoalKrAdapter(
     private val onItemClick: (GoalKrItem) -> Unit = {}
@@ -28,27 +29,22 @@ class GoalKrAdapter(
 
             if (item.achieved) {
                 tvAchieved.isVisible = true
-                tvKrValue.isVisible = false
                 tvKrApproval.isVisible = false
-                tvKrPercent.isVisible = false
-                flProgress.isVisible = false
-                ivKrArrow.isVisible = true
+                rowProgress.isVisible = false
             } else {
                 tvAchieved.isVisible = false
-                tvKrValue.isVisible = true
-                tvKrValue.text = item.valueLabel
-                val progressLabel = com.fuusy.hiddendanger.ui.model.KrProgressHelper
-                    .progressStatusLabel(item)
-                tvKrApproval.isVisible = when {
-                    progressLabel != null -> true
-                    !item.approvalLabel.isNullOrBlank() && item.approvalStatus != 1 -> true
-                    else -> false
-                }
+                val progressLabel = KrProgressHelper.progressStatusLabel(item)
+                val showKrApproval = !item.approvalLabel.isNullOrBlank() &&
+                    item.approvalStatus != 1 &&
+                    progressLabel == null
+                tvKrApproval.isVisible = progressLabel != null || showKrApproval
                 tvKrApproval.text = progressLabel ?: item.approvalLabel
-                tvKrPercent.isVisible = true
-                flProgress.isVisible = true
+
+                rowProgress.isVisible = true
+                val showValue = shouldShowValueLabel(item)
+                tvKrValue.isVisible = showValue
+                tvKrValue.text = item.valueLabel
                 tvKrPercent.text = "${item.progressPercent}%"
-                ivKrArrow.isVisible = true
                 viewKrProgress.post {
                     val trackWidth = flProgress.width
                     if (trackWidth > 0) {
@@ -59,6 +55,12 @@ class GoalKrAdapter(
                 }
             }
         }
+    }
+
+    /** 百分比类 KR 用进度条即可；其他单位（个、万元）在进度条左侧补数值 */
+    private fun shouldShowValueLabel(item: GoalKrItem): Boolean {
+        val unit = item.unit.orEmpty()
+        return unit.isNotBlank() && unit != "%"
     }
 
     class DiffCallback : DiffUtil.ItemCallback<GoalKrItem>() {
