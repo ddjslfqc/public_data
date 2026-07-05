@@ -87,15 +87,18 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
 
     private fun bindStatusStyle(status: WorkOrderStatus) {
         val tvStatus = binding.tvStatus
-        val (bgRes, textColor) = when (status) {
-            WorkOrderStatus.DRAFT -> R.drawable.bg_status_tag to Color.parseColor("#898FA0")
-            WorkOrderStatus.PENDING -> R.drawable.bg_status_tag to Color.parseColor("#F97316")
-            WorkOrderStatus.REJECT -> R.drawable.bg_status_reject to Color.parseColor("#D6413F")
-            WorkOrderStatus.PROCESSING -> R.drawable.bg_status_tag_processing to Color.parseColor("#6366F1")
-            WorkOrderStatus.EVAL -> R.drawable.bg_status_tag to Color.parseColor("#8B5CF6")
-            WorkOrderStatus.COMPLETED -> R.drawable.bg_status_done to Color.parseColor("#00AA60")
+        val (bgColor, textColor) = when (status) {
+            WorkOrderStatus.DRAFT -> Color.parseColor("#33898FA0") to Color.parseColor("#898FA0")
+            WorkOrderStatus.PENDING -> Color.parseColor("#33F97316") to Color.parseColor("#F97316")
+            WorkOrderStatus.REJECT -> Color.parseColor("#1AD6413F") to Color.parseColor("#D6413F")
+            WorkOrderStatus.PROCESSING -> Color.parseColor("#331365EC") to Color.parseColor("#1365EC")
+            WorkOrderStatus.EVAL -> Color.parseColor("#338B5CF6") to Color.parseColor("#8B5CF6")
+            WorkOrderStatus.COMPLETED -> Color.parseColor("#3300AA60") to Color.parseColor("#00AA60")
         }
-        tvStatus.setBackgroundResource(bgRes)
+        tvStatus.background = GradientDrawable().apply {
+            cornerRadius = dp(4).toFloat()
+            setColor(bgColor)
+        }
         tvStatus.setTextColor(textColor)
     }
 
