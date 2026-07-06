@@ -122,6 +122,11 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupClicks() {
+        binding.cardUwbDebug.setOnClickListener {
+            ARouter.getInstance()
+                .build("/project/UwbDebugActivity")
+                .navigation()
+        }
         binding.tvRankingMore.setOnClickListener {
             showToast("排行榜详情即将上线")
         }
