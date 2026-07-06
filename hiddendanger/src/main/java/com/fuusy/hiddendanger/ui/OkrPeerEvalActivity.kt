@@ -4,10 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.widget.SeekBar
+import android.app.Dialog
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -20,6 +20,7 @@ import com.fuusy.hiddendanger.data.OkrPeerUser
 import com.fuusy.hiddendanger.data.PeerEvalTask
 import com.fuusy.hiddendanger.databinding.ActivityOkrPeerEvalBinding
 import com.fuusy.hiddendanger.ui.adapter.PeerCollaboratorAdapter
+import com.fuusy.hiddendanger.ui.adapter.PeerCollaboratorPickAdapter
 import com.fuusy.hiddendanger.ui.adapter.PeerEvalTaskAdapter
 import com.fuusy.hiddendanger.viewmodel.PeerEvalViewModel
 
@@ -142,19 +143,53 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         val options = viewModel.userOptions.value.orEmpty()
         val selectedIds = viewModel.collaboratorsSnapshot().map { it.userId }.toSet()
         val available = options.filter { it.userId !in selectedIds }
-        if (available.isEmpty()) {
-            Toast.makeText(this, "暂无可选同事", Toast.LENGTH_SHORT).show()
-            return
+
+        val dialog = Dialog(this, R.style.CustomDialog)
+        val sheetView = layoutInflater.inflate(R.layout.dialog_peer_collaborator_picker, null)
+        dialog.setContentView(sheetView)
+        dialog.window?.apply {
+            setGravity(android.view.Gravity.BOTTOM)
+            setLayout(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            setBackgroundDrawableResource(android.R.color.transparent)
         }
-        val labels = available.map { it.displayName }.toTypedArray()
-        AlertDialog.Builder(this)
-            .setTitle("选择合作同事")
-            .setItems(labels) { dialog, which ->
-                viewModel.addCollaborator(available[which])
-                refreshCollaborators()
-                dialog.dismiss()
+
+        val rvUsers = sheetView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rv_users)
+        val tvEmpty = sheetView.findViewById<TextView>(R.id.tv_empty)
+        val btnConfirm = sheetView.findViewById<TextView>(R.id.btn_confirm)
+
+        fun updateConfirmLabel(count: Int) {
+            btnConfirm.text = if (count > 0) "确定（$count）" else "确定"
+            btnConfirm.alpha = if (count > 0) 1f else 0.45f
+            btnConfirm.isEnabled = count > 0
+        }
+
+        val pickAdapter = PeerCollaboratorPickAdapter { count -> updateConfirmLabel(count) }
+        rvUsers.layoutManager = LinearLayoutManager(this)
+        rvUsers.adapter = pickAdapter
+        pickAdapter.submitList(available)
+
+        val hasOptions = available.isNotEmpty()
+        rvUsers.isVisible = hasOptions
+        tvEmpty.isVisible = !hasOptions
+        updateConfirmLabel(0)
+
+        sheetView.findViewById<android.widget.ImageView>(R.id.btn_close).setOnClickListener {
+            dialog.dismiss()
+        }
+        btnConfirm.setOnClickListener {
+            val picked = pickAdapter.selectedUsers()
+            if (picked.isEmpty()) {
+                Toast.makeText(this, "请至少选择 1 位同事", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
-            .show()
+            viewModel.addCollaborators(picked)
+            refreshCollaborators()
+            dialog.dismiss()
+        }
+        dialog.show()
     }
 
     private fun openSubmit(task: PeerEvalTask) {

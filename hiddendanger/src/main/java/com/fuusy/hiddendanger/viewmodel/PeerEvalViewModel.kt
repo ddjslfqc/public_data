@@ -82,6 +82,10 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
         selectedCollaborators.add(user)
     }
 
+    fun addCollaborators(users: List<OkrPeerUser>) {
+        users.forEach { addCollaborator(it) }
+    }
+
     fun removeCollaborator(userId: Long) {
         selectedCollaborators.removeAll { it.userId == userId }
     }
