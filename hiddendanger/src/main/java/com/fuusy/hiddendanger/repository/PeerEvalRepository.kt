@@ -4,6 +4,7 @@ import android.app.Application
 import com.fuusy.common.network.RetrofitManager
 import com.fuusy.common.network.ServerConfig
 import com.fuusy.common.network.UserIdHeaderInterceptor
+import com.fuusy.common.network.UserIdProvider
 import com.fuusy.hiddendanger.data.AlignOptionsResponse
 import com.fuusy.hiddendanger.data.OkrApi
 import com.fuusy.hiddendanger.data.OkrPeerUser
@@ -47,8 +48,9 @@ class PeerEvalRepository(app: Application) {
         apiCallOrLocal(
             apiCall = {
                 val resp = api.getReviewPrep(period)
-                if (resp.isSuccess && resp.data != null) resp.data!!
-                else throw IllegalStateException(resp.errorMsg ?: "加载失败")
+                if (resp.isSuccess) {
+                    resp.data ?: OkrReviewPrep(period = period, phase = "PRE_MEETING")
+                } else throw IllegalStateException(resp.errorMsg ?: "加载失败")
             },
             localCall = {
                 local.getReviewPrep(period) ?: OkrReviewPrep(
@@ -60,18 +62,20 @@ class PeerEvalRepository(app: Application) {
 
     suspend fun saveReviewPrep(request: OkrReviewPrepRequest): Result<OkrReviewPrep> {
         val users = loadUserDirectory()
-        return apiCallOrLocal(
-            apiCall = {
-                val resp = api.saveReviewPrep(request)
-                if (resp.isSuccess && resp.data != null) resp.data!!
-                else throw IllegalStateException(resp.errorMsg ?: "保存失败")
-            },
-            localCall = {
+        return try {
+            val resp = api.saveReviewPrep(request)
+            if (resp.isSuccess && resp.data != null) Result.success(resp.data!!)
+            else Result.failure(IllegalStateException(resp.errorMsg ?: "保存失败"))
+        } catch (e: Exception) {
+            runCatching {
                 val prep = local.buildPrepFromRequest(request, users)
                 local.saveReviewPrep(prep)
                 prep
-            }
-        )
+            }.fold(
+                onSuccess = { Result.success(it) },
+                onFailure = { Result.failure(e) }
+            )
+        }
     }
 
     suspend fun getTasks(period: String): Result<List<PeerEvalTask>> =
@@ -85,22 +89,47 @@ class PeerEvalRepository(app: Application) {
         )
 
     suspend fun submitEval(request: PeerEvalSubmitRequest): Result<Unit> =
-        apiCallOrLocal(
-            apiCall = {
-                val resp = api.submitPeerEval(request)
-                if (resp.isSuccess) Unit
-                else throw IllegalStateException(resp.errorMsg ?: "提交失败")
-            },
-            localCall = {
-                local.markSubmitted(request.period, request.targetUserId, request)
-            }
-        )
+        try {
+            val resp = api.submitPeerEval(request)
+            if (resp.isSuccess) Result.success(Unit)
+            else Result.failure(IllegalStateException(resp.errorMsg ?: "提交失败"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
 
-    suspend fun getUserOptions(): Result<List<OkrPeerUser>> =
-        okrRepo.getAlignOptions().map { options -> options.toPeerUsers() }
+    /** 获取所有同事（优先新接口，失败时回退 align-options） */
+    suspend fun getColleagues(): Result<List<OkrPeerUser>> =
+        try {
+            val resp = api.getPeerEvalColleagues()
+            if (resp.isSuccess) {
+                Result.success(resp.data.orEmpty().map { it.toPeerUser() })
+            } else {
+                loadColleaguesFallback(resp.errorMsg ?: "加载同事列表失败")
+            }
+        } catch (e: Exception) {
+            loadColleaguesFallback(e.message ?: "加载同事列表失败", e)
+        }
+
+    private suspend fun loadColleaguesFallback(
+        reason: String,
+        cause: Exception? = null
+    ): Result<List<OkrPeerUser>> {
+        val selfId = UserIdProvider.current()
+        return okrRepo.getAlignOptions().map { options ->
+            options.toPeerUsers().filter { user ->
+                selfId == null || user.userId != selfId
+            }
+        }.fold(
+            onSuccess = {
+                if (it.isNotEmpty()) Result.success(it)
+                else Result.failure(cause ?: IllegalStateException(reason))
+            },
+            onFailure = { Result.failure(cause ?: it) }
+        )
+    }
 
     private suspend fun loadUserDirectory(): List<OkrPeerUser> =
-        getUserOptions().getOrElse { emptyList() }
+        getColleagues().getOrElse { emptyList() }
 
     private suspend inline fun <T> apiCallOrLocal(
         crossinline apiCall: suspend () -> T,
@@ -117,8 +146,6 @@ class PeerEvalRepository(app: Application) {
     private fun AlignOptionsResponse.toPeerUsers(): List<OkrPeerUser> =
         users.orEmpty().map { it.toPeerUser() }
 
-    private fun OkrUser.toPeerUser(): OkrPeerUser {
-        val deptName = null // align-options 不含部门名，后续接口可补
-        return OkrPeerUser(userId = id, nickName = displayName, deptName = deptName)
-    }
+    private fun OkrUser.toPeerUser(): OkrPeerUser =
+        OkrPeerUser(userId = id, nickName = displayName, deptName = null)
 }

@@ -5,7 +5,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.fuusy.common.network.UserIdProvider
 import com.fuusy.hiddendanger.data.OkrPeerUser
 import com.fuusy.hiddendanger.data.OkrReviewPrep
 import com.fuusy.hiddendanger.data.OkrReviewPrepRequest
@@ -52,10 +51,7 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
-            repo.getUserOptions().fold(
-                onSuccess = { _userOptions.value = it.filterNot { u -> u.userId == UserIdProvider.current() } },
-                onFailure = { _userOptions.value = emptyList() }
-            )
+            loadColleaguesInternal()
             repo.getSummary(period).fold(
                 onSuccess = { _summary.value = it },
                 onFailure = { _summary.value = PeerEvalSummary(period = period) }
@@ -73,6 +69,24 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
             reloadTasks()
             _loading.value = false
         }
+    }
+
+    /** 打开选人弹窗前刷新同事列表 */
+    fun refreshColleagues(onComplete: () -> Unit) {
+        viewModelScope.launch {
+            loadColleaguesInternal()
+            onComplete()
+        }
+    }
+
+    private suspend fun loadColleaguesInternal() {
+        repo.getColleagues().fold(
+            onSuccess = { _userOptions.value = it },
+            onFailure = {
+                _userOptions.value = emptyList()
+                _error.value = it.message ?: "加载同事列表失败"
+            }
+        )
     }
 
     fun collaboratorsSnapshot(): List<OkrPeerUser> = selectedCollaborators.toList()

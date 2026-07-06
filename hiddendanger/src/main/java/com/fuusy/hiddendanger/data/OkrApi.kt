@@ -147,4 +147,7 @@ interface OkrApi {
     suspend fun addPeerCollaborator(
         @Body body: AddCollaboratorRequest
     ): BaseResp<Any?>
+
+    @GET("mobile/okr/peer-eval/colleagues")
+    suspend fun getPeerEvalColleagues(): BaseResp<List<PeerEvalColleague>>
 }

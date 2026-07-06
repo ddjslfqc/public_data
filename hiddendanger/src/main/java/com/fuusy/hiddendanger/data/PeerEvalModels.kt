@@ -29,6 +29,21 @@ data class OkrPeerUser(
         get() = nickName?.takeIf { it.isNotBlank() } ?: "用户$userId"
 }
 
+/** GET /mobile/okr/peer-eval/colleagues 返回的同事项 */
+data class PeerEvalColleague(
+    val id: Long,
+    val userName: String? = null,
+    val nickName: String? = null,
+    val deptId: Long? = null,
+    val deptName: String? = null
+) {
+    fun toPeerUser(): OkrPeerUser = OkrPeerUser(
+        userId = id,
+        nickName = nickName?.takeIf { it.isNotBlank() } ?: userName,
+        deptName = deptName
+    )
+}
+
 data class PeerEvalTask(
     val taskId: Long? = null,
     val targetUserId: Long,

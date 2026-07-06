@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.app.Dialog
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -140,10 +141,6 @@ class OkrPeerEvalActivity : AppCompatActivity() {
     }
 
     private fun showUserPicker() {
-        val options = viewModel.userOptions.value.orEmpty()
-        val selectedIds = viewModel.collaboratorsSnapshot().map { it.userId }.toSet()
-        val available = options.filter { it.userId !in selectedIds }
-
         val dialog = Dialog(this, R.style.CustomDialog)
         val sheetView = layoutInflater.inflate(R.layout.dialog_peer_collaborator_picker, null)
         dialog.setContentView(sheetView)
@@ -159,6 +156,7 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         val rvUsers = sheetView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rv_users)
         val tvEmpty = sheetView.findViewById<TextView>(R.id.tv_empty)
         val btnConfirm = sheetView.findViewById<TextView>(R.id.btn_confirm)
+        val progress = sheetView.findViewById<ProgressBar>(R.id.progress_loading)
 
         fun updateConfirmLabel(count: Int) {
             btnConfirm.text = if (count > 0) "确定（$count）" else "确定"
@@ -169,12 +167,23 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         val pickAdapter = PeerCollaboratorPickAdapter { count -> updateConfirmLabel(count) }
         rvUsers.layoutManager = LinearLayoutManager(this)
         rvUsers.adapter = pickAdapter
-        pickAdapter.submitList(available)
-
-        val hasOptions = available.isNotEmpty()
-        rvUsers.isVisible = hasOptions
-        tvEmpty.isVisible = !hasOptions
         updateConfirmLabel(0)
+
+        fun bindColleagueList() {
+            val selectedIds = viewModel.collaboratorsSnapshot().map { it.userId }.toSet()
+            val available = viewModel.userOptions.value.orEmpty()
+                .filter { it.userId !in selectedIds }
+            progress.isVisible = false
+            pickAdapter.submitList(available)
+            val hasOptions = available.isNotEmpty()
+            rvUsers.isVisible = hasOptions
+            tvEmpty.isVisible = !hasOptions
+            tvEmpty.text = "暂无可选同事"
+        }
+
+        progress.isVisible = true
+        rvUsers.isVisible = false
+        tvEmpty.isVisible = false
 
         sheetView.findViewById<android.widget.ImageView>(R.id.btn_close).setOnClickListener {
             dialog.dismiss()
@@ -189,7 +198,9 @@ class OkrPeerEvalActivity : AppCompatActivity() {
             refreshCollaborators()
             dialog.dismiss()
         }
+
         dialog.show()
+        viewModel.refreshColleagues { bindColleagueList() }
     }
 
     private fun openSubmit(task: PeerEvalTask) {
