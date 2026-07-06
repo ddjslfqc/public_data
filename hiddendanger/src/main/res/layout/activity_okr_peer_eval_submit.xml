@@ -78,7 +78,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="请基于 Q2 合作经历进行评价（1-5 分）"
+                        android:text="请基于 Q2 合作经历进行评价（点击小心心打分）"
                         android:textColor="#686D79"
                         android:textSize="12sp" />
 

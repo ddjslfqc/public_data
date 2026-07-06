@@ -2,11 +2,12 @@ package com.fuusy.hiddendanger.ui.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.SeekBar
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.fuusy.hiddendanger.R
 import com.fuusy.hiddendanger.data.PeerEvalFormRow
 import com.fuusy.hiddendanger.data.PeerEvalScoreItem
 import com.fuusy.hiddendanger.databinding.ItemPeerEvalCategoryHeaderBinding
@@ -55,28 +56,41 @@ class PeerEvalScoreFormAdapter : ListAdapter<PeerEvalFormRow, RecyclerView.ViewH
         private val binding: ItemPeerEvalScoreItemBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
+        private val hearts: List<ImageView> by lazy {
+            listOf(
+                binding.heart1,
+                binding.heart2,
+                binding.heart3,
+                binding.heart4,
+                binding.heart5
+            )
+        }
+
         fun bind(itemId: String, title: String, description: String) {
             binding.tvTitle.text = title
             binding.tvDescription.text = description
             val initial = scores[itemId] ?: DEFAULT_SCORE
             scores[itemId] = initial
-            binding.seekScore.progress = initial - 1
-            binding.tvScore.text = "${initial}分"
-            setupScoreSeekBar(binding.seekScore, binding.tvScore, itemId)
-        }
-    }
-
-    private fun setupScoreSeekBar(seekBar: SeekBar, label: TextView, itemId: String) {
-        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seek: SeekBar?, progress: Int, fromUser: Boolean) {
-                val score = progress + 1
-                scores[itemId] = score
-                label.text = "${score}分"
+            renderHearts(initial)
+            hearts.forEachIndexed { index, heart ->
+                heart.setOnClickListener {
+                    val score = index + 1
+                    scores[itemId] = score
+                    renderHearts(score)
+                }
             }
+        }
 
-            override fun onStartTrackingTouch(seek: SeekBar?) = Unit
-            override fun onStopTrackingTouch(seek: SeekBar?) = Unit
-        })
+        private fun renderHearts(score: Int) {
+            hearts.forEachIndexed { index, heart ->
+                val filled = index < score
+                heart.setImageResource(
+                    if (filled) R.drawable.ic_peer_heart_filled
+                    else R.drawable.ic_peer_heart_outline
+                )
+            }
+            binding.tvScore.text = "${score} 颗心"
+        }
     }
 
     class DiffCallback : DiffUtil.ItemCallback<PeerEvalFormRow>() {
