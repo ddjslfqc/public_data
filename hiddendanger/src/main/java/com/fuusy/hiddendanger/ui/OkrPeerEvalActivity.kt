@@ -124,7 +124,7 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         viewModel.saved.observe(this) { saved ->
             if (saved) {
                 viewModel.consumeSaved()
-                Toast.makeText(this, "复盘已保存", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "复盘已保存，已邀请合作同事评价您", Toast.LENGTH_SHORT).show()
                 viewModel.reviewPrep.value?.let { bindReviewPanel(it) }
             }
         }

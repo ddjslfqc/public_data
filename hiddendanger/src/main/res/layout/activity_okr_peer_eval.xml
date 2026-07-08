@@ -364,7 +364,7 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:paddingHorizontal="24dp"
-                    android:text="请先在「我的复盘」中保存产出并选择合作同事"
+                    android:text="暂无需要您评价的同事。若您已保存复盘并选择合作同事，请等待对方评价您，结果将汇总在「收到的评价」"
                     android:textColor="#A7AFC3"
                     android:textSize="14sp"
                     android:visibility="gone" />
