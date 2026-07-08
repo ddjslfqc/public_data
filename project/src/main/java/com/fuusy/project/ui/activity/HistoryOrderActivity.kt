@@ -15,12 +15,15 @@ class HistoryOrderActivity : BaseVmActivity<ActivityHistoryOrderBinding>() {
         if (supportFragmentManager.findFragmentById(R.id.fragment_container) == null) {
             val showActivePending = intent.getBooleanExtra(EXTRA_SHOW_ACTIVE_PENDING, false)
             val showCompleted = intent.getBooleanExtra(EXTRA_SHOW_COMPLETED, false)
+            if (showCompleted) {
+                mBinding.tvTitle.text = "完成任务"
+            }
             supportFragmentManager.beginTransaction()
                 .replace(
                     R.id.fragment_container,
                     WorkOrderListFragment.newInstance(
                         showActivePending = showActivePending,
-                        showCompleted = showCompleted
+                        showCompletedOnly = showCompleted
                     )
                 )
                 .commit()

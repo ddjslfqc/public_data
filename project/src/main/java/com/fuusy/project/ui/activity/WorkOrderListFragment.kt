@@ -20,6 +20,7 @@ import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.alibaba.android.arouter.launcher.ARouter
 import com.fuusy.common.data.WorkOrderStatus
+import com.fuusy.common.network.UserIdProvider
 import com.fuusy.project.R
 import com.fuusy.project.adapter.HistoryOrderAdapter
 import com.fuusy.project.databinding.FragmentWorkOrderListBinding
@@ -50,7 +51,8 @@ class WorkOrderListFragment : Fragment() {
     }
 
     private var pendingShowActive = false
-    private var pendingShowCompleted = false
+    private var pendingShowCompletedOnly = false
+    private var completedOnlyMode = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -81,13 +83,24 @@ class WorkOrderListFragment : Fragment() {
         observeViewModel()
         updateTabStyle()
         reload()
-        if (arguments?.getBoolean(ARG_SHOW_ACTIVE_PENDING) == true || pendingShowActive) {
+        completedOnlyMode = arguments?.getBoolean(ARG_SHOW_COMPLETED_ONLY) == true || pendingShowCompletedOnly
+        if (completedOnlyMode) {
+            applyCompletedOnlyUi()
+            currentFilter = FilterType.COMPLETED
+            viewModel.load(WorkOrderStatus.COMPLETED)
+        } else if (arguments?.getBoolean(ARG_SHOW_ACTIVE_PENDING) == true || pendingShowActive) {
             pendingShowActive = false
             switchTab(FilterType.ACTIVE)
-        } else if (arguments?.getBoolean(ARG_SHOW_COMPLETED) == true || pendingShowCompleted) {
-            pendingShowCompleted = false
-            switchTab(FilterType.COMPLETED)
         }
+    }
+
+    private fun applyCompletedOnlyUi() {
+        binding.tabScroll.visibility = View.GONE
+        binding.statBar.visibility = View.GONE
+        binding.fabCreate.visibility = View.GONE
+        binding.etSearch.hint = "搜索工单名称、编号"
+        binding.tvEmpty.text = "暂无已完成任务"
+        binding.rvWorkOrders.updatePadding(bottom = (16 * resources.displayMetrics.density).toInt())
     }
 
     /** 从首页「待处理工单 · 查看更多」进入时调用 */
@@ -102,10 +115,13 @@ class WorkOrderListFragment : Fragment() {
     /** 从首页/档案「完成任务」进入时调用 */
     fun showCompletedOrders() {
         if (_binding == null) {
-            pendingShowCompleted = true
+            pendingShowCompletedOnly = true
             return
         }
-        switchTab(FilterType.COMPLETED)
+        completedOnlyMode = true
+        applyCompletedOnlyUi()
+        currentFilter = FilterType.COMPLETED
+        viewModel.load(WorkOrderStatus.COMPLETED)
     }
 
     override fun onResume() {
@@ -114,7 +130,9 @@ class WorkOrderListFragment : Fragment() {
     }
 
     private fun reload() {
-        viewModel.refreshTabCounts()
+        if (!completedOnlyMode) {
+            viewModel.refreshTabCounts()
+        }
         when (currentFilter) {
             FilterType.ACTIVE -> viewModel.load(null)
             else -> viewModel.load(currentFilter.status)
@@ -185,12 +203,16 @@ class WorkOrderListFragment : Fragment() {
         }
     }
 
-    private fun applyStatusFilter(list: List<com.fuusy.common.data.WorkOrderItem>): List<com.fuusy.common.data.WorkOrderItem> =
-        when (currentFilter) {
+    private fun applyStatusFilter(list: List<com.fuusy.common.data.WorkOrderItem>): List<com.fuusy.common.data.WorkOrderItem> {
+        val filtered = when (currentFilter) {
             FilterType.ACTIVE -> list.filter { it.status in ACTIVE_PENDING_STATUSES }
             FilterType.ALL -> list
             else -> list.filter { it.status == currentFilter.status }
         }
+        if (!completedOnlyMode) return filtered
+        val myId = UserIdProvider.current()?.toString() ?: return filtered
+        return filtered.filter { it.rectificationPersonId == myId }
+    }
 
     private fun updateTabCounts() {
         val tabs = listOf(
@@ -309,7 +331,7 @@ class WorkOrderListFragment : Fragment() {
 
     companion object {
         private const val ARG_SHOW_ACTIVE_PENDING = "show_active_pending"
-        private const val ARG_SHOW_COMPLETED = "show_completed"
+        private const val ARG_SHOW_COMPLETED_ONLY = "show_completed_only"
 
         val ACTIVE_PENDING_STATUSES = setOf(
             WorkOrderStatus.PENDING,
@@ -318,11 +340,11 @@ class WorkOrderListFragment : Fragment() {
             WorkOrderStatus.EVAL
         )
 
-        fun newInstance(showActivePending: Boolean = false, showCompleted: Boolean = false): WorkOrderListFragment =
+        fun newInstance(showActivePending: Boolean = false, showCompletedOnly: Boolean = false): WorkOrderListFragment =
             WorkOrderListFragment().apply {
                 arguments = Bundle().apply {
                     putBoolean(ARG_SHOW_ACTIVE_PENDING, showActivePending)
-                    putBoolean(ARG_SHOW_COMPLETED, showCompleted)
+                    putBoolean(ARG_SHOW_COMPLETED_ONLY, showCompletedOnly)
                 }
             }
     }
