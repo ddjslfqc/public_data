@@ -18,9 +18,10 @@ import com.fuusy.common.utils.SpUtils
 import com.fuusy.project.R
 import com.fuusy.project.adapter.HomePendingOrderAdapter
 import com.fuusy.project.databinding.FragmentHomeBinding
-import com.fuusy.project.ui.model.HomeLeaderItem
+import com.fuusy.project.databinding.ItemHomeLeaderBinding
 import com.fuusy.project.ui.model.HomePendingOrderItem
 import com.fuusy.project.workorder.MobileWorkOrderRepository
+import com.fuusy.project.workorder.WorkOrderRankingItemDto
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -38,6 +39,8 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private val workOrderRepo = MobileWorkOrderRepository()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -51,9 +54,9 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         applyStatusBarPadding()
         setupGreeting()
-        setupLeaderboard()
         setupPendingOrders()
         setupClicks()
+        refreshDashboard()
     }
 
     private fun applyStatusBarPadding() {
@@ -69,23 +72,8 @@ class HomeFragment : Fragment() {
     private fun setupGreeting() {
         val greeting = timeGreeting(Calendar.getInstance().get(Calendar.HOUR_OF_DAY))
         binding.tvGreeting.text = "$greeting，欢迎回来"
-        val username = SpUtils.getString("user_name", "")?.takeIf { it.isNotBlank() } ?: "常 伟思"
+        val username = SpUtils.getString("user_name", "")?.takeIf { it.isNotBlank() } ?: "用户"
         binding.tvUsername.text = username
-        binding.tvCompletedCount.text = "28"
-        binding.tvAverageRating.text = "4.5"
-    }
-
-    private fun setupLeaderboard() {
-        val leaders = HomeMockData.leaders
-        val bindings = listOf(binding.leader1, binding.leader2, binding.leader3)
-        leaders.forEachIndexed { index, item ->
-            bindings[index].apply {
-                tvAvatar.text = item.initial
-                tvAvatar.setBackgroundResource(item.avatarBgRes)
-                tvName.text = item.name
-                tvTaskCount.text = "任务量: ${item.taskCount}"
-            }
-        }
     }
 
     private fun setupPendingOrders() {
@@ -94,7 +82,40 @@ class HomeFragment : Fragment() {
         refreshPendingOrders()
     }
 
-    private val workOrderRepo = MobileWorkOrderRepository()
+    private fun refreshDashboard() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            workOrderRepo.dashboard().onSuccess { data ->
+                binding.tvCompletedCount.text = data.completedCount.toString()
+                val rating = data.averageRating
+                binding.tvAverageRating.text =
+                    if (rating > 0) String.format("%.1f", rating) else "--"
+                renderLeaderboard(data.rankingTop3.orEmpty())
+            }
+        }
+    }
+
+    private fun renderLeaderboard(items: List<WorkOrderRankingItemDto>) {
+        val avatarBgs = intArrayOf(
+            R.drawable.bg_home_avatar_blue,
+            R.drawable.bg_home_avatar_gold,
+            R.drawable.bg_home_avatar_green
+        )
+        val bindings = listOf(binding.leader1, binding.leader2, binding.leader3)
+        bindings.forEachIndexed { index, include ->
+            val row = ItemHomeLeaderBinding.bind(include.root)
+            val item = items.getOrNull(index)
+            if (item == null) {
+                row.root.visibility = View.INVISIBLE
+                return@forEachIndexed
+            }
+            row.root.visibility = View.VISIBLE
+            val name = item.nickName?.takeIf { it.isNotBlank() } ?: "用户"
+            row.tvAvatar.text = name.firstOrNull()?.toString() ?: "?"
+            row.tvAvatar.setBackgroundResource(avatarBgs[index % avatarBgs.size])
+            row.tvName.text = name
+            row.tvTaskCount.text = "任务量: ${item.completedCount}"
+        }
+    }
 
     private fun refreshPendingOrders() {
         val activeStatuses = setOf(
@@ -109,30 +130,35 @@ class HomeFragment : Fragment() {
                 .orEmpty()
                 .filter { it.status in activeStatuses }
                 .take(3)
-                .map { order ->
-                    HomePendingOrderItem(
-                        title = order.hiddenDangerName.orEmpty(),
-                        time = order.submitTime,
-                        status = order.nodeName?.takeIf { it.isNotBlank() } ?: order.status.displayName,
-                        workOrder = order
-                    )
-                }
+                .map { HomePendingOrderItem.fromWorkOrder(it) }
             pendingAdapter.submitList(items)
         }
     }
 
     private fun setupClicks() {
         binding.cardUwbDebug.setOnClickListener {
+            ARouter.getInstance().build("/project/UwbDebugActivity").navigation()
+        }
+        binding.cardStatCompleted.setOnClickListener { openCompletedOrders() }
+        binding.cardStatRating.setOnClickListener {
             ARouter.getInstance()
-                .build("/project/UwbDebugActivity")
+                .build("/hiddendanger/EvaluationRecordActivity")
                 .navigation()
         }
         binding.tvRankingMore.setOnClickListener {
-            showToast("排行榜详情即将上线")
+            ARouter.getInstance()
+                .build("/project/WorkOrderRankingActivity")
+                .navigation()
         }
-        binding.tvOrdersMore.setOnClickListener {
-            openWorkOrderTab()
-        }
+        binding.tvOrdersMore.setOnClickListener { openWorkOrderTab() }
+    }
+
+    private fun openCompletedOrders() {
+        (activity as? ProjectDetailActivity)?.switchToWorkOrderTab(showCompleted = true)
+            ?: ARouter.getInstance()
+                .build("/project/HistoryOrderActivity")
+                .withBoolean(HistoryOrderActivity.EXTRA_SHOW_COMPLETED, true)
+                .navigation()
     }
 
     private fun openWorkOrderTab() {
@@ -146,15 +172,13 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         setupGreeting()
+        refreshDashboard()
         refreshPendingOrders()
     }
 
     fun onProjectSwitched(newProjectId: String) {
-        // 预留：切换项目后刷新首页数据
-    }
-
-    private fun showToast(msg: String) {
-        Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+        refreshDashboard()
+        refreshPendingOrders()
     }
 
     override fun onDestroyView() {
@@ -171,19 +195,10 @@ class HomeFragment : Fragment() {
             }
         }
 
-        /** 早上好 5–11 点；中午好 12–17 点；晚上好 其余时段 */
         fun timeGreeting(hour: Int): String = when (hour) {
             in 5..11 -> "早上好"
             in 12..17 -> "中午好"
             else -> "晚上好"
         }
     }
-}
-
-private object HomeMockData {
-    val leaders = listOf(
-        HomeLeaderItem("章北海", "章", 12, R.drawable.bg_home_avatar_blue, 1),
-        HomeLeaderItem("常伟思", "常", 10, R.drawable.bg_home_avatar_gold, 2),
-        HomeLeaderItem("汪淼", "汪", 8, R.drawable.bg_home_avatar_green, 3)
-    )
 }

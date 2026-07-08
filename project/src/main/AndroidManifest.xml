@@ -31,6 +31,7 @@
             android:name=".ui.activity.ProjectDetailActivity"
             android:hardwareAccelerated="true" />
         <activity android:name=".ui.activity.HistoryOrderActivity" />
+        <activity android:name=".ui.activity.WorkOrderRankingActivity" />
     </application>
 
 </manifest>

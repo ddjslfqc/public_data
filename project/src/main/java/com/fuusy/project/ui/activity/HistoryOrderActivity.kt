@@ -14,10 +14,14 @@ class HistoryOrderActivity : BaseVmActivity<ActivityHistoryOrderBinding>() {
         mBinding.btnBack.setOnClickListener { finish() }
         if (supportFragmentManager.findFragmentById(R.id.fragment_container) == null) {
             val showActivePending = intent.getBooleanExtra(EXTRA_SHOW_ACTIVE_PENDING, false)
+            val showCompleted = intent.getBooleanExtra(EXTRA_SHOW_COMPLETED, false)
             supportFragmentManager.beginTransaction()
                 .replace(
                     R.id.fragment_container,
-                    WorkOrderListFragment.newInstance(showActivePending = showActivePending)
+                    WorkOrderListFragment.newInstance(
+                        showActivePending = showActivePending,
+                        showCompleted = showCompleted
+                    )
                 )
                 .commit()
         }
@@ -25,5 +29,6 @@ class HistoryOrderActivity : BaseVmActivity<ActivityHistoryOrderBinding>() {
 
     companion object {
         const val EXTRA_SHOW_ACTIVE_PENDING = "show_active_pending"
+        const val EXTRA_SHOW_COMPLETED = "show_completed"
     }
 }

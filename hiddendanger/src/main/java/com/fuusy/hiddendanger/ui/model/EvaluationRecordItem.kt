@@ -18,5 +18,6 @@ data class EvaluationRecordItem(
     val rating: Float,
     val content: String,
     val workOrderTitle: String,
+    val workOrderId: String? = null,
     val workOrder: WorkOrderItem? = null
 )

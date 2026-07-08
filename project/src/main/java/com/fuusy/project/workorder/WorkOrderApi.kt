@@ -59,4 +59,22 @@ interface WorkOrderApi {
 
     @DELETE("mobile/workorder/attachment/{id}")
     suspend fun deleteAttachment(@Path("id") id: String): BaseResp<Any?>
+
+    @POST("mobile/workorder/evaluate")
+    suspend fun evaluate(@Body body: WorkOrderEvaluateRequest): BaseResp<Any?>
+
+    @GET("mobile/workorder/dashboard")
+    suspend fun dashboard(): BaseResp<WorkOrderDashboardDto>
+
+    @GET("mobile/workorder/ranking")
+    suspend fun ranking(@Query("limit") limit: Int = 20): BaseResp<List<WorkOrderRankingItemDto>>
+
+    @GET("mobile/workorder/evaluation/summary")
+    suspend fun evaluationSummary(@Query("type") type: String): BaseResp<WorkOrderEvaluationSummaryDto>
+
+    @GET("mobile/workorder/evaluation/list")
+    suspend fun evaluationList(@Query("type") type: String): BaseResp<List<WorkOrderEvaluationItemDto>>
+
+    @GET("mobile/workorder/archive")
+    suspend fun archive(): BaseResp<WorkOrderArchiveDto>
 }

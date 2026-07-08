@@ -119,11 +119,18 @@ class PersonalViewModel(application: Application) : AndroidViewModel(application
                 // 从数据库或SharedPreferences获取真实用户信息
                 loadUserInfo()
 
-                val completedCount = workOrderRepo.list(WorkOrderStatus.COMPLETED)
-                    .getOrNull()
-                    ?.size ?: 0
-                _completedTaskCount.postValue(completedCount)
-                _averageRating.postValue("4.5")
+                workOrderRepo.dashboard().onSuccess { dashboard ->
+                    _completedTaskCount.postValue(dashboard.completedCount)
+                    val rating = dashboard.averageRating
+                    _averageRating.postValue(
+                        if (rating > 0) String.format("%.1f", rating) else "--"
+                    )
+                }.onFailure {
+                    val completedCount = workOrderRepo.list(WorkOrderStatus.COMPLETED)
+                        .getOrNull()?.size ?: 0
+                    _completedTaskCount.postValue(completedCount)
+                    _averageRating.postValue("--")
+                }
                 val draftOrders = repository.getWorkOrdersByStatus(WorkOrderStatus.DRAFT)
                 _draftCount.postValue(draftOrders.size)
                 

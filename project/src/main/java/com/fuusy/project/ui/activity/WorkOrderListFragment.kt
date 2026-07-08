@@ -50,6 +50,7 @@ class WorkOrderListFragment : Fragment() {
     }
 
     private var pendingShowActive = false
+    private var pendingShowCompleted = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -83,6 +84,9 @@ class WorkOrderListFragment : Fragment() {
         if (arguments?.getBoolean(ARG_SHOW_ACTIVE_PENDING) == true || pendingShowActive) {
             pendingShowActive = false
             switchTab(FilterType.ACTIVE)
+        } else if (arguments?.getBoolean(ARG_SHOW_COMPLETED) == true || pendingShowCompleted) {
+            pendingShowCompleted = false
+            switchTab(FilterType.COMPLETED)
         }
     }
 
@@ -93,6 +97,15 @@ class WorkOrderListFragment : Fragment() {
             return
         }
         switchTab(FilterType.ACTIVE)
+    }
+
+    /** 从首页/档案「完成任务」进入时调用 */
+    fun showCompletedOrders() {
+        if (_binding == null) {
+            pendingShowCompleted = true
+            return
+        }
+        switchTab(FilterType.COMPLETED)
     }
 
     override fun onResume() {
@@ -296,6 +309,7 @@ class WorkOrderListFragment : Fragment() {
 
     companion object {
         private const val ARG_SHOW_ACTIVE_PENDING = "show_active_pending"
+        private const val ARG_SHOW_COMPLETED = "show_completed"
 
         val ACTIVE_PENDING_STATUSES = setOf(
             WorkOrderStatus.PENDING,
@@ -304,10 +318,11 @@ class WorkOrderListFragment : Fragment() {
             WorkOrderStatus.EVAL
         )
 
-        fun newInstance(showActivePending: Boolean = false): WorkOrderListFragment =
+        fun newInstance(showActivePending: Boolean = false, showCompleted: Boolean = false): WorkOrderListFragment =
             WorkOrderListFragment().apply {
                 arguments = Bundle().apply {
                     putBoolean(ARG_SHOW_ACTIVE_PENDING, showActivePending)
+                    putBoolean(ARG_SHOW_COMPLETED, showCompleted)
                 }
             }
     }

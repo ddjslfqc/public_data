@@ -11,7 +11,8 @@ data class ArchiveEvaluationItem(
     val tagTextColor: Int,
     @DrawableRes val tagBackgroundRes: Int,
     val content: String,
-    val meta: String
+    val meta: String,
+    val workOrderId: String? = null
 )
 
 data class ArchiveDistributionItem(

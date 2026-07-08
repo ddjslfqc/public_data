@@ -7,7 +7,17 @@ data class HomePendingOrderItem(
     val time: String,
     val status: String,
     val workOrder: WorkOrderItem? = null
-)
+) {
+    companion object {
+        fun fromWorkOrder(order: WorkOrderItem): HomePendingOrderItem =
+            HomePendingOrderItem(
+                title = order.hiddenDangerName?.takeIf { it.isNotBlank() } ?: "工单",
+                time = order.submitTime ?: "",
+                status = order.nodeName?.takeIf { it.isNotBlank() } ?: order.status.displayName,
+                workOrder = order
+            )
+    }
+}
 
 data class HomeLeaderItem(
     val name: String,

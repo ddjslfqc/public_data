@@ -103,3 +103,59 @@ data class WorkOrderOptionsDto(
     val priorities: List<OptionItemDto>? = null,
     val departments: List<OptionItemDto>? = null
 )
+
+data class WorkOrderEvaluateRequest(
+    val workOrderId: String,
+    val score: Int,
+    val content: String? = null
+)
+
+data class WorkOrderDashboardDto(
+    val completedCount: Int = 0,
+    val averageRating: Double = 0.0,
+    val rankingTop3: List<WorkOrderRankingItemDto>? = null,
+    val myRank: WorkOrderMyRankDto? = null
+)
+
+data class WorkOrderRankingItemDto(
+    val rank: Int = 0,
+    val userId: String? = null,
+    val nickName: String? = null,
+    val completedCount: Int = 0
+)
+
+data class WorkOrderMyRankDto(
+    val rank: Int = 0,
+    val completedCount: Int = 0
+)
+
+data class WorkOrderEvaluationSummaryDto(
+    val averageRating: String? = null,
+    val positiveRate: String? = null,
+    val totalCount: Int = 0
+)
+
+data class WorkOrderEvaluationItemDto(
+    val id: String? = null,
+    val workOrderId: String? = null,
+    val workOrderNo: String? = null,
+    val workOrderTitle: String? = null,
+    val reviewerName: String? = null,
+    val department: String? = null,
+    val date: String? = null,
+    val score: Int? = null,
+    val tag: String? = null,
+    val content: String? = null
+)
+
+data class WorkOrderArchiveTagDto(
+    val label: String? = null,
+    val count: Int = 0
+)
+
+data class WorkOrderArchiveDto(
+    val completedCount: Int = 0,
+    val averageRating: String? = null,
+    val tagDistribution: List<WorkOrderArchiveTagDto>? = null,
+    val recentEvaluations: List<WorkOrderEvaluationItemDto>? = null
+)

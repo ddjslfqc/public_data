@@ -107,6 +107,20 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    fun evaluate(workOrderId: String, score: Int, content: String?, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            _loading.value = true
+            repo.evaluate(workOrderId, score, content).fold(
+                onSuccess = {
+                    loadDetail(workOrderId)
+                    onResult(true, null)
+                },
+                onFailure = { onResult(false, it.message) }
+            )
+            _loading.value = false
+        }
+    }
+
     fun deleteAttachment(workOrderId: String, attachmentId: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             _loading.value = true

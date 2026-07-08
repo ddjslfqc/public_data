@@ -147,10 +147,11 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
     }
 
     /** 切到工单 Tab；[showActivePending] 为 true 时展示与首页「待处理工单」一致的列表 */
-    fun switchToWorkOrderTab(showActivePending: Boolean = false) {
+    fun switchToWorkOrderTab(showActivePending: Boolean = false, showCompleted: Boolean = false) {
         selectBottomTab(R.id.navigation_work_order)
-        if (showActivePending) {
-            (workOrderFragment as? WorkOrderListFragment)?.showActivePendingOrders()
+        when {
+            showCompleted -> (workOrderFragment as? WorkOrderListFragment)?.showCompletedOrders()
+            showActivePending -> (workOrderFragment as? WorkOrderListFragment)?.showActivePendingOrders()
         }
     }
 

@@ -1,9 +1,7 @@
 package com.fuusy.hiddendanger.ui.adapter
 
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
@@ -12,8 +10,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.fuusy.hiddendanger.databinding.ItemArchiveEvaluationBinding
 import com.fuusy.hiddendanger.ui.model.ArchiveEvaluationItem
 
-class ArchiveEvaluationAdapter :
-    ListAdapter<ArchiveEvaluationItem, ArchiveEvaluationAdapter.VH>(DiffCallback()) {
+class ArchiveEvaluationAdapter(
+    private val onItemClick: (ArchiveEvaluationItem) -> Unit = {}
+) : ListAdapter<ArchiveEvaluationItem, ArchiveEvaluationAdapter.VH>(DiffCallback()) {
 
     class VH(val binding: ItemArchiveEvaluationBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -42,6 +41,9 @@ class ArchiveEvaluationAdapter :
                 tvTag.setTextColor(item.tagTextColor)
                 tvTag.setBackgroundResource(item.tagBackgroundRes)
             }
+            root.setOnClickListener {
+                if (item.workOrderId != null) onItemClick(item)
+            }
         }
     }
 
@@ -54,18 +56,12 @@ class ArchiveEvaluationAdapter :
 
     private fun buildStars(rating: Float): String {
         val full = rating.toInt().coerceIn(0, 5)
-        val half = if (rating - full >= 0.5f) 1 else 0
-        val empty = 5 - full - half
-        return buildString {
-            repeat(full) { append("★") }
-            if (half > 0) append("☆")
-            repeat(empty) { append("☆") }
-        }
+        return "★".repeat(full) + "☆".repeat(5 - full)
     }
 
     class DiffCallback : DiffUtil.ItemCallback<ArchiveEvaluationItem>() {
         override fun areItemsTheSame(oldItem: ArchiveEvaluationItem, newItem: ArchiveEvaluationItem) =
-            oldItem.meta == newItem.meta
+            oldItem.meta == newItem.meta && oldItem.reviewerName == newItem.reviewerName
 
         override fun areContentsTheSame(oldItem: ArchiveEvaluationItem, newItem: ArchiveEvaluationItem) =
             oldItem == newItem

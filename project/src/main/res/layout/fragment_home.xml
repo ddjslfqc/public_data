@@ -69,11 +69,13 @@
                 android:orientation="horizontal">
 
                 <FrameLayout
+                    android:id="@+id/card_stat_completed"
                     android:layout_width="0dp"
                     android:layout_height="76dp"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_home_stat_blue"
+                    android:foreground="?attr/selectableItemBackground"
                     android:padding="16dp">
 
                     <TextView
@@ -96,11 +98,13 @@
                 </FrameLayout>
 
                 <FrameLayout
+                    android:id="@+id/card_stat_rating"
                     android:layout_width="0dp"
                     android:layout_height="76dp"
                     android:layout_marginStart="4dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_home_stat_gold"
+                    android:foreground="?attr/selectableItemBackground"
                     android:padding="16dp">
 
                     <TextView

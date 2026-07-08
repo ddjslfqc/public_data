@@ -2,6 +2,7 @@ package com.fuusy.hiddendanger.ui
 
 import android.content.Context
 import android.content.Intent
+import androidx.appcompat.app.AlertDialog
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -321,14 +322,29 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
     }
 
     private fun showEvaluateDialog(item: WorkOrderItem) {
-        AppDialogHelper.showConfirm(
-            this,
-            title = "评价工单",
-            message = "确认提交评价？",
-            confirmText = "提交评价"
-        ) {
-            runApprove(item, pass = true, opinion = "评价通过")
-        }
+        val options = arrayOf("5星 - 非常满意", "4星 - 满意", "3星 - 一般", "2星 - 较差", "1星 - 很差")
+        AlertDialog.Builder(this)
+            .setTitle("评价工单")
+            .setItems(options) { _, which ->
+                val score = 5 - which
+                AppDialogHelper.showInput(
+                    context = this,
+                    title = "评价说明",
+                    label = "可选填写评价内容：",
+                    hint = "处理质量、响应速度等...",
+                    required = false,
+                    confirmText = "提交评价"
+                ) { content ->
+                    viewModel.evaluate(item.id, score, content) { ok, msg ->
+                        if (ok) {
+                            ToastUtil.showCustomToast(this@OrderDetailActivity, "评价成功")
+                        } else {
+                            ToastUtil.showCustomToast(this@OrderDetailActivity, msg ?: "评价失败")
+                        }
+                    }
+                }
+            }
+            .show()
     }
 
     private fun runApprove(item: WorkOrderItem, pass: Boolean, opinion: String?) {

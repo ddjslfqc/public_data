@@ -133,6 +133,27 @@ class MobileWorkOrderRepository {
         Result.failure(e)
     }
 
+    suspend fun evaluate(workOrderId: String, score: Int, content: String?): Result<Unit> = try {
+        val resp = authApi.evaluate(WorkOrderEvaluateRequest(workOrderId, score, content))
+        if (resp.isSuccess) Result.success(Unit)
+        else Result.failure(IllegalStateException(resp.errorMsg ?: "评价失败(${resp.errorCode})"))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun dashboard(): Result<WorkOrderDashboardDto> = safeCall { authApi.dashboard() }
+
+    suspend fun ranking(limit: Int = 20): Result<List<WorkOrderRankingItemDto>> =
+        safeList { authApi.ranking(limit) }
+
+    suspend fun evaluationSummary(type: String): Result<WorkOrderEvaluationSummaryDto> =
+        safeCall { authApi.evaluationSummary(type) }
+
+    suspend fun evaluationList(type: String): Result<List<WorkOrderEvaluationItemDto>> =
+        safeList { authApi.evaluationList(type) }
+
+    suspend fun archive(): Result<WorkOrderArchiveDto> = safeCall { authApi.archive() }
+
     private suspend inline fun <T> safeCall(
         crossinline block: suspend () -> BaseResp<T>
     ): Result<T> = try {

@@ -37,13 +37,8 @@ class EvaluationRecordAdapter(
 
             val hasWorkOrder = item.workOrderTitle.isNotBlank()
             rowWorkOrder.isVisible = hasWorkOrder
-            if (hasWorkOrder) {
-                rowWorkOrder.setOnClickListener {
-                    if (item.workOrder != null) onWorkOrderClick(item)
-                }
-            } else {
-                rowWorkOrder.setOnClickListener(null)
-            }
+            val clickable = item.workOrder != null || item.workOrderId != null
+            rowWorkOrder.setOnClickListener(if (clickable) { { onWorkOrderClick(item) } } else null)
         }
     }
 
