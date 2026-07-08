@@ -28,7 +28,10 @@ class PeerEvalReceivedViewModel(application: Application) : AndroidViewModel(app
             _error.value = null
             repo.getReceivedEval(period).fold(
                 onSuccess = { _received.value = it },
-                onFailure = { _error.value = it.message ?: "加载失败" }
+                onFailure = {
+                    _error.value = it.message ?: "加载失败"
+                    _received.value = PeerEvalReceivedResponse(period = period)
+                }
             )
             _loading.value = false
         }

@@ -97,24 +97,17 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
                 if (summary.receivedEvaluatorCount > 0) {
                     _peerEvalReceivedCount.value = summary.receivedEvaluatorCount
                     _peerEvalReceivedScore.value = summary.receivedAverageScore
+                } else {
+                    _peerEvalReceivedCount.value = 0
+                    _peerEvalReceivedScore.value = null
                 }
             },
             onFailure = {
                 _peerEvalSummary.value = null
                 _peerEvalPendingCount.value = 0
                 _peerEvalCompletedCount.value = 0
-            }
-        )
-        peerEvalRepo.getReceivedEval(evalPeriod).fold(
-            onSuccess = { received ->
-                _peerEvalReceivedCount.value = received.evaluatorCount
-                _peerEvalReceivedScore.value = received.averageScore
-            },
-            onFailure = {
-                if (_peerEvalReceivedCount.value == 0) {
-                    _peerEvalReceivedCount.value = 0
-                    _peerEvalReceivedScore.value = null
-                }
+                _peerEvalReceivedCount.value = 0
+                _peerEvalReceivedScore.value = null
             }
         )
     }

@@ -46,13 +46,20 @@ class OkrPeerEvalReceivedActivity : AppCompatActivity() {
             msg?.let { Toast.makeText(this, it, Toast.LENGTH_SHORT).show() }
         }
         viewModel.received.observe(this) { data ->
-            data?.let { bindReceived(it) }
+            bindReceived(data)
         }
 
         viewModel.load(period)
     }
 
-    private fun bindReceived(data: PeerEvalReceivedResponse) {
+    private fun bindReceived(data: PeerEvalReceivedResponse?) {
+        val empty = data == null || data.evaluatorCount <= 0
+        binding.tvEmpty.isVisible = empty
+        binding.layoutContent.isVisible = !empty
+        if (empty || data == null) {
+            binding.tvEmpty.text = "暂无同事评价，互评结束后将在此汇总展示"
+            return
+        }
         binding.tvEvaluatorCount.text = "${data.evaluatorCount} 位同事已完成评价"
         binding.tvAverageScore.text = "%.1f".format(data.averageScore)
         binding.tvPublishedAt.isVisible = !data.publishedAt.isNullOrBlank()

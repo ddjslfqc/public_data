@@ -12,7 +12,6 @@ import com.fuusy.hiddendanger.data.OkrReviewPrep
 import com.fuusy.hiddendanger.data.OkrReviewPrepRequest
 import com.fuusy.hiddendanger.data.OkrUser
 import com.fuusy.hiddendanger.data.PeerEvalReceivedResponse
-import com.fuusy.hiddendanger.data.PeerEvalMockData
 import com.fuusy.hiddendanger.data.PeerEvalSubmissionDetail
 import com.fuusy.hiddendanger.data.PeerEvalSubmitRequest
 import com.fuusy.hiddendanger.data.PeerEvalSummary
@@ -22,7 +21,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class PeerEvalRepository(app: Application) {
 
-    private val local = PeerEvalLocalStore(app)
     private val okrRepo = OkrRepository()
 
     private val api: OkrApi by lazy {
@@ -38,77 +36,34 @@ class PeerEvalRepository(app: Application) {
     }
 
     suspend fun getSummary(period: String): Result<PeerEvalSummary> =
-        apiCallOrLocal(
-            apiCall = {
-                val resp = api.getPeerEvalSummary(period)
-                if (resp.isSuccess && resp.data != null) resp.data!!
-                else throw IllegalStateException(resp.errorMsg ?: "加载失败")
-            },
-            localCall = { local.getSummary(period) }
-        )
+        safeCall { api.getPeerEvalSummary(period) }
 
-    suspend fun getReviewPrep(period: String): Result<OkrReviewPrep> =
-        apiCallOrLocal(
-            apiCall = {
-                val resp = api.getReviewPrep(period)
-                if (resp.isSuccess) {
-                    resp.data ?: OkrReviewPrep(period = period, phase = "PRE_MEETING")
-                } else throw IllegalStateException(resp.errorMsg ?: "加载失败")
-            },
-            localCall = {
-                local.getReviewPrep(period) ?: OkrReviewPrep(
-                    period = period,
-                    phase = "POST_MEETING"
-                )
-            }
-        )
-
-    suspend fun saveReviewPrep(request: OkrReviewPrepRequest): Result<OkrReviewPrep> {
-        val users = loadUserDirectory()
-        return try {
-            val resp = api.saveReviewPrep(request)
-            if (resp.isSuccess && resp.data != null) Result.success(resp.data!!)
-            else Result.failure(IllegalStateException(resp.errorMsg ?: "保存失败"))
-        } catch (e: Exception) {
-            runCatching {
-                val prep = local.buildPrepFromRequest(request, users)
-                local.saveReviewPrep(prep)
-                prep
-            }.fold(
-                onSuccess = { Result.success(it) },
-                onFailure = { Result.failure(e) }
-            )
+    suspend fun getReviewPrep(period: String): Result<OkrReviewPrep> = try {
+        val resp = api.getReviewPrep(period)
+        if (resp.isSuccess) {
+            Result.success(resp.data ?: OkrReviewPrep(period = period, phase = "PRE_MEETING"))
+        } else {
+            Result.failure(IllegalStateException(resp.errorMsg ?: "加载复盘失败"))
         }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
+
+    suspend fun saveReviewPrep(request: OkrReviewPrepRequest): Result<OkrReviewPrep> =
+        safeCall { api.saveReviewPrep(request) }
 
     suspend fun getTasks(period: String): Result<List<PeerEvalTask>> =
-        apiCallOrLocal(
-            apiCall = {
-                val resp = api.getPeerEvalTasks(period)
-                if (resp.isSuccess) mergeLocalDoneState(period, resp.data.orEmpty())
-                else throw IllegalStateException(resp.errorMsg ?: "加载失败")
-            },
-            localCall = { local.getTasks(period) }
-        )
+        safeListCall { api.getPeerEvalTasks(period) }
 
-    private fun mergeLocalDoneState(period: String, tasks: List<PeerEvalTask>): List<PeerEvalTask> {
-        val doneIds = local.getCompletedTargetIds(period)
-        if (doneIds.isEmpty()) return tasks
-        return tasks.map { task ->
-            if (task.isDone || task.targetUserId !in doneIds) task
-            else task.copy(status = "DONE", submittedAt = task.submittedAt ?: "刚刚")
-        }
-    }
-
-    suspend fun submitEval(request: PeerEvalSubmitRequest): Result<Unit> {
-        local.markSubmitted(request.period, request.targetUserId, request)
-        return try {
-            val resp = api.submitPeerEval(request)
-            if (resp.isSuccess) Result.success(Unit)
-            else Result.success(Unit)
-        } catch (e: Exception) {
+    suspend fun submitEval(request: PeerEvalSubmitRequest): Result<Unit> = try {
+        val resp = api.submitPeerEval(request)
+        if (resp.isSuccess) {
             Result.success(Unit)
+        } else {
+            Result.failure(IllegalStateException(resp.errorMsg ?: "提交失败"))
         }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
     suspend fun getSubmissionDetail(
@@ -116,41 +71,19 @@ class PeerEvalRepository(app: Application) {
         targetUserId: Long,
         targetUserName: String? = null,
         deptName: String? = null
-    ): Result<PeerEvalSubmissionDetail> =
-        apiCallOrLocal(
-            apiCall = {
-                val resp = api.getPeerEvalSubmission(period, targetUserId)
-                if (resp.isSuccess && resp.data != null) resp.data!!
-                else throw IllegalStateException(resp.errorMsg ?: "加载评价详情失败")
-            },
-            localCall = {
-                local.getSubmission(period, targetUserId)?.let { submission ->
-                    PeerEvalSubmissionDetail(
-                        period = submission.period,
-                        targetUserId = submission.targetUserId,
-                        targetUserName = targetUserName,
-                        deptName = deptName,
-                        scores = submission.scores,
-                        highlight = submission.highlight,
-                        suggestion = submission.suggestion,
-                        averageScore = submission.averageScore,
-                        submittedAt = "刚刚"
-                    )
-                } ?: PeerEvalMockData.sentDetail(period, targetUserId, targetUserName, deptName)
-            }
-        )
+    ): Result<PeerEvalSubmissionDetail> = safeCall {
+        api.getPeerEvalSubmission(period, targetUserId)
+    }.map { detail ->
+        if (detail.targetUserName.isNullOrBlank() && !targetUserName.isNullOrBlank()) {
+            detail.copy(targetUserName = targetUserName, deptName = detail.deptName ?: deptName)
+        } else {
+            detail
+        }
+    }
 
     suspend fun getReceivedEval(period: String): Result<PeerEvalReceivedResponse> =
-        apiCallOrLocal(
-            apiCall = {
-                val resp = api.getPeerEvalReceived(period)
-                if (resp.isSuccess && resp.data != null) resp.data!!
-                else throw IllegalStateException(resp.errorMsg ?: "加载收到的评价失败")
-            },
-            localCall = { PeerEvalMockData.received(period) }
-        )
+        safeCall { api.getPeerEvalReceived(period) }
 
-    /** 获取所有同事（优先新接口，失败时回退 align-options） */
     suspend fun getColleagues(): Result<List<OkrPeerUser>> =
         try {
             val resp = api.getPeerEvalColleagues()
@@ -181,19 +114,30 @@ class PeerEvalRepository(app: Application) {
         )
     }
 
-    private suspend fun loadUserDirectory(): List<OkrPeerUser> =
-        getColleagues().getOrElse { emptyList() }
-
-    private suspend inline fun <T> apiCallOrLocal(
-        crossinline apiCall: suspend () -> T,
-        crossinline localCall: suspend () -> T
+    private suspend inline fun <T> safeCall(
+        crossinline block: suspend () -> com.fuusy.common.network.BaseResp<T>
     ): Result<T> = try {
-        Result.success(apiCall())
+        val resp = block()
+        if (resp.isSuccess && resp.data != null) {
+            Result.success(resp.data!!)
+        } else {
+            Result.failure(IllegalStateException(resp.errorMsg ?: "请求失败(${resp.errorCode})"))
+        }
     } catch (e: Exception) {
-        runCatching { localCall() }.fold(
-            onSuccess = { Result.success(it) },
-            onFailure = { Result.failure(e) }
-        )
+        Result.failure(e)
+    }
+
+    private suspend inline fun <T> safeListCall(
+        crossinline block: suspend () -> com.fuusy.common.network.BaseResp<List<T>>
+    ): Result<List<T>> = try {
+        val resp = block()
+        if (resp.isSuccess) {
+            Result.success(resp.data.orEmpty())
+        } else {
+            Result.failure(IllegalStateException(resp.errorMsg ?: "请求失败(${resp.errorCode})"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
     private fun AlignOptionsResponse.toPeerUsers(): List<OkrPeerUser> =

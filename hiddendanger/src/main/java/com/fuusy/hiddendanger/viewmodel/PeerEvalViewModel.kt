@@ -163,7 +163,9 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
     private suspend fun reloadReceivedInternal() {
         repo.getReceivedEval(period).fold(
             onSuccess = { _received.value = it },
-            onFailure = { _received.value = PeerEvalReceivedResponse(period = period) }
+            onFailure = {
+                _received.value = PeerEvalReceivedResponse(period = period)
+            }
         )
     }
 
