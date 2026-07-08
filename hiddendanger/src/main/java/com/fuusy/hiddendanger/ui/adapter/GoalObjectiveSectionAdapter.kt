@@ -1,5 +1,6 @@
 package com.fuusy.hiddendanger.ui.adapter
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.view.isVisible
@@ -7,6 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.fuusy.hiddendanger.R
 import com.fuusy.hiddendanger.data.OkrObjective
 import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.databinding.ItemGoalObjectiveSectionBinding
@@ -32,10 +34,19 @@ class GoalObjectiveSectionAdapter(
         val objective = getItem(position)
         holder.binding.apply {
             tvObjectiveTitle.text = objective.title
-            tvObjectiveStatus.text = objective.statusLabel.orEmpty()
-            tvObjectiveStatus.isVisible = !objective.statusLabel.isNullOrBlank()
+            val periodEnded = OkrPeriodHelper.isPeriodEnded(objective.endDate)
+            val statusLabel = OkrPeriodHelper.objectiveStatusLabel(objective)
+            tvObjectiveStatus.text = statusLabel
+            tvObjectiveStatus.isVisible = statusLabel.isNotBlank()
+            if (periodEnded) {
+                tvObjectiveStatus.setBackgroundResource(R.drawable.bg_goal_period_tab_normal)
+                tvObjectiveStatus.setTextColor(Color.parseColor("#686D79"))
+            } else {
+                tvObjectiveStatus.setBackgroundResource(R.drawable.bg_goal_progress_tag)
+                tvObjectiveStatus.setTextColor(Color.parseColor("#1365EC"))
+            }
             tvCreatedAt.text = objective.createTime?.take(10).orEmpty().ifBlank { "—" }
-            tvPeriodLabel.text = objective.periodLabel.orEmpty().ifBlank { "—" }
+            tvPeriodLabel.text = OkrPeriodHelper.objectivePeriodDisplay(objective)
             val (completed, total) = OkrPeriodHelper.krCompletionStats(objective)
             tvCurrentProgress.text = if (total > 0) "$completed/$total" else "—"
 

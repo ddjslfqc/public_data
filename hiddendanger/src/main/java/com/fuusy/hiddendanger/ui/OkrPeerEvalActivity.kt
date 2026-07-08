@@ -17,6 +17,8 @@ import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.fuusy.hiddendanger.R
+import com.fuusy.hiddendanger.data.OkrReviewPrep
+import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.data.OkrPeerUser
 import com.fuusy.hiddendanger.data.PeerEvalReceivedResponse
 import com.fuusy.hiddendanger.data.PeerEvalTask
@@ -37,6 +39,7 @@ class OkrPeerEvalActivity : AppCompatActivity() {
     private lateinit var taskAdapter: PeerEvalTaskAdapter
 
     private var prepFieldsBound = false
+    private var reviewCompleted = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,6 +81,7 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         }
 
         observeViewModel()
+        bindPeerEvalPeriodUi()
         when {
             intent.getBooleanExtra(EXTRA_SHOW_RECEIVED_TAB, false) -> selectTab(PeerTab.RECEIVED)
             intent.getBooleanExtra(EXTRA_SHOW_EVAL_TAB, false) -> selectTab(PeerTab.EVAL)
@@ -97,12 +101,7 @@ class OkrPeerEvalActivity : AppCompatActivity() {
             msg?.let { Toast.makeText(this, it, Toast.LENGTH_SHORT).show() }
         }
         viewModel.reviewPrep.observe(this) { prep ->
-            if (!prepFieldsBound) {
-                binding.etProjectOutput.setText(prep.projectOutput.orEmpty())
-                binding.etSkillGrowth.setText(prep.skillGrowth.orEmpty())
-                prepFieldsBound = true
-            }
-            refreshCollaborators()
+            bindReviewPanel(prep)
         }
         viewModel.tasks.observe(this) { tasks ->
             taskAdapter.submitList(tasks)
@@ -115,9 +114,46 @@ class OkrPeerEvalActivity : AppCompatActivity() {
             if (saved) {
                 viewModel.consumeSaved()
                 Toast.makeText(this, "复盘已保存", Toast.LENGTH_SHORT).show()
-                selectTab(PeerTab.EVAL)
+                viewModel.reviewPrep.value?.let { bindReviewPanel(it) }
             }
         }
+    }
+
+    private fun bindReviewPanel(prep: OkrReviewPrep) {
+        reviewCompleted = prep.isReviewCompleted()
+        val quarterLabel = OkrPeriodHelper.peerEvalQuarterLabel()
+
+        binding.tvReviewSectionTitle.text =
+            if (reviewCompleted) "我的复盘" else "$quarterLabel 产出与收获"
+        binding.tvReviewSavedBadge.isVisible = reviewCompleted
+        binding.tvReviewSectionHint.isVisible = !reviewCompleted
+        binding.tvPeerEvalScope.isVisible = !reviewCompleted
+
+        binding.etProjectOutput.isVisible = !reviewCompleted
+        binding.tvProjectOutput.isVisible = reviewCompleted
+        binding.etSkillGrowth.isVisible = !reviewCompleted
+        binding.tvSkillGrowth.isVisible = reviewCompleted
+        binding.btnAddCollaborator.isVisible = !reviewCompleted
+        binding.btnSaveReview.isVisible = !reviewCompleted
+        binding.tvCollaboratorHint.isVisible = !reviewCompleted
+
+        if (reviewCompleted) {
+            binding.tvProjectOutput.text = prep.projectOutput.orEmpty()
+            binding.tvSkillGrowth.text = prep.skillGrowth.orEmpty()
+        } else if (!prepFieldsBound) {
+            binding.etProjectOutput.setText(prep.projectOutput.orEmpty())
+            binding.etSkillGrowth.setText(prep.skillGrowth.orEmpty())
+            prepFieldsBound = true
+        }
+
+        collaboratorAdapter.readOnly = reviewCompleted
+        refreshCollaborators()
+        updateReviewTabLabel()
+    }
+
+    private fun updateReviewTabLabel() {
+        val label = OkrPeriodHelper.peerEvalQuarterLabel()
+        binding.tabReview.text = if (reviewCompleted) "我的复盘" else "$label 复盘"
     }
 
     private fun bindReceivedPreview(data: PeerEvalReceivedResponse?) {
@@ -255,6 +291,13 @@ class OkrPeerEvalActivity : AppCompatActivity() {
             targetUserName = task.targetUserName.orEmpty(),
             deptName = task.deptName
         )
+    }
+
+    private fun bindPeerEvalPeriodUi() {
+        val label = OkrPeriodHelper.peerEvalQuarterLabel()
+        updateReviewTabLabel()
+        binding.tvPeerEvalScope.text =
+            "基于 $label 合作经历进行互评；当前 ${OkrPeriodHelper.quarterLabel(OkrPeriodHelper.currentQuarterValue())} 目标不在互评范围内"
     }
 
     private fun applyStatusBarPadding() {

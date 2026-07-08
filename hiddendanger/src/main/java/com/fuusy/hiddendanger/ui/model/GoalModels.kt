@@ -17,7 +17,9 @@ data class GoalKrItem(
     val valueLabel: String,
     val progressPercent: Int,
     val achieved: Boolean = false,
-    val approvalLabel: String? = null
+    val approvalLabel: String? = null,
+    /** 所属目标周期结束日 yyyy-MM-dd，用于判断能否更新进度 */
+    val periodEndDate: String? = null
 )
 
 data class GoalPeerItem(

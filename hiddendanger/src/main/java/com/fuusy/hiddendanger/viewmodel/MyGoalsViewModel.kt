@@ -10,7 +10,7 @@ import com.fuusy.hiddendanger.data.OkrPeriodOption
 import com.fuusy.hiddendanger.data.PeerEvalSummary
 import com.fuusy.hiddendanger.repository.OkrRepository
 import com.fuusy.hiddendanger.repository.PeerEvalRepository
-import com.fuusy.hiddendanger.viewmodel.PeerEvalViewModel
+import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import kotlinx.coroutines.launch
 
 class MyGoalsViewModel(application: Application) : AndroidViewModel(application) {
@@ -88,7 +88,7 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
             onSuccess = { _receivedCommentCount.value = it.size },
             onFailure = { _receivedCommentCount.value = 0 }
         )
-        val evalPeriod = PeerEvalViewModel.DEFAULT_PERIOD
+        val evalPeriod = OkrPeriodHelper.peerEvalPeriod()
         peerEvalRepo.getSummary(evalPeriod).fold(
             onSuccess = { summary ->
                 _peerEvalSummary.value = summary

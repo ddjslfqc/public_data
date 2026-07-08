@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.fuusy.hiddendanger.data.OkrPeerUser
 import com.fuusy.hiddendanger.data.OkrReviewPrep
 import com.fuusy.hiddendanger.data.OkrReviewPrepRequest
+import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.data.PeerEvalReceivedResponse
 import com.fuusy.hiddendanger.data.PeerEvalSummary
 import com.fuusy.hiddendanger.data.PeerEvalTask
@@ -42,13 +43,14 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
     private val _saved = MutableLiveData(false)
     val saved: LiveData<Boolean> = _saved
 
-    var period: String = DEFAULT_PERIOD
+    var period: String = OkrPeriodHelper.peerEvalPeriod()
         private set
 
     private val selectedCollaborators = mutableListOf<OkrPeerUser>()
 
     fun init(period: String?) {
-        this.period = period?.takeIf { it.isNotBlank() } ?: DEFAULT_PERIOD
+        // 360 互评固定为「上一已结束季度」，不接受外部传入当前季度
+        this.period = OkrPeriodHelper.peerEvalPeriod()
     }
 
     fun load() {
@@ -170,6 +172,8 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
     }
 
     companion object {
-        const val DEFAULT_PERIOD = "quarter-2"
+        /** @deprecated 请使用 [OkrPeriodHelper.peerEvalPeriod] */
+        val DEFAULT_PERIOD: String
+            get() = OkrPeriodHelper.peerEvalPeriod()
     }
 }

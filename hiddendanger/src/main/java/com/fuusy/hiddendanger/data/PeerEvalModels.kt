@@ -11,7 +11,13 @@ data class OkrReviewPrep(
     /** PRE_MEETING / POST_MEETING / CLOSED */
     val phase: String? = null,
     val deadline: String? = null
-)
+) {
+    /** 已保存复盘：有产出内容且已选合作同事 */
+    fun isReviewCompleted(): Boolean =
+        !projectOutput.isNullOrBlank() &&
+            !skillGrowth.isNullOrBlank() &&
+            !collaborators.isNullOrEmpty()
+}
 
 data class OkrReviewPrepRequest(
     val period: String,

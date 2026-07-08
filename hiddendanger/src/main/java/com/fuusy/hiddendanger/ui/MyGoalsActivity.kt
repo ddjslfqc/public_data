@@ -72,7 +72,7 @@ class MyGoalsActivity : AppCompatActivity() {
                 Intent(this, EditGoalActivity::class.java).apply {
                     putExtra(
                         EditGoalActivity.EXTRA_PERIOD_VALUE,
-                        viewModel.activePeriodValue() ?: "quarter-2"
+                        viewModel.activePeriodValue() ?: OkrPeriodHelper.currentQuarterValue()
                     )
                 }
             )
@@ -97,7 +97,9 @@ class MyGoalsActivity : AppCompatActivity() {
         binding.rvObjectives.adapter = objectiveAdapter
 
         observeViewModel()
-        viewModel.load(null)
+        selectedPeriod = OkrPeriodHelper.currentQuarterValue()
+        viewModel.load(selectedPeriod)
+        updatePeriodActions()
     }
 
     override fun onResume() {
@@ -158,6 +160,7 @@ class MyGoalsActivity : AppCompatActivity() {
             if (data == null) return@observe
             cachedPeriods = data.periods.orEmpty()
             renderPeriodTabs(cachedPeriods)
+            updatePeriodActions()
             val objectives = data.objectives.orEmpty()
             val highlighted = data.currentObjective ?: objectives.firstOrNull()
             bindHero(highlighted, objectives.size)
@@ -208,7 +211,7 @@ class MyGoalsActivity : AppCompatActivity() {
     private fun openPeerEval(showEvalTab: Boolean, showReceivedTab: Boolean = false) {
         OkrPeerEvalActivity.start(
             context = this,
-            period = PeerEvalViewModel.DEFAULT_PERIOD,
+            period = OkrPeriodHelper.peerEvalPeriod(),
             showEvalTab = showEvalTab,
             showReceivedTab = showReceivedTab
         )
@@ -242,21 +245,32 @@ class MyGoalsActivity : AppCompatActivity() {
     private fun renderPeriodTabs(periods: List<OkrPeriodOption>) {
         val container = binding.llPeriodTabs
         container.removeAllViews()
+        val dateBased = OkrPeriodHelper.currentQuarterValue()
         val tabs = if (periods.isEmpty()) {
-            listOf(
-                OkrPeriodOption("Q2 2026", "quarter-2", true),
-                OkrPeriodOption("Q3 2026", "quarter-3", false),
-                OkrPeriodOption("Q4 2026", "quarter-4", false),
-                OkrPeriodOption("年度目标", "year", false)
-            )
+            OkrPeriodHelper.defaultPeriodTabs()
         } else {
-            if (selectedPeriod == null) {
-                periods.firstOrNull { it.active }?.value?.let { selectedPeriod = it }
-                if (selectedPeriod == null) selectedPeriod = periods.firstOrNull()?.value
-            }
             periods
         }
+        if (selectedPeriod == null || tabs.none { it.value == selectedPeriod }) {
+            selectedPeriod = tabs.firstOrNull { it.value == dateBased }?.value
+                ?: tabs.firstOrNull { it.active }?.value
+                ?: tabs.firstOrNull()?.value
+                ?: dateBased
+        }
         tabs.forEachIndexed { index, period -> addPeriodTab(container, period, index > 0) }
+    }
+
+    private fun updatePeriodActions() {
+        val period = selectedPeriod ?: OkrPeriodHelper.currentQuarterValue()
+        val ended = OkrPeriodHelper.isPeriodEndedByValue(period)
+        binding.btnAddGoal.isEnabled = !ended
+        binding.btnAddGoal.alpha = if (ended) 0.45f else 1f
+        binding.tvPeriodEndedHint.isVisible = ended
+        binding.tvPeriodEndedHint.text =
+            "${OkrPeriodHelper.quarterLabel(period)} 已结束，仅可查看，不可新增目标或更新进度"
+
+        binding.tvPeerEvalPeriodHint.text =
+            "360 互评针对已结束的 ${OkrPeriodHelper.peerEvalQuarterLabel()}（当前季度不可互评）"
     }
 
     private fun addPeriodTab(container: LinearLayout, period: OkrPeriodOption, addMargin: Boolean) {
@@ -266,7 +280,7 @@ class MyGoalsActivity : AppCompatActivity() {
             gravity = android.view.Gravity.CENTER
             textSize = 12f
             includeFontPadding = false
-            val selected = period.value == selectedPeriod || period.active
+            val selected = period.value == selectedPeriod
             setBackgroundResource(
                 if (selected) R.drawable.bg_goal_period_tab_selected
                 else R.drawable.bg_goal_period_tab_normal
@@ -285,6 +299,7 @@ class MyGoalsActivity : AppCompatActivity() {
                 if (selectedPeriod == period.value) return@setOnClickListener
                 selectedPeriod = period.value
                 renderPeriodTabs(cachedPeriods)
+                updatePeriodActions()
                 viewModel.load(period.value)
             }
         }

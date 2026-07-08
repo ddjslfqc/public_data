@@ -2,6 +2,7 @@ package com.fuusy.hiddendanger.ui.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -11,6 +12,13 @@ import com.fuusy.hiddendanger.databinding.ItemPeerCollaboratorBinding
 class PeerCollaboratorAdapter(
     private val onRemove: (OkrPeerUser) -> Unit
 ) : ListAdapter<OkrPeerUser, PeerCollaboratorAdapter.VH>(DiffCallback()) {
+
+    var readOnly: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            notifyDataSetChanged()
+        }
 
     class VH(val binding: ItemPeerCollaboratorBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -27,7 +35,8 @@ class PeerCollaboratorAdapter(
         val item = getItem(position)
         holder.binding.apply {
             tvName.text = item.displayName
-            btnRemove.setOnClickListener { onRemove(item) }
+            btnRemove.isVisible = !readOnly
+            btnRemove.setOnClickListener { if (!readOnly) onRemove(item) }
         }
     }
 

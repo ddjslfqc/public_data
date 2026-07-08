@@ -1,6 +1,7 @@
 package com.fuusy.hiddendanger.ui.model
 
 import com.fuusy.common.network.UserIdProvider
+import com.fuusy.hiddendanger.data.OkrPeriodHelper
 
 object KrProgressHelper {
 
@@ -12,6 +13,7 @@ object KrProgressHelper {
 
     fun canUpdateProgress(item: GoalKrItem): Boolean {
         if (!isKrOwner(item)) return false
+        if (OkrPeriodHelper.isPeriodEnded(item.periodEndDate)) return false
         if (item.achieved || item.status == 1) return false
         if (item.approvalStatus != 1) return false
         if (item.progressApprovalStatus == 0) return false
@@ -19,6 +21,7 @@ object KrProgressHelper {
     }
 
     fun updateBlockedReason(item: GoalKrItem): String? = when {
+        OkrPeriodHelper.isPeriodEnded(item.periodEndDate) -> "该目标周期已结束，无法更新进度"
         item.achieved || item.status == 1 -> "该 KR 已完成"
         item.approvalStatus == 0 -> "等待目标创建人审批 KR，通过后可更新进度"
         item.approvalStatus == 2 -> "KR 已被拒绝，无法更新进度"

@@ -31,7 +31,8 @@ object KrNavHelper {
             valueLabel = OkrPeriodHelper.krValueLabel(kr),
             progressPercent = OkrPeriodHelper.krProgressPercent(kr),
             achieved = kr.achieved || kr.status == 1,
-            approvalLabel = OkrPeriodHelper.approvalLabel(kr.approvalStatus)
+            approvalLabel = OkrPeriodHelper.approvalLabel(kr.approvalStatus),
+            periodEndDate = objective.endDate
         )
     }
 
