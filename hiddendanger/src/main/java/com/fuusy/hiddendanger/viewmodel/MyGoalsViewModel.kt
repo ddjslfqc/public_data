@@ -54,36 +54,47 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
                 onSuccess = { _myGoal.value = it },
                 onFailure = { _error.value = it.message ?: "加载失败" }
             )
-            var krCount = 0
-            var progressCount = 0
-            repo.getPendingKrs().fold(
-                onSuccess = { krPending -> krCount = krPending.size },
-                onFailure = { krCount = 0 }
-            )
-            repo.getPendingUpdateRecords().fold(
-                onSuccess = { progressPending -> progressCount = progressPending.size },
-                onFailure = { progressCount = 0 }
-            )
-            _pendingCount.value = krCount + progressCount
-            repo.getReceivedComments().fold(
-                onSuccess = { _receivedCommentCount.value = it.size },
-                onFailure = { _receivedCommentCount.value = 0 }
-            )
-            val evalPeriod = PeerEvalViewModel.DEFAULT_PERIOD
-            peerEvalRepo.getSummary(evalPeriod).fold(
-                onSuccess = { summary ->
-                    _peerEvalSummary.value = summary
-                    _peerEvalPendingCount.value = summary.pendingCount
-                    _peerEvalCompletedCount.value = summary.completedCount
-                },
-                onFailure = {
-                    _peerEvalSummary.value = null
-                    _peerEvalPendingCount.value = 0
-                    _peerEvalCompletedCount.value = 0
-                }
-            )
+            refreshBadgesInternal()
             _loading.value = false
         }
+    }
+
+    /** 仅刷新待办角标，不重新拉取目标列表 */
+    fun refreshBadges() {
+        viewModelScope.launch {
+            refreshBadgesInternal()
+        }
+    }
+
+    private suspend fun refreshBadgesInternal() {
+        var krCount = 0
+        var progressCount = 0
+        repo.getPendingKrs().fold(
+            onSuccess = { krPending -> krCount = krPending.size },
+            onFailure = { krCount = 0 }
+        )
+        repo.getPendingUpdateRecords().fold(
+            onSuccess = { progressPending -> progressCount = progressPending.size },
+            onFailure = { progressCount = 0 }
+        )
+        _pendingCount.value = krCount + progressCount
+        repo.getReceivedComments().fold(
+            onSuccess = { _receivedCommentCount.value = it.size },
+            onFailure = { _receivedCommentCount.value = 0 }
+        )
+        val evalPeriod = PeerEvalViewModel.DEFAULT_PERIOD
+        peerEvalRepo.getSummary(evalPeriod).fold(
+            onSuccess = { summary ->
+                _peerEvalSummary.value = summary
+                _peerEvalPendingCount.value = summary.pendingCount
+                _peerEvalCompletedCount.value = summary.completedCount
+            },
+            onFailure = {
+                _peerEvalSummary.value = null
+                _peerEvalPendingCount.value = 0
+                _peerEvalCompletedCount.value = 0
+            }
+        )
     }
 
     fun activePeriodValue(): String? =

@@ -1,10 +1,12 @@
 package com.fuusy.hiddendanger.ui
 
 import android.graphics.Color
+import android.content.Intent
 import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -29,11 +31,31 @@ class MyGoalsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMyGoalsBinding
     private val viewModel: MyGoalsViewModel by viewModels()
     private val objectiveAdapter = GoalObjectiveSectionAdapter { item ->
-        KrDetailActivity.start(this, item)
+        krDetailLauncher.launch(
+            Intent(this, KrDetailActivity::class.java).apply {
+                com.fuusy.hiddendanger.ui.model.KrNavHelper.putExtra(this, item)
+            }
+        )
     }
     private var selectedPeriod: String? = null
     private var cachedPeriods: List<OkrPeriodOption> = emptyList()
     private var peerEvalPending = 0
+
+    private val krDetailLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            viewModel.load(selectedPeriod)
+        }
+    }
+
+    private val editGoalLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            viewModel.load(selectedPeriod)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +67,14 @@ class MyGoalsActivity : AppCompatActivity() {
 
         binding.btnBack.setOnClickListener { finish() }
         binding.btnAddGoal.setOnClickListener {
-            EditGoalActivity.start(viewModel.activePeriodValue())
+            editGoalLauncher.launch(
+                Intent(this, EditGoalActivity::class.java).apply {
+                    putExtra(
+                        EditGoalActivity.EXTRA_PERIOD_VALUE,
+                        viewModel.activePeriodValue() ?: "quarter-2"
+                    )
+                }
+            )
         }
         binding.cardKrApproval.setOnClickListener {
             ARouter.getInstance().build("/hiddendanger/KrApprovalActivity").navigation()
@@ -69,7 +98,7 @@ class MyGoalsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.load(selectedPeriod)
+        viewModel.refreshBadges()
     }
 
     private fun observeViewModel() {
@@ -169,8 +198,10 @@ class MyGoalsActivity : AppCompatActivity() {
                 OkrPeriodOption("年度目标", "year", false)
             )
         } else {
-            periods.forEach { if (it.active) selectedPeriod = it.value }
-            if (selectedPeriod == null) selectedPeriod = periods.firstOrNull()?.value
+            if (selectedPeriod == null) {
+                periods.firstOrNull { it.active }?.value?.let { selectedPeriod = it }
+                if (selectedPeriod == null) selectedPeriod = periods.firstOrNull()?.value
+            }
             periods
         }
         tabs.forEachIndexed { index, period -> addPeriodTab(container, period, index > 0) }

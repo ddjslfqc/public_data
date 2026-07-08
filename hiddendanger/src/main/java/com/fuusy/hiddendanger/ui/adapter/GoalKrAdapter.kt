@@ -27,31 +27,27 @@ class GoalKrAdapter(
             tvKrTitle.text = item.title
             root.setOnClickListener { onItemClick(item) }
 
-            if (item.achieved) {
-                tvAchieved.isVisible = true
-                tvKrApproval.isVisible = false
-                rowProgress.isVisible = false
-            } else {
-                tvAchieved.isVisible = false
-                val progressLabel = KrProgressHelper.progressStatusLabel(item)
-                val showKrApproval = !item.approvalLabel.isNullOrBlank() &&
-                    item.approvalStatus != 1 &&
-                    progressLabel == null
-                tvKrApproval.isVisible = progressLabel != null || showKrApproval
-                tvKrApproval.text = progressLabel ?: item.approvalLabel
+            tvAchieved.isVisible = item.achieved
+            val progressLabel = KrProgressHelper.progressStatusLabel(item)
+            val showKrApproval = !item.achieved &&
+                !item.approvalLabel.isNullOrBlank() &&
+                item.approvalStatus != 1 &&
+                progressLabel == null
+            tvKrApproval.isVisible = !item.achieved && (progressLabel != null || showKrApproval)
+            tvKrApproval.text = progressLabel ?: item.approvalLabel
 
-                rowProgress.isVisible = true
-                val showValue = shouldShowValueLabel(item)
-                tvKrValue.isVisible = showValue
-                tvKrValue.text = item.valueLabel
-                tvKrPercent.text = "${item.progressPercent}%"
-                viewKrProgress.post {
-                    val trackWidth = flProgress.width
-                    if (trackWidth > 0) {
-                        viewKrProgress.layoutParams.width =
-                            (trackWidth * item.progressPercent / 100f).toInt().coerceAtLeast(0)
-                        viewKrProgress.requestLayout()
-                    }
+            rowProgress.isVisible = true
+            val showValue = shouldShowValueLabel(item)
+            tvKrValue.isVisible = showValue
+            tvKrValue.text = item.valueLabel
+            val percent = if (item.achieved) 100 else item.progressPercent
+            tvKrPercent.text = "$percent%"
+            viewKrProgress.post {
+                val trackWidth = flProgress.width
+                if (trackWidth > 0) {
+                    viewKrProgress.layoutParams.width =
+                        (trackWidth * percent / 100f).toInt().coerceAtLeast(0)
+                    viewKrProgress.requestLayout()
                 }
             }
         }
