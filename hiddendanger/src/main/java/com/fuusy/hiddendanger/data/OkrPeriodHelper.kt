@@ -67,6 +67,10 @@ object OkrPeriodHelper {
 
     fun peerEvalQuarterLabel(): String = quarterLabel(peerEvalPeriod())
 
+    /** 「我的目标」页是否展示 360 互评区块：仅在与互评周期一致的 Tab 下显示 */
+    fun shouldShowPeerEvalSection(viewingPeriod: String): Boolean =
+        viewingPeriod == peerEvalPeriod()
+
     /** 列表展示：周期已结束时优先显示「已结束」，而非服务端 stale 的「进行中」 */
     fun objectiveStatusLabel(objective: OkrObjective): String {
         if (isPeriodEnded(objective.endDate)) return "已结束"
