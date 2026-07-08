@@ -34,7 +34,8 @@ class PeerCollaboratorAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = getItem(position)
         holder.binding.apply {
-            tvName.text = item.displayName
+            val dept = item.deptName?.takeIf { it.isNotBlank() }
+            tvName.text = if (dept != null) "${item.displayName} · $dept" else item.displayName
             btnRemove.isVisible = !readOnly
             btnRemove.setOnClickListener { if (!readOnly) onRemove(item) }
         }

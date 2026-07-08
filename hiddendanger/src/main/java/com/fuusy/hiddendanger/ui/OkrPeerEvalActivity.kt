@@ -128,6 +128,8 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         binding.tvReviewSavedBadge.isVisible = reviewCompleted
         binding.tvReviewSectionHint.isVisible = !reviewCompleted
         binding.tvPeerEvalScope.isVisible = !reviewCompleted
+        binding.tvReviewPeriodSubtitle.isVisible = reviewCompleted
+        binding.tvReviewPeriodSubtitle.text = "$quarterLabel 复盘记录"
 
         binding.etProjectOutput.isVisible = !reviewCompleted
         binding.tvProjectOutput.isVisible = reviewCompleted
