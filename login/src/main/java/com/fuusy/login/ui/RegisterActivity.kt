@@ -93,7 +93,7 @@ class RegisterActivity : BaseVmActivity<ActivityRegisterBinding>() {
                 is LoadingStatus.Success -> LoadingUtils.hideLoading()
                 is LoadingStatus.Error -> {
                     LoadingUtils.hideLoading()
-                    showToast(status.message)
+                    showErrorToast(status.message)
                 }
             }
         }

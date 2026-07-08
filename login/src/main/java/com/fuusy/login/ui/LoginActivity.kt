@@ -91,7 +91,7 @@ class LoginActivity : BaseVmActivity<ActivityLoginBinding>() {
                 is LoadingStatus.Success -> LoadingUtils.hideLoading()
                 is LoadingStatus.Error -> {
                     LoadingUtils.hideLoading()
-                    showToast(status.message)
+                    showErrorToast(status.message)
                 }
             }
         }

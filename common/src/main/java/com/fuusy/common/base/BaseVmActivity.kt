@@ -43,6 +43,14 @@ abstract class BaseVmActivity<T : ViewDataBinding> : AppCompatActivity {
         ToastUtil.showCustomToast(this, msg)
     }
 
+    /** 展示后端/业务错误提示，不过滤「错误」等关键词 */
+    fun showErrorToast(msg: String?) {
+        val text = msg?.trim().orEmpty()
+        if (text.isNotEmpty()) {
+            ToastUtil.showCustomToast(this, text)
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         mBinding?.unbind()
