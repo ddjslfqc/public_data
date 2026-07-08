@@ -50,7 +50,7 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
 
     private var currentPeriod: String? = null
 
-    fun load(periodType: String? = null) {
+    fun load(periodType: String? = null, includeBadges: Boolean = true) {
         val query = periodType ?: currentPeriod
         currentPeriod = query
         viewModelScope.launch {
@@ -60,10 +60,15 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
                 onSuccess = { _myGoal.value = it },
                 onFailure = { _error.value = it.message ?: "加载失败" }
             )
-            refreshBadgesInternal()
+            if (includeBadges) {
+                refreshBadgesInternal()
+            }
             _loading.value = false
         }
     }
+
+    /** 切换季度 Tab 时只拉目标，角标与季度无关不必重复请求 */
+    fun loadGoalsOnly(periodType: String? = null) = load(periodType, includeBadges = false)
 
     /** 仅刷新待办角标，不重新拉取目标列表 */
     fun refreshBadges() {

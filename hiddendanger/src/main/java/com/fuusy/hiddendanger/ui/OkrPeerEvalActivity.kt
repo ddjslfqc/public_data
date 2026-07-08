@@ -20,7 +20,7 @@ import com.fuusy.hiddendanger.R
 import com.fuusy.hiddendanger.data.OkrReviewPrep
 import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.data.OkrPeerUser
-import com.fuusy.hiddendanger.data.PeerEvalReceivedResponse
+import com.fuusy.hiddendanger.data.PeerEvalSummary
 import com.fuusy.hiddendanger.data.PeerEvalTask
 import com.fuusy.hiddendanger.databinding.ActivityOkrPeerEvalBinding
 import com.fuusy.hiddendanger.ui.adapter.PeerCollaboratorAdapter
@@ -40,6 +40,7 @@ class OkrPeerEvalActivity : AppCompatActivity() {
 
     private var prepFieldsBound = false
     private var reviewCompleted = false
+    private var resumedOnce = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,7 +78,13 @@ class OkrPeerEvalActivity : AppCompatActivity() {
             )
         }
         binding.btnViewReceivedDetail.setOnClickListener {
-            OkrPeerEvalReceivedActivity.start(this, viewModel.period)
+            viewModel.ensureReceivedDetailLoaded {
+                OkrPeerEvalReceivedActivity.start(
+                    this,
+                    viewModel.period,
+                    viewModel.receivedSnapshot()
+                )
+            }
         }
 
         observeViewModel()
@@ -87,12 +94,16 @@ class OkrPeerEvalActivity : AppCompatActivity() {
             intent.getBooleanExtra(EXTRA_SHOW_EVAL_TAB, false) -> selectTab(PeerTab.EVAL)
             else -> selectTab(PeerTab.REVIEW)
         }
-        viewModel.load()
     }
 
     override fun onResume() {
         super.onResume()
-        viewModel.load()
+        if (resumedOnce) {
+            viewModel.refreshOnReturn()
+        } else {
+            viewModel.loadInitial()
+            resumedOnce = true
+        }
     }
 
     private fun observeViewModel() {
@@ -109,7 +120,7 @@ class OkrPeerEvalActivity : AppCompatActivity() {
             binding.rvTasks.isVisible = tasks.isNotEmpty()
             updateEvalTabBadge(tasks.count { !it.isDone })
         }
-        viewModel.received.observe(this) { bindReceivedPreview(it) }
+        viewModel.summary.observe(this) { bindReceivedPreview(it) }
         viewModel.saved.observe(this) { saved ->
             if (saved) {
                 viewModel.consumeSaved()
@@ -158,16 +169,17 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         binding.tabReview.text = if (reviewCompleted) "我的复盘" else "$label 复盘"
     }
 
-    private fun bindReceivedPreview(data: PeerEvalReceivedResponse?) {
-        val hasData = data != null && data.evaluatorCount > 0
+    private fun bindReceivedPreview(summary: PeerEvalSummary?) {
+        val count = summary?.receivedEvaluatorCount ?: 0
+        val hasData = count > 0
         binding.tvReceivedCount.isVisible = hasData
         binding.tvReceivedScore.isVisible = hasData
         binding.btnViewReceivedDetail.isVisible = hasData
         binding.tvReceivedEmpty.isVisible = !hasData
-        if (hasData && data != null) {
-            binding.tvReceivedCount.text = "${data.evaluatorCount} 位同事已完成评价"
-            binding.tvReceivedScore.text = "%.1f".format(data.averageScore)
-            updateReceivedTabBadge(data.evaluatorCount)
+        if (hasData && summary != null) {
+            binding.tvReceivedCount.text = "$count 位同事已完成评价"
+            binding.tvReceivedScore.text = "%.1f".format(summary.receivedAverageScore ?: 0.0)
+            updateReceivedTabBadge(count)
         } else {
             updateReceivedTabBadge(0)
         }
@@ -210,6 +222,9 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         binding.panelReview.isVisible = review
         binding.panelEval.isVisible = eval
         binding.panelReceived.isVisible = received
+        if (received) {
+            viewModel.ensureReceivedDetailLoaded()
+        }
     }
 
     private fun showUserPicker() {

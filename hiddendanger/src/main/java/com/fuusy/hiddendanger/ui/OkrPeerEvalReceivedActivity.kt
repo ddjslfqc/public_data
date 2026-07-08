@@ -32,6 +32,7 @@ class OkrPeerEvalReceivedActivity : AppCompatActivity() {
         applyStatusBarPadding()
 
         val period = intent.getStringExtra(EXTRA_PERIOD).orEmpty()
+        val cached = intent.getParcelableExtra<PeerEvalReceivedResponse>(EXTRA_RECEIVED)
 
         binding.rvBreakdown.apply {
             layoutManager = LinearLayoutManager(this@OkrPeerEvalReceivedActivity)
@@ -49,7 +50,11 @@ class OkrPeerEvalReceivedActivity : AppCompatActivity() {
             bindReceived(data)
         }
 
-        viewModel.load(period)
+        if (cached != null) {
+            bindReceived(cached)
+        } else {
+            viewModel.load(period)
+        }
     }
 
     private fun bindReceived(data: PeerEvalReceivedResponse?) {
@@ -87,11 +92,17 @@ class OkrPeerEvalReceivedActivity : AppCompatActivity() {
 
     companion object {
         private const val EXTRA_PERIOD = "period"
+        private const val EXTRA_RECEIVED = "received"
 
-        fun start(context: Context, period: String) {
+        fun start(
+            context: Context,
+            period: String,
+            cached: PeerEvalReceivedResponse? = null
+        ) {
             context.startActivity(
                 Intent(context, OkrPeerEvalReceivedActivity::class.java).apply {
                     putExtra(EXTRA_PERIOD, period)
+                    cached?.let { putExtra(EXTRA_RECEIVED, it) }
                 }
             )
         }

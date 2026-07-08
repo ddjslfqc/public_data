@@ -23,7 +23,6 @@ import com.fuusy.hiddendanger.data.OkrPeriodOption
 import com.fuusy.hiddendanger.databinding.ActivityMyGoalsBinding
 import com.fuusy.hiddendanger.ui.adapter.GoalObjectiveSectionAdapter
 import com.fuusy.hiddendanger.viewmodel.MyGoalsViewModel
-import com.fuusy.hiddendanger.viewmodel.PeerEvalViewModel
 
 @Route(path = "/hiddendanger/MyGoalsActivity")
 class MyGoalsActivity : AppCompatActivity() {
@@ -41,6 +40,7 @@ class MyGoalsActivity : AppCompatActivity() {
     private var cachedPeriods: List<OkrPeriodOption> = emptyList()
     private var peerEvalPending = 0
     private var peerEvalReceived = 0
+    private var resumedOnce = false
 
     private val krDetailLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -104,7 +104,11 @@ class MyGoalsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.refreshBadges()
+        if (resumedOnce) {
+            viewModel.refreshBadges()
+        } else {
+            resumedOnce = true
+        }
     }
 
     private fun observeViewModel() {
@@ -299,7 +303,7 @@ class MyGoalsActivity : AppCompatActivity() {
                 selectedPeriod = period.value
                 renderPeriodTabs(cachedPeriods)
                 updatePeriodActions()
-                viewModel.load(period.value)
+                viewModel.loadGoalsOnly(period.value)
             }
         }
         container.addView(tab)

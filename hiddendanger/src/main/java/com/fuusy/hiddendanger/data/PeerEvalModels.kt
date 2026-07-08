@@ -1,6 +1,8 @@
 package com.fuusy.hiddendanger.data
 
+import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
+import kotlinx.parcelize.Parcelize
 
 /** 周会复盘 / Q2 产出（话题 1） */
 data class OkrReviewPrep(
@@ -109,6 +111,7 @@ data class PeerEvalSubmissionDetail(
 )
 
 /** GET /mobile/okr/peer-eval/received 我收到的同事评价（匿名汇总） */
+@Parcelize
 data class PeerEvalReceivedResponse(
     val period: String,
     val evaluatorCount: Int = 0,
@@ -117,13 +120,14 @@ data class PeerEvalReceivedResponse(
     val scoreBreakdown: List<PeerEvalScoreBreakdownItem> = emptyList(),
     val highlights: List<String> = emptyList(),
     val suggestions: List<String> = emptyList()
-)
+) : Parcelable
 
+@Parcelize
 data class PeerEvalScoreBreakdownItem(
     val itemId: String,
     val itemTitle: String? = null,
     val averageScore: Double
-)
+) : Parcelable
 
 data class AddCollaboratorRequest(
     val period: String,
