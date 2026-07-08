@@ -558,8 +558,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:textColor="#A7AFC3"
-                        android:textSize="10sp"
-                        tools:text="360 互评针对已结束的 Q2 2026" />
+                        android:textSize="10sp" />
 
                     <View
                         android:layout_width="match_parent"

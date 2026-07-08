@@ -269,12 +269,7 @@ class MyGoalsActivity : AppCompatActivity() {
         binding.tvPeriodEndedHint.isVisible = ended
         binding.tvPeriodEndedHint.text =
             "${OkrPeriodHelper.quarterLabel(period)} 已结束，仅可查看，不可新增目标或更新进度"
-
         binding.section360.isVisible = showPeerEval
-        if (showPeerEval) {
-            binding.tvPeerEvalPeriodHint.text =
-                "360 互评针对已结束的 ${OkrPeriodHelper.peerEvalQuarterLabel()}（当前季度不可互评）"
-        }
     }
 
     private fun addPeriodTab(container: LinearLayout, period: OkrPeriodOption, addMargin: Boolean) {
