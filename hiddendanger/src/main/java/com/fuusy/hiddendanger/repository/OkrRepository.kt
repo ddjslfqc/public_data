@@ -15,6 +15,7 @@ import com.fuusy.hiddendanger.data.MyGoalResponse
 import com.fuusy.hiddendanger.data.OkrApi
 import com.fuusy.hiddendanger.data.OkrAttachmentDto
 import com.fuusy.hiddendanger.data.OkrKrComment
+import com.fuusy.hiddendanger.data.OkrKrDetailResponse
 import com.fuusy.hiddendanger.data.OkrObjective
 import com.fuusy.hiddendanger.data.OkrUpdateRecordItem
 import com.fuusy.hiddendanger.data.PendingKrItem
@@ -48,6 +49,17 @@ class OkrRepository {
 
     suspend fun getObjectiveDetail(objectiveId: Long): Result<OkrObjective> =
         safeCall { api.getObjectiveDetail(objectiveId) }
+
+    suspend fun getKrDetail(krId: Long): Result<OkrKrDetailResponse> = try {
+        val resp = api.getKrDetail(krId)
+        if (resp.isSuccess && resp.data != null) {
+            Result.success(resp.data!!)
+        } else {
+            Result.failure(IllegalStateException(resp.errorMsg ?: "KR不存在"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 
     suspend fun getAlignOptions(): Result<AlignOptionsResponse> =
         safeCall { api.getAlignOptions() }
@@ -136,8 +148,16 @@ class OkrRepository {
         Result.failure(e)
     }
 
-    /** 从 my-goal 中按 krId 查找完整 KR，供评论收件箱跳转详情 */
-    suspend fun findKrItem(krId: Long): Result<GoalKrItem> {
+    /** 按 krId 解析完整 KR，优先 KR 详情接口，失败时回退 my-goal 扫描 */
+    suspend fun findKrItem(krId: Long, periodEndDate: String? = null): Result<GoalKrItem> {
+        getKrDetail(krId).fold(
+            onSuccess = { return Result.success(KrNavHelper.goalKrItem(it, periodEndDate)) },
+            onFailure = { /* 回退 */ }
+        )
+        return findKrItemFromMyGoal(krId)
+    }
+
+    private suspend fun findKrItemFromMyGoal(krId: Long): Result<GoalKrItem> {
         return try {
             val resp = api.getMyGoal(null)
             if (!resp.isSuccess) {

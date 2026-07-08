@@ -11,7 +11,12 @@ data class OkrPeriodOption(
 data class OkrObjectiveBrief(
     val id: Long,
     val title: String,
-    @SerializedName("userId") val userId: Long? = null
+    @SerializedName("userId") val userId: Long? = null,
+    val status: Int? = null,
+    val progress: Int? = null,
+    val periodType: String? = null,
+    val endDate: String? = null,
+    val startDate: String? = null
 )
 
 data class OkrParentKr(
@@ -208,28 +213,63 @@ data class PendingUpdateRecordItem(
         get() = newValue ?: currentValue
 }
 
-/** GET /update-record/list 返回项 */
+/** GET /update-record/list 及 KR 详情内嵌的更新记录 */
 data class OkrUpdateRecordItem(
     val id: Long,
     val okrType: String? = null,
     val okrId: Long? = null,
     val userId: Long? = null,
+    val title: String? = null,
+    val description: String? = null,
+    val periodType: String? = null,
     val currentValue: Double? = null,
     val content: String? = null,
     val status: Int? = null,
+    val approvalUserId: Long? = null,
     val approvalRemark: String? = null,
     val approvalTime: String? = null,
     val createTime: String? = null,
+    val updateTime: String? = null,
     val attachments: List<OkrUpdateRecordAttachment>? = null
 )
 
 data class OkrKrAttachment(
     val id: Long? = null,
     val krId: Long? = null,
+    val userId: Long? = null,
+    val type: String? = null,
+    @SerializedName(value = "name", alternate = ["fileName"])
     val fileName: String? = null,
+    @SerializedName(value = "url", alternate = ["fileUrl", "filePath"])
     val fileUrl: String? = null,
     val fileSize: Long? = null,
     val createTime: String? = null
+)
+
+/** GET /mobile/okr/kr/detail/{id} 聚合响应 */
+data class OkrKrDetailResponse(
+    val id: Long,
+    val objectiveId: Long,
+    val title: String,
+    val targetValue: Double = 0.0,
+    val weight: Int? = null,
+    val currentValue: Double = 0.0,
+    val unit: String? = null,
+    val status: Int = 0,
+    val sortOrder: Int? = null,
+    val approvalStatus: Int? = null,
+    val approvalUserId: Long? = null,
+    val approvalRemark: String? = null,
+    val approvalTime: String? = null,
+    val userId: Long? = null,
+    val createTime: String? = null,
+    val updateTime: String? = null,
+    val progressApprovalStatus: Int? = null,
+    val pendingProgressValue: Double? = null,
+    val objective: OkrObjectiveBrief? = null,
+    val attachments: List<OkrKrAttachment>? = null,
+    val comments: List<OkrKrComment>? = null,
+    val updateRecords: List<OkrUpdateRecordItem>? = null
 )
 
 data class OkrKrComment(

@@ -28,6 +28,12 @@ interface OkrApi {
         @Path("id") objectiveId: Long
     ): BaseResp<OkrObjective>
 
+    /** KR 详情（含所属目标、附件、评论、更新记录） */
+    @GET("mobile/okr/kr/detail/{id}")
+    suspend fun getKrDetail(
+        @Path("id") krId: Long
+    ): BaseResp<OkrKrDetailResponse>
+
     @GET("mobile/okr/align-options")
     suspend fun getAlignOptions(): BaseResp<AlignOptionsResponse>
 

@@ -43,44 +43,7 @@ class KrDetailViewModel(application: Application) : AndroidViewModel(application
             _error.value = null
             _commentSubmitted.value = false
             _commentDeleted.value = false
-
-            var item = krItem
-            if (item.objectiveId <= 0) {
-                repo.findKrItem(item.id).fold(
-                    onSuccess = { resolved ->
-                        item = resolved
-                        _refreshedKr.value = resolved
-                    },
-                    onFailure = { /* 使用传入的兜底数据 */ }
-                )
-            }
-
-            if (item.objectiveId > 0) {
-                repo.getObjectiveDetail(item.objectiveId).fold(
-                    onSuccess = { objective ->
-                        val kr = objective.keyResults.orEmpty().find { it.id == item.id }
-                        if (kr != null) {
-                            item = KrNavHelper.goalKrItem(objective, kr)
-                            _refreshedKr.value = item
-                            if (!kr.comments.isNullOrEmpty()) {
-                                _comments.value = kr.comments.orEmpty()
-                            }
-                        }
-                    },
-                    onFailure = { /* 详情失败时仍尝试单独拉评论 */ }
-                )
-            }
-
-            repo.getKrCommentList(item.id).fold(
-                onSuccess = { _comments.value = it },
-                onFailure = { /* 保留详情接口返回的评论 */ }
-            )
-
-            repo.getUpdateRecordList("kr", item.id).fold(
-                onSuccess = { _updateRecords.value = it },
-                onFailure = { _updateRecords.value = emptyList() }
-            )
-
+            reloadDetail(krItem.id, krItem.periodEndDate)
             _loading.value = false
         }
     }
@@ -94,10 +57,11 @@ class KrDetailViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
+            val periodEnd = _refreshedKr.value?.periodEndDate
             repo.createKrComment(krId, trimmed).fold(
                 onSuccess = {
                     _commentSubmitted.value = true
-                    refreshComments(krId)
+                    reloadDetail(krId, periodEnd)
                 },
                 onFailure = { _error.value = it.message ?: "评论失败" }
             )
@@ -109,10 +73,11 @@ class KrDetailViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
+            val periodEnd = _refreshedKr.value?.periodEndDate
             repo.deleteKrComment(commentId).fold(
                 onSuccess = {
                     _commentDeleted.value = true
-                    refreshComments(krId)
+                    reloadDetail(krId, periodEnd)
                 },
                 onFailure = { _error.value = it.message ?: "删除失败" }
             )
@@ -120,10 +85,18 @@ class KrDetailViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private suspend fun refreshComments(krId: Long) {
-        repo.getKrCommentList(krId).fold(
-            onSuccess = { _comments.value = it },
-            onFailure = { }
+    private suspend fun reloadDetail(krId: Long, periodEndDate: String?) {
+        repo.getKrDetail(krId).fold(
+            onSuccess = { detail ->
+                _refreshedKr.value = KrNavHelper.goalKrItem(detail, periodEndDate)
+                _comments.value = detail.comments.orEmpty()
+                _updateRecords.value = detail.updateRecords.orEmpty()
+            },
+            onFailure = { e ->
+                _error.value = e.message
+                _comments.value = emptyList()
+                _updateRecords.value = emptyList()
+            }
         )
     }
 }

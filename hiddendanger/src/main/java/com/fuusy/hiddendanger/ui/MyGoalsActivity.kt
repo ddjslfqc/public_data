@@ -263,17 +263,17 @@ class MyGoalsActivity : AppCompatActivity() {
     private fun updatePeriodActions() {
         val period = selectedPeriod ?: OkrPeriodHelper.currentQuarterValue()
         val ended = OkrPeriodHelper.isPeriodEndedByValue(period)
+        val showPeerEval = OkrPeriodHelper.isPeerEvalVisibleForTab(period)
         binding.btnAddGoal.isEnabled = !ended
         binding.btnAddGoal.alpha = if (ended) 0.45f else 1f
         binding.tvPeriodEndedHint.isVisible = ended
         binding.tvPeriodEndedHint.text =
             "${OkrPeriodHelper.quarterLabel(period)} 已结束，仅可查看，不可新增目标或更新进度"
 
-        val showPeerEval = OkrPeriodHelper.shouldShowPeerEvalSection(period)
         binding.section360.isVisible = showPeerEval
         if (showPeerEval) {
             binding.tvPeerEvalPeriodHint.text =
-                "360 互评针对已结束的 ${OkrPeriodHelper.peerEvalQuarterLabel()}"
+                "360 互评针对已结束的 ${OkrPeriodHelper.peerEvalQuarterLabel()}（当前季度不可互评）"
         }
     }
 
