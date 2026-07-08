@@ -46,7 +46,8 @@ class MyGoalsActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
-            viewModel.load(selectedPeriod)
+            viewModel.loadGoalsOnly(selectedPeriod)
+            viewModel.refreshBadgesWithoutPeerEval()
         }
     }
 
@@ -54,8 +55,15 @@ class MyGoalsActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
-            viewModel.load(selectedPeriod)
+            viewModel.loadGoalsOnly(selectedPeriod)
+            viewModel.refreshBadgesWithoutPeerEval()
         }
+    }
+
+    private val peerEvalLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        viewModel.refreshBadgesAfterPeerEval()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -105,7 +113,7 @@ class MyGoalsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (resumedOnce) {
-            viewModel.refreshBadges()
+            viewModel.refreshBadgesWithoutPeerEval()
         } else {
             resumedOnce = true
         }
@@ -213,11 +221,12 @@ class MyGoalsActivity : AppCompatActivity() {
     }
 
     private fun openPeerEval(showEvalTab: Boolean, showReceivedTab: Boolean = false) {
-        OkrPeerEvalActivity.start(
-            context = this,
-            period = OkrPeriodHelper.peerEvalPeriod(),
-            showEvalTab = showEvalTab,
-            showReceivedTab = showReceivedTab
+        peerEvalLauncher.launch(
+            Intent(this, OkrPeerEvalActivity::class.java).apply {
+                putExtra(OkrPeerEvalActivity.EXTRA_PERIOD, OkrPeriodHelper.peerEvalPeriod())
+                putExtra(OkrPeerEvalActivity.EXTRA_SHOW_EVAL_TAB, showEvalTab)
+                putExtra(OkrPeerEvalActivity.EXTRA_SHOW_RECEIVED_TAB, showReceivedTab)
+            }
         )
     }
 
@@ -304,6 +313,9 @@ class MyGoalsActivity : AppCompatActivity() {
                 renderPeriodTabs(cachedPeriods)
                 updatePeriodActions()
                 viewModel.loadGoalsOnly(period.value)
+                if (OkrPeriodHelper.isPeerEvalVisibleForTab(period.value)) {
+                    viewModel.refreshPeerEvalBadges()
+                }
             }
         }
         container.addView(tab)

@@ -7,7 +7,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.fuusy.hiddendanger.data.MyGoalResponse
 import com.fuusy.hiddendanger.data.OkrPeriodOption
-import com.fuusy.hiddendanger.data.PeerEvalSummary
 import com.fuusy.hiddendanger.repository.OkrRepository
 import com.fuusy.hiddendanger.repository.PeerEvalRepository
 import com.fuusy.hiddendanger.data.OkrPeriodHelper
@@ -45,9 +44,6 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
     private val _peerEvalReceivedScore = MutableLiveData<Double?>(null)
     val peerEvalReceivedScore: LiveData<Double?> = _peerEvalReceivedScore
 
-    private val _peerEvalSummary = MutableLiveData<PeerEvalSummary?>()
-    val peerEvalSummary: LiveData<PeerEvalSummary?> = _peerEvalSummary
-
     private var currentPeriod: String? = null
 
     fun load(periodType: String? = null, includeBadges: Boolean = true) {
@@ -61,7 +57,7 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
                 onFailure = { _error.value = it.message ?: "加载失败" }
             )
             if (includeBadges) {
-                refreshBadgesInternal()
+                refreshBadgesInternal(includePeerEval = shouldLoadPeerEval())
             }
             _loading.value = false
         }
@@ -70,14 +66,42 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
     /** 切换季度 Tab 时只拉目标，角标与季度无关不必重复请求 */
     fun loadGoalsOnly(periodType: String? = null) = load(periodType, includeBadges = false)
 
-    /** 仅刷新待办角标，不重新拉取目标列表 */
-    fun refreshBadges() {
+    /** 仅刷新 KR/评论角标，不碰互评接口 */
+    fun refreshBadgesWithoutPeerEval() {
         viewModelScope.launch {
-            refreshBadgesInternal()
+            refreshBadgesInternal(includePeerEval = false)
         }
     }
 
-    private suspend fun refreshBadgesInternal() {
+    /** 从 360 互评返回：只刷新任务角标（提交/保存会 invalidate 缓存） */
+    fun refreshBadgesAfterPeerEval() {
+        viewModelScope.launch {
+            refreshKrBadgesInternal()
+            if (shouldLoadPeerEval()) {
+                refreshPeerEvalTasks(forceRefresh = false)
+            }
+        }
+    }
+
+    /** 切到互评周期 Tab 时懒加载 360 卡片数据 */
+    fun refreshPeerEvalBadges(includeReceived: Boolean = true) {
+        viewModelScope.launch {
+            if (!shouldLoadPeerEval()) return@launch
+            refreshPeerEvalTasks(forceRefresh = false)
+            if (includeReceived) {
+                refreshPeerEvalReceived(forceRefresh = false)
+            }
+        }
+    }
+
+    private suspend fun refreshBadgesInternal(includePeerEval: Boolean) {
+        refreshKrBadgesInternal()
+        if (!includePeerEval) return
+        refreshPeerEvalTasks(forceRefresh = false)
+        refreshPeerEvalReceived(forceRefresh = false)
+    }
+
+    private suspend fun refreshKrBadgesInternal() {
         var krCount = 0
         var progressCount = 0
         repo.getPendingKrs().fold(
@@ -93,28 +117,44 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
             onSuccess = { _receivedCommentCount.value = it.size },
             onFailure = { _receivedCommentCount.value = 0 }
         )
+    }
+
+    private suspend fun refreshPeerEvalTasks(forceRefresh: Boolean) {
         val evalPeriod = OkrPeriodHelper.peerEvalPeriod()
-        peerEvalRepo.getSummary(evalPeriod).fold(
-            onSuccess = { summary ->
-                _peerEvalSummary.value = summary
-                _peerEvalPendingCount.value = summary.pendingCount
-                _peerEvalCompletedCount.value = summary.completedCount
-                if (summary.receivedEvaluatorCount > 0) {
-                    _peerEvalReceivedCount.value = summary.receivedEvaluatorCount
-                    _peerEvalReceivedScore.value = summary.receivedAverageScore
+        peerEvalRepo.getTasks(evalPeriod, forceRefresh).fold(
+            onSuccess = { tasks ->
+                _peerEvalPendingCount.value = tasks.count { !it.isDone }
+                _peerEvalCompletedCount.value = tasks.count { it.isDone }
+            },
+            onFailure = {
+                _peerEvalPendingCount.value = 0
+                _peerEvalCompletedCount.value = 0
+            }
+        )
+    }
+
+    private suspend fun refreshPeerEvalReceived(forceRefresh: Boolean) {
+        val evalPeriod = OkrPeriodHelper.peerEvalPeriod()
+        peerEvalRepo.getReceivedEval(evalPeriod, forceRefresh).fold(
+            onSuccess = { received ->
+                if (received.evaluatorCount > 0) {
+                    _peerEvalReceivedCount.value = received.evaluatorCount
+                    _peerEvalReceivedScore.value = received.averageScore
                 } else {
                     _peerEvalReceivedCount.value = 0
                     _peerEvalReceivedScore.value = null
                 }
             },
             onFailure = {
-                _peerEvalSummary.value = null
-                _peerEvalPendingCount.value = 0
-                _peerEvalCompletedCount.value = 0
                 _peerEvalReceivedCount.value = 0
                 _peerEvalReceivedScore.value = null
             }
         )
+    }
+
+    private fun shouldLoadPeerEval(): Boolean {
+        val tab = currentPeriod ?: OkrPeriodHelper.currentQuarterValue()
+        return OkrPeriodHelper.isPeerEvalVisibleForTab(tab)
     }
 
     fun activePeriodValue(): String? =

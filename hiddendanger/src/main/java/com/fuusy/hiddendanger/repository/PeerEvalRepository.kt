@@ -35,29 +35,56 @@ class PeerEvalRepository(app: Application) {
             .create(OkrApi::class.java)
     }
 
-    suspend fun getSummary(period: String): Result<PeerEvalSummary> =
-        safeCall { api.getPeerEvalSummary(period) }
-
-    suspend fun getReviewPrep(period: String): Result<OkrReviewPrep> = try {
-        val resp = api.getReviewPrep(period)
-        if (resp.isSuccess) {
-            Result.success(resp.data ?: OkrReviewPrep(period = period, phase = "PRE_MEETING"))
-        } else {
-            Result.failure(IllegalStateException(resp.errorMsg ?: "加载复盘失败"))
+    suspend fun getSummary(period: String, forceRefresh: Boolean = false): Result<PeerEvalSummary> {
+        if (!forceRefresh) {
+            PeerEvalCache.getSummary<PeerEvalSummary>(period)?.let { return Result.success(it) }
         }
-    } catch (e: Exception) {
-        Result.failure(e)
+        return safeCall { api.getPeerEvalSummary(period) }.also { result ->
+            result.onSuccess { PeerEvalCache.putSummary(period, it) }
+        }
+    }
+
+    suspend fun getReviewPrep(period: String, forceRefresh: Boolean = false): Result<OkrReviewPrep> {
+        if (!forceRefresh) {
+            PeerEvalCache.getReviewPrep<OkrReviewPrep>(period)?.let { return Result.success(it) }
+        }
+        return try {
+            val resp = api.getReviewPrep(period)
+            if (resp.isSuccess) {
+                val prep = resp.data ?: OkrReviewPrep(period = period, phase = "PRE_MEETING")
+                PeerEvalCache.putReviewPrep(period, prep)
+                Result.success(prep)
+            } else {
+                Result.failure(IllegalStateException(resp.errorMsg ?: "加载复盘失败"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun saveReviewPrep(request: OkrReviewPrepRequest): Result<OkrReviewPrep> =
-        safeCall { api.saveReviewPrep(request) }
+        safeCall { api.saveReviewPrep(request) }.also { result ->
+            result.onSuccess { prep ->
+                val period = request.period
+                PeerEvalCache.putReviewPrep(period, prep)
+                PeerEvalCache.invalidateTasks(period)
+                PeerEvalCache.invalidateReviewPrep(period)
+            }
+        }
 
-    suspend fun getTasks(period: String): Result<List<PeerEvalTask>> =
-        safeListCall { api.getPeerEvalTasks(period) }
+    suspend fun getTasks(period: String, forceRefresh: Boolean = false): Result<List<PeerEvalTask>> {
+        if (!forceRefresh) {
+            PeerEvalCache.getTasks<List<PeerEvalTask>>(period)?.let { return Result.success(it) }
+        }
+        return safeListCall { api.getPeerEvalTasks(period) }.also { result ->
+            result.onSuccess { PeerEvalCache.putTasks(period, it) }
+        }
+    }
 
     suspend fun submitEval(request: PeerEvalSubmitRequest): Result<Unit> = try {
         val resp = api.submitPeerEval(request)
         if (resp.isSuccess) {
+            PeerEvalCache.invalidateTasks(request.period)
             Result.success(Unit)
         } else {
             Result.failure(IllegalStateException(resp.errorMsg ?: "提交失败"))
@@ -81,20 +108,32 @@ class PeerEvalRepository(app: Application) {
         }
     }
 
-    suspend fun getReceivedEval(period: String): Result<PeerEvalReceivedResponse> =
-        safeCall { api.getPeerEvalReceived(period) }
+    suspend fun getReceivedEval(period: String, forceRefresh: Boolean = false): Result<PeerEvalReceivedResponse> {
+        if (!forceRefresh) {
+            PeerEvalCache.getReceived<PeerEvalReceivedResponse>(period)?.let { return Result.success(it) }
+        }
+        return safeCall { api.getPeerEvalReceived(period) }.also { result ->
+            result.onSuccess { PeerEvalCache.putReceived(period, it) }
+        }
+    }
 
-    suspend fun getColleagues(): Result<List<OkrPeerUser>> =
-        try {
+    suspend fun getColleagues(forceRefresh: Boolean = false): Result<List<OkrPeerUser>> {
+        if (!forceRefresh) {
+            PeerEvalCache.getColleagues<List<OkrPeerUser>>()?.let { return Result.success(it) }
+        }
+        return try {
             val resp = api.getPeerEvalColleagues()
             if (resp.isSuccess) {
-                Result.success(resp.data.orEmpty().map { it.toPeerUser() })
+                val users = resp.data.orEmpty().map { it.toPeerUser() }
+                PeerEvalCache.putColleagues(users)
+                Result.success(users)
             } else {
                 loadColleaguesFallback(resp.errorMsg ?: "加载同事列表失败")
             }
         } catch (e: Exception) {
             loadColleaguesFallback(e.message ?: "加载同事列表失败", e)
         }
+    }
 
     private suspend fun loadColleaguesFallback(
         reason: String,

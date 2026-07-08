@@ -22,11 +22,15 @@ class PeerEvalReceivedViewModel(application: Application) : AndroidViewModel(app
     private val _received = MutableLiveData<PeerEvalReceivedResponse?>()
     val received: LiveData<PeerEvalReceivedResponse?> = _received
 
-    fun load(period: String) {
+    fun load(period: String, cached: PeerEvalReceivedResponse? = null) {
+        if (cached != null) {
+            _received.value = cached
+            return
+        }
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
-            repo.getReceivedEval(period).fold(
+            repo.getReceivedEval(period, forceRefresh = false).fold(
                 onSuccess = { _received.value = it },
                 onFailure = {
                     _error.value = it.message ?: "加载失败"

@@ -83,10 +83,10 @@ class OkrPeerEvalSubmitActivity : AppCompatActivity() {
     }
 
     companion object {
-        private const val EXTRA_PERIOD = "period"
-        private const val EXTRA_TARGET_USER_ID = "target_user_id"
-        private const val EXTRA_TARGET_NAME = "target_name"
-        private const val EXTRA_DEPT_NAME = "dept_name"
+        const val EXTRA_PERIOD = "period"
+        const val EXTRA_TARGET_USER_ID = "target_user_id"
+        const val EXTRA_TARGET_NAME = "target_name"
+        const val EXTRA_DEPT_NAME = "dept_name"
 
         fun start(
             context: Context,

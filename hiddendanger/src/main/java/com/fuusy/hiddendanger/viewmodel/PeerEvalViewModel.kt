@@ -10,7 +10,6 @@ import com.fuusy.hiddendanger.data.OkrReviewPrep
 import com.fuusy.hiddendanger.data.OkrReviewPrepRequest
 import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.data.PeerEvalReceivedResponse
-import com.fuusy.hiddendanger.data.PeerEvalSummary
 import com.fuusy.hiddendanger.data.PeerEvalTask
 import com.fuusy.hiddendanger.repository.PeerEvalRepository
 import kotlinx.coroutines.async
@@ -25,9 +24,6 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
 
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
-
-    private val _summary = MutableLiveData<PeerEvalSummary>()
-    val summary: LiveData<PeerEvalSummary> = _summary
 
     private val _reviewPrep = MutableLiveData<OkrReviewPrep>()
     val reviewPrep: LiveData<OkrReviewPrep> = _reviewPrep
@@ -48,22 +44,20 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
         private set
 
     private val selectedCollaborators = mutableListOf<OkrPeerUser>()
-    private var receivedDetailLoaded = false
-    private var receivedDetailCache: PeerEvalReceivedResponse? = null
+    private var receivedLoaded = false
 
     fun init(period: String?) {
         // 360 互评固定为「上一已结束季度」，不接受外部传入当前季度
         this.period = OkrPeriodHelper.peerEvalPeriod()
     }
 
-    /** 首次进入：复盘 + 任务 + 摘要（预览用），同事列表等打开选人弹窗再拉 */
+    /** 首次进入：复盘 + 任务；summary/received 懒加载 */
     fun loadInitial() {
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
             val prepDeferred = async { repo.getReviewPrep(period) }
             val tasksDeferred = async { repo.getTasks(period) }
-            val summaryDeferred = async { repo.getSummary(period) }
 
             prepDeferred.await().fold(
                 onSuccess = { prep ->
@@ -79,58 +73,42 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
                 onSuccess = { _tasks.value = it },
                 onFailure = { _tasks.value = emptyList() }
             )
-            summaryDeferred.await().fold(
-                onSuccess = { _summary.value = it },
-                onFailure = { _summary.value = PeerEvalSummary(period = period) }
-            )
             _loading.value = false
         }
     }
 
-    /** 从子页返回：只刷新任务和摘要，避免重复拉复盘/同事/详情 */
-    fun refreshOnReturn() {
+    /** 提交评价成功后刷新任务列表 */
+    fun refreshTasksAfterSubmit() {
         viewModelScope.launch {
-            val tasksDeferred = async { repo.getTasks(period) }
-            val summaryDeferred = async { repo.getSummary(period) }
-            tasksDeferred.await().fold(
-                onSuccess = { _tasks.value = it },
-                onFailure = { _tasks.value = emptyList() }
-            )
-            summaryDeferred.await().fold(
-                onSuccess = { _summary.value = it },
-                onFailure = { _summary.value = PeerEvalSummary(period = period) }
-            )
-            receivedDetailLoaded = false
-            receivedDetailCache = null
+            reloadTasksInternal(forceRefresh = true)
         }
     }
 
-    /** 切换到「收到的评价」Tab 或打开详情前懒加载完整 received */
-    fun ensureReceivedDetailLoaded(onComplete: (() -> Unit)? = null) {
-        if (receivedDetailLoaded && receivedDetailCache != null) {
-            _received.value = receivedDetailCache!!
+    /** 切换到「收到的评价」Tab 或打开详情前懒加载 received */
+    fun ensureReceivedLoaded(onComplete: (() -> Unit)? = null) {
+        if (receivedLoaded && _received.value != null) {
             onComplete?.invoke()
             return
         }
         viewModelScope.launch {
-            reloadReceivedInternal()
-            receivedDetailLoaded = true
+            reloadReceivedInternal(forceRefresh = false)
+            receivedLoaded = true
             onComplete?.invoke()
         }
     }
 
-    fun receivedSnapshot(): PeerEvalReceivedResponse? = receivedDetailCache
+    fun receivedSnapshot(): PeerEvalReceivedResponse? = _received.value
 
-    /** 打开选人弹窗前刷新同事列表 */
+    /** 打开选人弹窗时拉同事列表（带缓存） */
     fun refreshColleagues(onComplete: () -> Unit) {
         viewModelScope.launch {
-            loadColleaguesInternal()
+            loadColleaguesInternal(forceRefresh = false)
             onComplete()
         }
     }
 
-    private suspend fun loadColleaguesInternal() {
-        repo.getColleagues().fold(
+    private suspend fun loadColleaguesInternal(forceRefresh: Boolean) {
+        repo.getColleagues(forceRefresh).fold(
             onSuccess = { _userOptions.value = it },
             onFailure = {
                 _userOptions.value = emptyList()
@@ -175,8 +153,7 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
                         selectedCollaborators.clear()
                         selectedCollaborators.addAll(it.collaborators.orEmpty())
                         _saved.value = true
-                        reloadTasksInternal()
-                        reloadSummaryInternal()
+                        reloadTasksInternal(forceRefresh = true)
                     },
                     onFailure = { _error.value = it.message ?: "保存失败" }
                 )
@@ -189,30 +166,18 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
         _saved.value = false
     }
 
-    private suspend fun reloadTasksInternal() {
-        repo.getTasks(period).fold(
+    private suspend fun reloadTasksInternal(forceRefresh: Boolean) {
+        repo.getTasks(period, forceRefresh).fold(
             onSuccess = { _tasks.value = it },
             onFailure = { _tasks.value = emptyList() }
         )
     }
 
-    private suspend fun reloadSummaryInternal() {
-        repo.getSummary(period).fold(
-            onSuccess = { _summary.value = it },
-            onFailure = { }
-        )
-    }
-
-    private suspend fun reloadReceivedInternal() {
-        repo.getReceivedEval(period).fold(
-            onSuccess = {
-                receivedDetailCache = it
-                _received.value = it
-            },
+    private suspend fun reloadReceivedInternal(forceRefresh: Boolean) {
+        repo.getReceivedEval(period, forceRefresh).fold(
+            onSuccess = { _received.value = it },
             onFailure = {
-                val empty = PeerEvalReceivedResponse(period = period)
-                receivedDetailCache = empty
-                _received.value = empty
+                _received.value = PeerEvalReceivedResponse(period = period)
             }
         )
     }

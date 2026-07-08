@@ -8,6 +8,7 @@ import android.app.Dialog
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -20,7 +21,7 @@ import com.fuusy.hiddendanger.R
 import com.fuusy.hiddendanger.data.OkrReviewPrep
 import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.data.OkrPeerUser
-import com.fuusy.hiddendanger.data.PeerEvalSummary
+import com.fuusy.hiddendanger.data.PeerEvalReceivedResponse
 import com.fuusy.hiddendanger.data.PeerEvalTask
 import com.fuusy.hiddendanger.databinding.ActivityOkrPeerEvalBinding
 import com.fuusy.hiddendanger.ui.adapter.PeerCollaboratorAdapter
@@ -40,7 +41,14 @@ class OkrPeerEvalActivity : AppCompatActivity() {
 
     private var prepFieldsBound = false
     private var reviewCompleted = false
-    private var resumedOnce = false
+
+    private val submitLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            viewModel.refreshTasksAfterSubmit()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,7 +86,7 @@ class OkrPeerEvalActivity : AppCompatActivity() {
             )
         }
         binding.btnViewReceivedDetail.setOnClickListener {
-            viewModel.ensureReceivedDetailLoaded {
+            viewModel.ensureReceivedLoaded {
                 OkrPeerEvalReceivedActivity.start(
                     this,
                     viewModel.period,
@@ -94,16 +102,7 @@ class OkrPeerEvalActivity : AppCompatActivity() {
             intent.getBooleanExtra(EXTRA_SHOW_EVAL_TAB, false) -> selectTab(PeerTab.EVAL)
             else -> selectTab(PeerTab.REVIEW)
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (resumedOnce) {
-            viewModel.refreshOnReturn()
-        } else {
-            viewModel.loadInitial()
-            resumedOnce = true
-        }
+        viewModel.loadInitial()
     }
 
     private fun observeViewModel() {
@@ -120,7 +119,7 @@ class OkrPeerEvalActivity : AppCompatActivity() {
             binding.rvTasks.isVisible = tasks.isNotEmpty()
             updateEvalTabBadge(tasks.count { !it.isDone })
         }
-        viewModel.summary.observe(this) { bindReceivedPreview(it) }
+        viewModel.received.observe(this) { bindReceivedPreview(it) }
         viewModel.saved.observe(this) { saved ->
             if (saved) {
                 viewModel.consumeSaved()
@@ -169,18 +168,18 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         binding.tabReview.text = if (reviewCompleted) "我的复盘" else "$label 复盘"
     }
 
-    private fun bindReceivedPreview(summary: PeerEvalSummary?) {
-        val count = summary?.receivedEvaluatorCount ?: 0
+    private fun bindReceivedPreview(data: PeerEvalReceivedResponse?) {
+        val count = data?.evaluatorCount ?: 0
         val hasData = count > 0
         binding.tvReceivedCount.isVisible = hasData
         binding.tvReceivedScore.isVisible = hasData
         binding.btnViewReceivedDetail.isVisible = hasData
         binding.tvReceivedEmpty.isVisible = !hasData
-        if (hasData && summary != null) {
+        if (hasData && data != null) {
             binding.tvReceivedCount.text = "$count 位同事已完成评价"
-            binding.tvReceivedScore.text = "%.1f".format(summary.receivedAverageScore ?: 0.0)
+            binding.tvReceivedScore.text = "%.1f".format(data.averageScore)
             updateReceivedTabBadge(count)
-        } else {
+        } else if (data != null) {
             updateReceivedTabBadge(0)
         }
     }
@@ -223,7 +222,7 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         binding.panelEval.isVisible = eval
         binding.panelReceived.isVisible = received
         if (received) {
-            viewModel.ensureReceivedDetailLoaded()
+            viewModel.ensureReceivedLoaded()
         }
     }
 
@@ -291,12 +290,13 @@ class OkrPeerEvalActivity : AppCompatActivity() {
     }
 
     private fun openSubmit(task: PeerEvalTask) {
-        OkrPeerEvalSubmitActivity.start(
-            context = this,
-            period = viewModel.period,
-            targetUserId = task.targetUserId,
-            targetUserName = task.targetUserName.orEmpty(),
-            deptName = task.deptName
+        submitLauncher.launch(
+            Intent(this, OkrPeerEvalSubmitActivity::class.java).apply {
+                putExtra(OkrPeerEvalSubmitActivity.EXTRA_PERIOD, viewModel.period)
+                putExtra(OkrPeerEvalSubmitActivity.EXTRA_TARGET_USER_ID, task.targetUserId)
+                putExtra(OkrPeerEvalSubmitActivity.EXTRA_TARGET_NAME, task.targetUserName.orEmpty())
+                task.deptName?.let { putExtra(OkrPeerEvalSubmitActivity.EXTRA_DEPT_NAME, it) }
+            }
         )
     }
 
@@ -329,9 +329,9 @@ class OkrPeerEvalActivity : AppCompatActivity() {
     private enum class PeerTab { REVIEW, EVAL, RECEIVED }
 
     companion object {
-        private const val EXTRA_PERIOD = "period"
-        private const val EXTRA_SHOW_EVAL_TAB = "show_eval_tab"
-        private const val EXTRA_SHOW_RECEIVED_TAB = "show_received_tab"
+        const val EXTRA_PERIOD = "period"
+        const val EXTRA_SHOW_EVAL_TAB = "show_eval_tab"
+        const val EXTRA_SHOW_RECEIVED_TAB = "show_received_tab"
 
         fun start(
             context: Context,
