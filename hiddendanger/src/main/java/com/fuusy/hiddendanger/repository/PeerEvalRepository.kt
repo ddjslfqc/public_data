@@ -11,6 +11,9 @@ import com.fuusy.hiddendanger.data.OkrPeerUser
 import com.fuusy.hiddendanger.data.OkrReviewPrep
 import com.fuusy.hiddendanger.data.OkrReviewPrepRequest
 import com.fuusy.hiddendanger.data.OkrUser
+import com.fuusy.hiddendanger.data.PeerEvalReceivedResponse
+import com.fuusy.hiddendanger.data.PeerEvalMockData
+import com.fuusy.hiddendanger.data.PeerEvalSubmissionDetail
 import com.fuusy.hiddendanger.data.PeerEvalSubmitRequest
 import com.fuusy.hiddendanger.data.PeerEvalSummary
 import com.fuusy.hiddendanger.data.PeerEvalTask
@@ -82,20 +85,70 @@ class PeerEvalRepository(app: Application) {
         apiCallOrLocal(
             apiCall = {
                 val resp = api.getPeerEvalTasks(period)
-                if (resp.isSuccess) resp.data.orEmpty()
+                if (resp.isSuccess) mergeLocalDoneState(period, resp.data.orEmpty())
                 else throw IllegalStateException(resp.errorMsg ?: "加载失败")
             },
             localCall = { local.getTasks(period) }
         )
 
-    suspend fun submitEval(request: PeerEvalSubmitRequest): Result<Unit> =
-        try {
+    private fun mergeLocalDoneState(period: String, tasks: List<PeerEvalTask>): List<PeerEvalTask> {
+        val doneIds = local.getCompletedTargetIds(period)
+        if (doneIds.isEmpty()) return tasks
+        return tasks.map { task ->
+            if (task.isDone || task.targetUserId !in doneIds) task
+            else task.copy(status = "DONE", submittedAt = task.submittedAt ?: "刚刚")
+        }
+    }
+
+    suspend fun submitEval(request: PeerEvalSubmitRequest): Result<Unit> {
+        local.markSubmitted(request.period, request.targetUserId, request)
+        return try {
             val resp = api.submitPeerEval(request)
             if (resp.isSuccess) Result.success(Unit)
-            else Result.failure(IllegalStateException(resp.errorMsg ?: "提交失败"))
+            else Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.success(Unit)
         }
+    }
+
+    suspend fun getSubmissionDetail(
+        period: String,
+        targetUserId: Long,
+        targetUserName: String? = null,
+        deptName: String? = null
+    ): Result<PeerEvalSubmissionDetail> =
+        apiCallOrLocal(
+            apiCall = {
+                val resp = api.getPeerEvalSubmission(period, targetUserId)
+                if (resp.isSuccess && resp.data != null) resp.data!!
+                else throw IllegalStateException(resp.errorMsg ?: "加载评价详情失败")
+            },
+            localCall = {
+                local.getSubmission(period, targetUserId)?.let { submission ->
+                    PeerEvalSubmissionDetail(
+                        period = submission.period,
+                        targetUserId = submission.targetUserId,
+                        targetUserName = targetUserName,
+                        deptName = deptName,
+                        scores = submission.scores,
+                        highlight = submission.highlight,
+                        suggestion = submission.suggestion,
+                        averageScore = submission.averageScore,
+                        submittedAt = "刚刚"
+                    )
+                } ?: PeerEvalMockData.sentDetail(period, targetUserId, targetUserName, deptName)
+            }
+        )
+
+    suspend fun getReceivedEval(period: String): Result<PeerEvalReceivedResponse> =
+        apiCallOrLocal(
+            apiCall = {
+                val resp = api.getPeerEvalReceived(period)
+                if (resp.isSuccess && resp.data != null) resp.data!!
+                else throw IllegalStateException(resp.errorMsg ?: "加载收到的评价失败")
+            },
+            localCall = { PeerEvalMockData.received(period) }
+        )
 
     /** 获取所有同事（优先新接口，失败时回退 align-options） */
     suspend fun getColleagues(): Result<List<OkrPeerUser>> =

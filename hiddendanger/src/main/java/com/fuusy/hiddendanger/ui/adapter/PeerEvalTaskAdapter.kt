@@ -32,7 +32,7 @@ class PeerEvalTaskAdapter(
             tvDept.isVisible = dept != null
             tvDept.text = dept
             if (item.isDone) {
-                tvStatus.text = "已评价"
+                tvStatus.text = "已评价 · 详情"
                 tvStatus.setBackgroundResource(com.fuusy.hiddendanger.R.drawable.bg_status_done)
                 tvStatus.setTextColor(0xFF00AA60.toInt())
                 root.alpha = 0.72f
@@ -42,9 +42,7 @@ class PeerEvalTaskAdapter(
                 tvStatus.setTextColor(0xFFEA9300.toInt())
                 root.alpha = 1f
             }
-            root.setOnClickListener {
-                if (!item.isDone) onClick(item)
-            }
+            root.setOnClickListener { onClick(item) }
         }
     }
 

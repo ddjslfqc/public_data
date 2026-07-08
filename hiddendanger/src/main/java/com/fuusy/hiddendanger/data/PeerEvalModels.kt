@@ -81,7 +81,42 @@ data class PeerEvalSummary(
     val phase: String? = null,
     val pendingCount: Int = 0,
     val completedCount: Int = 0,
-    val reviewPrepCompleted: Boolean = false
+    val reviewPrepCompleted: Boolean = false,
+    /** 收到同事评价的人数（匿名汇总） */
+    val receivedEvaluatorCount: Int = 0,
+    /** 收到同事评价的综合均分 */
+    val receivedAverageScore: Double? = null
+)
+
+/** GET /mobile/okr/peer-eval/submission 我发出的评价详情 */
+data class PeerEvalSubmissionDetail(
+    val submissionId: Long? = null,
+    val period: String,
+    val targetUserId: Long,
+    val targetUserName: String? = null,
+    val deptName: String? = null,
+    val scores: List<PeerEvalScoreItem> = emptyList(),
+    val highlight: String? = null,
+    val suggestion: String? = null,
+    val averageScore: Double? = null,
+    val submittedAt: String? = null
+)
+
+/** GET /mobile/okr/peer-eval/received 我收到的同事评价（匿名汇总） */
+data class PeerEvalReceivedResponse(
+    val period: String,
+    val evaluatorCount: Int = 0,
+    val averageScore: Double = 0.0,
+    val publishedAt: String? = null,
+    val scoreBreakdown: List<PeerEvalScoreBreakdownItem> = emptyList(),
+    val highlights: List<String> = emptyList(),
+    val suggestions: List<String> = emptyList()
+)
+
+data class PeerEvalScoreBreakdownItem(
+    val itemId: String,
+    val itemTitle: String? = null,
+    val averageScore: Double
 )
 
 data class AddCollaboratorRequest(

@@ -40,6 +40,7 @@ class MyGoalsActivity : AppCompatActivity() {
     private var selectedPeriod: String? = null
     private var cachedPeriods: List<OkrPeriodOption> = emptyList()
     private var peerEvalPending = 0
+    private var peerEvalReceived = 0
 
     private val krDetailLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -86,7 +87,10 @@ class MyGoalsActivity : AppCompatActivity() {
             Toast.makeText(this, "领导评价功能即将上线", Toast.LENGTH_SHORT).show()
         }
         binding.cardColleagueEval.setOnClickListener {
-            openPeerEval(showEvalTab = peerEvalPending > 0)
+            openPeerEval(
+                showEvalTab = peerEvalPending > 0,
+                showReceivedTab = peerEvalPending == 0 && peerEvalReceived > 0
+            )
         }
 
         binding.rvObjectives.layoutManager = LinearLayoutManager(this)
@@ -118,10 +122,37 @@ class MyGoalsActivity : AppCompatActivity() {
         }
         viewModel.peerEvalPendingCount.observe(this) { pending ->
             peerEvalPending = pending
-            bindColleagueEvalSummary(pending, viewModel.peerEvalCompletedCount.value ?: 0)
+            bindColleagueEvalSummary(
+                pending,
+                viewModel.peerEvalCompletedCount.value ?: 0,
+                viewModel.peerEvalReceivedCount.value ?: 0,
+                viewModel.peerEvalReceivedScore.value
+            )
         }
         viewModel.peerEvalCompletedCount.observe(this) { completed ->
-            bindColleagueEvalSummary(viewModel.peerEvalPendingCount.value ?: 0, completed)
+            bindColleagueEvalSummary(
+                viewModel.peerEvalPendingCount.value ?: 0,
+                completed,
+                viewModel.peerEvalReceivedCount.value ?: 0,
+                viewModel.peerEvalReceivedScore.value
+            )
+        }
+        viewModel.peerEvalReceivedCount.observe(this) { received ->
+            peerEvalReceived = received
+            bindColleagueEvalSummary(
+                viewModel.peerEvalPendingCount.value ?: 0,
+                viewModel.peerEvalCompletedCount.value ?: 0,
+                received,
+                viewModel.peerEvalReceivedScore.value
+            )
+        }
+        viewModel.peerEvalReceivedScore.observe(this) { score ->
+            bindColleagueEvalSummary(
+                viewModel.peerEvalPendingCount.value ?: 0,
+                viewModel.peerEvalCompletedCount.value ?: 0,
+                viewModel.peerEvalReceivedCount.value ?: 0,
+                score
+            )
         }
         viewModel.myGoal.observe(this) { data ->
             if (data == null) return@observe
@@ -134,15 +165,35 @@ class MyGoalsActivity : AppCompatActivity() {
         }
     }
 
-    private fun bindColleagueEvalSummary(pending: Int, completed: Int) {
+    private fun bindColleagueEvalSummary(
+        pending: Int,
+        completed: Int,
+        received: Int,
+        receivedScore: Double?
+    ) {
         binding.tvPeerPendingValue.text = "$pending 人"
         binding.tvPeerCompletedValue.text = "$completed 人"
+        if (received > 0) {
+            binding.tvPeerReceivedValue.text = if (receivedScore != null) {
+                "$received 人 · ${"%.1f".format(receivedScore)}分"
+            } else {
+                "$received 人"
+            }
+        } else {
+            binding.tvPeerReceivedValue.text = "暂无"
+        }
         when {
             pending > 0 -> {
                 binding.tvColleagueEvalTag.isVisible = true
                 binding.tvColleagueEvalTag.text = "待评价 $pending"
                 binding.tvColleagueEvalTag.setBackgroundResource(R.drawable.bg_archive_tag_warn)
                 binding.tvColleagueEvalTag.setTextColor(Color.parseColor("#EA9300"))
+            }
+            received > 0 -> {
+                binding.tvColleagueEvalTag.isVisible = true
+                binding.tvColleagueEvalTag.text = "收到 $received 条"
+                binding.tvColleagueEvalTag.setBackgroundResource(R.drawable.bg_goal_status_processing)
+                binding.tvColleagueEvalTag.setTextColor(Color.parseColor("#00AA60"))
             }
             completed > 0 -> {
                 binding.tvColleagueEvalTag.isVisible = true
@@ -154,11 +205,12 @@ class MyGoalsActivity : AppCompatActivity() {
         }
     }
 
-    private fun openPeerEval(showEvalTab: Boolean) {
+    private fun openPeerEval(showEvalTab: Boolean, showReceivedTab: Boolean = false) {
         OkrPeerEvalActivity.start(
             context = this,
             period = PeerEvalViewModel.DEFAULT_PERIOD,
-            showEvalTab = showEvalTab
+            showEvalTab = showEvalTab,
+            showReceivedTab = showReceivedTab
         )
     }
 

@@ -49,25 +49,37 @@
                 android:id="@+id/tab_review"
                 android:layout_width="0dp"
                 android:layout_height="36dp"
-                android:layout_marginEnd="6dp"
+                android:layout_marginEnd="4dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_goal_period_tab_selected"
                 android:gravity="center"
                 android:text="Q2 复盘"
                 android:textColor="#1365EC"
-                android:textSize="13sp" />
+                android:textSize="12sp" />
 
             <TextView
                 android:id="@+id/tab_eval"
                 android:layout_width="0dp"
                 android:layout_height="36dp"
-                android:layout_marginStart="6dp"
+                android:layout_marginHorizontal="4dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_goal_period_tab_normal"
                 android:gravity="center"
                 android:text="待我评价"
                 android:textColor="#686D79"
-                android:textSize="13sp" />
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tab_received"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_goal_period_tab_normal"
+                android:gravity="center"
+                android:text="收到的评价"
+                android:textColor="#686D79"
+                android:textSize="12sp" />
         </LinearLayout>
 
         <FrameLayout
@@ -247,6 +259,87 @@
                     android:textSize="14sp"
                     android:visibility="gone" />
             </FrameLayout>
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/panel_received"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:padding="12dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_personal_menu_card"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="同事对我的评价"
+                        android:textColor="#000000"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="匿名汇总，不展示具体评价人"
+                        android:textColor="#686D79"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tv_received_count"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:textColor="#686D79"
+                        android:textSize="13sp"
+                        tools:text="5 位同事已完成评价" />
+
+                    <TextView
+                        android:id="@+id/tv_received_score"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textColor="#1365EC"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        tools:text="4.3" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="综合平均分"
+                        android:textColor="#686D79"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/btn_view_received_detail"
+                        style="@style/AppButton.Primary"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center"
+                        android:text="查看评价详情"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/tv_received_empty"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center"
+                        android:paddingVertical="24dp"
+                        android:text="暂无同事评价，互评结束后将在此汇总展示"
+                        android:textColor="#A7AFC3"
+                        android:textSize="14sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
         </FrameLayout>
     </LinearLayout>
 

@@ -13,12 +13,20 @@ import com.fuusy.hiddendanger.data.PeerEvalScoreItem
 import com.fuusy.hiddendanger.databinding.ItemPeerEvalCategoryHeaderBinding
 import com.fuusy.hiddendanger.databinding.ItemPeerEvalScoreItemBinding
 
-class PeerEvalScoreFormAdapter : ListAdapter<PeerEvalFormRow, RecyclerView.ViewHolder>(DiffCallback()) {
+class PeerEvalScoreFormAdapter(
+    private val readOnly: Boolean = false
+) : ListAdapter<PeerEvalFormRow, RecyclerView.ViewHolder>(DiffCallback()) {
 
     private val scores = linkedMapOf<String, Int>()
 
     fun getScores(): List<PeerEvalScoreItem> =
         scores.map { (itemId, score) -> PeerEvalScoreItem(itemId = itemId, score = score) }
+
+    fun setScores(scoreMap: Map<String, Int>) {
+        scores.clear()
+        scores.putAll(scoreMap)
+        notifyDataSetChanged()
+    }
 
     override fun getItemViewType(position: Int): Int = when (getItem(position)) {
         is PeerEvalFormRow.Category -> VIEW_CATEGORY
@@ -73,7 +81,9 @@ class PeerEvalScoreFormAdapter : ListAdapter<PeerEvalFormRow, RecyclerView.ViewH
             scores[itemId] = initial
             renderHearts(initial)
             hearts.forEachIndexed { index, heart ->
+                heart.isEnabled = !readOnly
                 heart.setOnClickListener {
+                    if (readOnly) return@setOnClickListener
                     val score = index + 1
                     scores[itemId] = score
                     renderHearts(score)

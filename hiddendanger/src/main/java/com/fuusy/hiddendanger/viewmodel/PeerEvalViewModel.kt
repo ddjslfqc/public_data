@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.fuusy.hiddendanger.data.OkrPeerUser
 import com.fuusy.hiddendanger.data.OkrReviewPrep
 import com.fuusy.hiddendanger.data.OkrReviewPrepRequest
+import com.fuusy.hiddendanger.data.PeerEvalReceivedResponse
 import com.fuusy.hiddendanger.data.PeerEvalSummary
 import com.fuusy.hiddendanger.data.PeerEvalTask
 import com.fuusy.hiddendanger.repository.PeerEvalRepository
@@ -31,6 +32,9 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
 
     private val _tasks = MutableLiveData<List<PeerEvalTask>>(emptyList())
     val tasks: LiveData<List<PeerEvalTask>> = _tasks
+
+    private val _received = MutableLiveData<PeerEvalReceivedResponse>()
+    val received: LiveData<PeerEvalReceivedResponse> = _received
 
     private val _userOptions = MutableLiveData<List<OkrPeerUser>>(emptyList())
     val userOptions: LiveData<List<OkrPeerUser>> = _userOptions
@@ -67,6 +71,7 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
                 }
             )
             reloadTasks()
+            reloadReceivedInternal()
             _loading.value = false
         }
     }
@@ -150,6 +155,13 @@ class PeerEvalViewModel(application: Application) : AndroidViewModel(application
         repo.getSummary(period).fold(
             onSuccess = { _summary.value = it },
             onFailure = { }
+        )
+    }
+
+    private suspend fun reloadReceivedInternal() {
+        repo.getReceivedEval(period).fold(
+            onSuccess = { _received.value = it },
+            onFailure = { _received.value = PeerEvalReceivedResponse(period = period) }
         )
     }
 

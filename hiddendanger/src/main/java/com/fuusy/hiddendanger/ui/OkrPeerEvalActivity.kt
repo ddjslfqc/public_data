@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.fuusy.hiddendanger.R
 import com.fuusy.hiddendanger.data.OkrPeerUser
+import com.fuusy.hiddendanger.data.PeerEvalReceivedResponse
 import com.fuusy.hiddendanger.data.PeerEvalTask
 import com.fuusy.hiddendanger.databinding.ActivityOkrPeerEvalBinding
 import com.fuusy.hiddendanger.ui.adapter.PeerCollaboratorAdapter
@@ -30,7 +31,7 @@ class OkrPeerEvalActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityOkrPeerEvalBinding
     private val viewModel: PeerEvalViewModel by viewModels()
-    private var showEvalTab = false
+    private var currentTab = PeerTab.REVIEW
 
     private lateinit var collaboratorAdapter: PeerCollaboratorAdapter
     private lateinit var taskAdapter: PeerEvalTaskAdapter
@@ -52,7 +53,9 @@ class OkrPeerEvalActivity : AppCompatActivity() {
             viewModel.removeCollaborator(user.userId)
             refreshCollaborators()
         }
-        taskAdapter = PeerEvalTaskAdapter { task -> openSubmit(task) }
+        taskAdapter = PeerEvalTaskAdapter { task ->
+            if (task.isDone) openDetail(task) else openSubmit(task)
+        }
 
         binding.rvCollaborators.layoutManager = LinearLayoutManager(this)
         binding.rvCollaborators.adapter = collaboratorAdapter
@@ -60,8 +63,9 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         binding.rvTasks.adapter = taskAdapter
 
         binding.btnBack.setOnClickListener { finish() }
-        binding.tabReview.setOnClickListener { selectTab(review = true) }
-        binding.tabEval.setOnClickListener { selectTab(review = false) }
+        binding.tabReview.setOnClickListener { selectTab(PeerTab.REVIEW) }
+        binding.tabEval.setOnClickListener { selectTab(PeerTab.EVAL) }
+        binding.tabReceived.setOnClickListener { selectTab(PeerTab.RECEIVED) }
         binding.btnAddCollaborator.setOnClickListener { showUserPicker() }
         binding.btnSaveReview.setOnClickListener {
             viewModel.saveReviewPrep(
@@ -69,10 +73,16 @@ class OkrPeerEvalActivity : AppCompatActivity() {
                 binding.etSkillGrowth.text?.toString().orEmpty()
             )
         }
+        binding.btnViewReceivedDetail.setOnClickListener {
+            OkrPeerEvalReceivedActivity.start(this, viewModel.period)
+        }
 
         observeViewModel()
-        val openEvalTab = intent.getBooleanExtra(EXTRA_SHOW_EVAL_TAB, false)
-        selectTab(review = !openEvalTab)
+        when {
+            intent.getBooleanExtra(EXTRA_SHOW_RECEIVED_TAB, false) -> selectTab(PeerTab.RECEIVED)
+            intent.getBooleanExtra(EXTRA_SHOW_EVAL_TAB, false) -> selectTab(PeerTab.EVAL)
+            else -> selectTab(PeerTab.REVIEW)
+        }
         viewModel.load()
     }
 
@@ -100,12 +110,28 @@ class OkrPeerEvalActivity : AppCompatActivity() {
             binding.rvTasks.isVisible = tasks.isNotEmpty()
             updateEvalTabBadge(tasks.count { !it.isDone })
         }
+        viewModel.received.observe(this) { bindReceivedPreview(it) }
         viewModel.saved.observe(this) { saved ->
             if (saved) {
                 viewModel.consumeSaved()
                 Toast.makeText(this, "复盘已保存", Toast.LENGTH_SHORT).show()
-                selectTab(review = false)
+                selectTab(PeerTab.EVAL)
             }
+        }
+    }
+
+    private fun bindReceivedPreview(data: PeerEvalReceivedResponse?) {
+        val hasData = data != null && data.evaluatorCount > 0
+        binding.tvReceivedCount.isVisible = hasData
+        binding.tvReceivedScore.isVisible = hasData
+        binding.btnViewReceivedDetail.isVisible = hasData
+        binding.tvReceivedEmpty.isVisible = !hasData
+        if (hasData && data != null) {
+            binding.tvReceivedCount.text = "${data.evaluatorCount} 位同事已完成评价"
+            binding.tvReceivedScore.text = "%.1f".format(data.averageScore)
+            updateReceivedTabBadge(data.evaluatorCount)
+        } else {
+            updateReceivedTabBadge(0)
         }
     }
 
@@ -117,27 +143,35 @@ class OkrPeerEvalActivity : AppCompatActivity() {
     }
 
     private fun updateEvalTabBadge(pending: Int) {
-        binding.tabEval.text = if (pending > 0) "待我评价 ($pending)" else "待我评价"
+        binding.tabEval.text = if (pending > 0) "待我评价($pending)" else "待我评价"
     }
 
-    private fun selectTab(review: Boolean) {
-        showEvalTab = !review
+    private fun updateReceivedTabBadge(count: Int) {
+        binding.tabReceived.text = if (count > 0) "收到的($count)" else "收到的评价"
+    }
+
+    private fun selectTab(tab: PeerTab) {
+        currentTab = tab
+        val review = tab == PeerTab.REVIEW
+        val eval = tab == PeerTab.EVAL
+        val received = tab == PeerTab.RECEIVED
+
         binding.tabReview.setBackgroundResource(
-            if (review) R.drawable.bg_goal_period_tab_selected
-            else R.drawable.bg_goal_period_tab_normal
+            if (review) R.drawable.bg_goal_period_tab_selected else R.drawable.bg_goal_period_tab_normal
         )
         binding.tabEval.setBackgroundResource(
-            if (!review) R.drawable.bg_goal_period_tab_selected
-            else R.drawable.bg_goal_period_tab_normal
+            if (eval) R.drawable.bg_goal_period_tab_selected else R.drawable.bg_goal_period_tab_normal
         )
-        binding.tabReview.setTextColor(
-            Color.parseColor(if (review) "#1365EC" else "#686D79")
+        binding.tabReceived.setBackgroundResource(
+            if (received) R.drawable.bg_goal_period_tab_selected else R.drawable.bg_goal_period_tab_normal
         )
-        binding.tabEval.setTextColor(
-            Color.parseColor(if (!review) "#1365EC" else "#686D79")
-        )
+        binding.tabReview.setTextColor(Color.parseColor(if (review) "#1365EC" else "#686D79"))
+        binding.tabEval.setTextColor(Color.parseColor(if (eval) "#1365EC" else "#686D79"))
+        binding.tabReceived.setTextColor(Color.parseColor(if (received) "#1365EC" else "#686D79"))
+
         binding.panelReview.isVisible = review
-        binding.panelEval.isVisible = !review
+        binding.panelEval.isVisible = eval
+        binding.panelReceived.isVisible = received
     }
 
     private fun showUserPicker() {
@@ -213,6 +247,16 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         )
     }
 
+    private fun openDetail(task: PeerEvalTask) {
+        OkrPeerEvalDetailActivity.start(
+            context = this,
+            period = viewModel.period,
+            targetUserId = task.targetUserId,
+            targetUserName = task.targetUserName.orEmpty(),
+            deptName = task.deptName
+        )
+    }
+
     private fun applyStatusBarPadding() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar) { view, insets ->
             val top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
@@ -222,15 +266,24 @@ class OkrPeerEvalActivity : AppCompatActivity() {
         ViewCompat.requestApplyInsets(binding.toolbar)
     }
 
+    private enum class PeerTab { REVIEW, EVAL, RECEIVED }
+
     companion object {
         private const val EXTRA_PERIOD = "period"
         private const val EXTRA_SHOW_EVAL_TAB = "show_eval_tab"
+        private const val EXTRA_SHOW_RECEIVED_TAB = "show_received_tab"
 
-        fun start(context: Context, period: String? = null, showEvalTab: Boolean = false) {
+        fun start(
+            context: Context,
+            period: String? = null,
+            showEvalTab: Boolean = false,
+            showReceivedTab: Boolean = false
+        ) {
             context.startActivity(
                 Intent(context, OkrPeerEvalActivity::class.java).apply {
                     period?.let { putExtra(EXTRA_PERIOD, it) }
                     putExtra(EXTRA_SHOW_EVAL_TAB, showEvalTab)
+                    putExtra(EXTRA_SHOW_RECEIVED_TAB, showReceivedTab)
                 }
             )
         }

@@ -533,7 +533,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="基于 Q2 合作经历互评，含复盘与待评价"
+                        android:text="基于 Q2 合作经历互评：待我评价 / 我已评价 / 收到评价"
                         android:textColor="#686D79"
                         android:textSize="11sp" />
 
@@ -567,7 +567,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:text="已完成"
+                                android:text="我已评价"
                                 android:textColor="#686D79"
                                 android:textSize="12sp" />
 
@@ -575,7 +575,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:text="协作互评"
+                                android:text="收到评价"
                                 android:textColor="#686D79"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -612,12 +612,14 @@
                                     tools:text="1 人" />
 
                                 <TextView
+                                    android:id="@+id/tv_peer_received_value"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="8dp"
-                                    android:text="Q2 复盘"
+                                    android:text="暂无"
                                     android:textColor="#1365EC"
-                                    android:textSize="12sp" />
+                                    android:textSize="12sp"
+                                    tools:text="5 人 · 4.3分" />
                             </LinearLayout>
 
                             <ImageView

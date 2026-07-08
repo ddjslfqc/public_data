@@ -143,6 +143,17 @@ interface OkrApi {
         @Body body: PeerEvalSubmitRequest
     ): BaseResp<Long>
 
+    @GET("mobile/okr/peer-eval/submission")
+    suspend fun getPeerEvalSubmission(
+        @Query("period") period: String,
+        @Query("targetUserId") targetUserId: Long
+    ): BaseResp<PeerEvalSubmissionDetail>
+
+    @GET("mobile/okr/peer-eval/received")
+    suspend fun getPeerEvalReceived(
+        @Query("period") period: String
+    ): BaseResp<PeerEvalReceivedResponse>
+
     @POST("mobile/okr/peer-eval/add-collaborator")
     suspend fun addPeerCollaborator(
         @Body body: AddCollaboratorRequest

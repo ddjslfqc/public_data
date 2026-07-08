@@ -39,6 +39,12 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
     private val _peerEvalCompletedCount = MutableLiveData(0)
     val peerEvalCompletedCount: LiveData<Int> = _peerEvalCompletedCount
 
+    private val _peerEvalReceivedCount = MutableLiveData(0)
+    val peerEvalReceivedCount: LiveData<Int> = _peerEvalReceivedCount
+
+    private val _peerEvalReceivedScore = MutableLiveData<Double?>(null)
+    val peerEvalReceivedScore: LiveData<Double?> = _peerEvalReceivedScore
+
     private val _peerEvalSummary = MutableLiveData<PeerEvalSummary?>()
     val peerEvalSummary: LiveData<PeerEvalSummary?> = _peerEvalSummary
 
@@ -88,11 +94,27 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
                 _peerEvalSummary.value = summary
                 _peerEvalPendingCount.value = summary.pendingCount
                 _peerEvalCompletedCount.value = summary.completedCount
+                if (summary.receivedEvaluatorCount > 0) {
+                    _peerEvalReceivedCount.value = summary.receivedEvaluatorCount
+                    _peerEvalReceivedScore.value = summary.receivedAverageScore
+                }
             },
             onFailure = {
                 _peerEvalSummary.value = null
                 _peerEvalPendingCount.value = 0
                 _peerEvalCompletedCount.value = 0
+            }
+        )
+        peerEvalRepo.getReceivedEval(evalPeriod).fold(
+            onSuccess = { received ->
+                _peerEvalReceivedCount.value = received.evaluatorCount
+                _peerEvalReceivedScore.value = received.averageScore
+            },
+            onFailure = {
+                if (_peerEvalReceivedCount.value == 0) {
+                    _peerEvalReceivedCount.value = 0
+                    _peerEvalReceivedScore.value = null
+                }
             }
         )
     }

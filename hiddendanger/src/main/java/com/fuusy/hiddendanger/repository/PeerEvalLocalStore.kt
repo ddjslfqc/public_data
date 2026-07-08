@@ -5,6 +5,7 @@ import com.fuusy.hiddendanger.data.OkrPeerUser
 import com.fuusy.hiddendanger.data.OkrReviewPrep
 import com.fuusy.hiddendanger.data.OkrReviewPrepRequest
 import com.fuusy.hiddendanger.data.PeerEvalSubmitRequest
+import com.fuusy.hiddendanger.data.PeerEvalMockData
 import com.fuusy.hiddendanger.data.PeerEvalSummary
 import com.fuusy.hiddendanger.data.PeerEvalTask
 import com.google.gson.Gson
@@ -51,6 +52,11 @@ class PeerEvalLocalStore(context: Context) {
             .apply()
     }
 
+    fun getSubmission(period: String, targetUserId: Long): PeerEvalSubmitRequest? {
+        val json = prefs.getString(keySubmission(period, targetUserId), null) ?: return null
+        return runCatching { gson.fromJson(json, PeerEvalSubmitRequest::class.java) }.getOrNull()
+    }
+
     fun getSummary(period: String): PeerEvalSummary {
         val prep = getReviewPrep(period)
         val tasks = getTasks(period)
@@ -58,12 +64,15 @@ class PeerEvalLocalStore(context: Context) {
         val completed = tasks.count { it.isDone }
         val prepDone = !prep?.projectOutput.isNullOrBlank() == true &&
             !prep?.collaborators.isNullOrEmpty()
+        val received = PeerEvalMockData.received(period)
         return PeerEvalSummary(
             period = period,
             phase = prep?.phase ?: "POST_MEETING",
             pendingCount = pending,
             completedCount = completed,
-            reviewPrepCompleted = prepDone
+            reviewPrepCompleted = prepDone,
+            receivedEvaluatorCount = received.evaluatorCount,
+            receivedAverageScore = received.averageScore
         )
     }
 
@@ -72,6 +81,8 @@ class PeerEvalLocalStore(context: Context) {
             .orEmpty()
             .mapNotNull { it.toLongOrNull() }
             .toSet()
+
+    fun getCompletedTargetIds(period: String): Set<Long> = getCompletedIds(period)
 
     fun buildPrepFromRequest(request: OkrReviewPrepRequest, users: List<OkrPeerUser>): OkrReviewPrep {
         val idSet = request.collaboratorUserIds.toSet()

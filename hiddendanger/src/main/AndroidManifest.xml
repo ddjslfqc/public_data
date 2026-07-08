@@ -111,6 +111,18 @@
             android:label="填写评价"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".ui.OkrPeerEvalDetailActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="评价详情" />
+
+        <activity
+            android:name=".ui.OkrPeerEvalReceivedActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="收到的评价" />
+
         <activity android:name="com.fuusy.hiddendanger.ui.DraftBoxActivity" />
 
         <provider
