@@ -197,7 +197,7 @@ class LoginActivity : BaseVmActivity<ActivityLoginBinding>() {
 
             // 忘记密码
             tvForgetPwd.setOnClickListener {
-                Toast.makeText(this@LoginActivity, "请联系管理员重置密码", Toast.LENGTH_SHORT).show()
+                ARouter.getInstance().build(Constants.PATH_FORGOT_PASSWORD).navigation()
             }
 
             tvGoRegister.setOnClickListener {

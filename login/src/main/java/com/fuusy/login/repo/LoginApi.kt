@@ -11,6 +11,9 @@ interface LoginApi {
     @POST("mobile/auth/register")
     suspend fun register(@Body body: RegisterBody): BaseResp<Boolean>
 
+    @POST("mobile/auth/reset-password")
+    suspend fun resetPassword(@Body body: ResetPasswordBody): BaseResp<Boolean>
+
     @POST("mobile/auth/login")
     suspend fun login(@Body body: LoginBody): BaseResp<LoginResp>
 
@@ -23,6 +26,12 @@ data class RegisterBody(
     val password: String,
     val nickName: String,
     val deptId: Long
+)
+
+data class ResetPasswordBody(
+    val username: String,
+    val nickName: String,
+    val password: String
 )
 
 data class LoginBody(

@@ -13,6 +13,7 @@ import com.fuusy.common.utils.LoadingStatus
 class LoginViewModel(private val repo: LoginRepo) : BaseViewModel() {
     val loginLiveData = StateLiveData<LoginResp>()
     val registerLiveData = StateLiveData<Boolean>()
+    val resetPasswordLiveData = StateLiveData<Boolean>()
 
     val loadingStatus = MutableLiveData<LoadingStatus>()
 
@@ -66,6 +67,24 @@ class LoginViewModel(private val repo: LoginRepo) : BaseViewModel() {
                 }
             } catch (e: Exception) {
                 loadingStatus.postValue(LoadingStatus.Error(e.message ?: "注册失败"))
+            }
+        }
+    }
+
+    fun resetPassword(userName: String, nickName: String, password: String) {
+        viewModelScope.launch {
+            try {
+                loadingStatus.postValue(LoadingStatus.Loading)
+                val resp = repo.resetPassword(userName, nickName, password, resetPasswordLiveData)
+                if (resp.dataState == DataState.STATE_SUCCESS) {
+                    loadingStatus.postValue(LoadingStatus.Success)
+                } else {
+                    loadingStatus.postValue(
+                        LoadingStatus.Error(resp.errorMsg ?: resp.error?.message ?: "重置失败")
+                    )
+                }
+            } catch (e: Exception) {
+                loadingStatus.postValue(LoadingStatus.Error(e.message ?: "重置失败"))
             }
         }
     }

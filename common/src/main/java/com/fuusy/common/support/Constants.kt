@@ -8,6 +8,7 @@ class Constants {
         const val PATH_WEBVIEW: String = "/webview/WebviewActivity"
         const val PATH_LOGIN: String = "/login/LoginActivity"
         const val PATH_REGISTER: String = "/login/RegisterActivity"
+        const val PATH_FORGOT_PASSWORD: String = "/login/ForgotPasswordActivity"
 
         const val KEY_LIVEDATA_BUS_LOGIN = "KEY_LIVEDATA_BUS_LOGIN"
         const val KEY_PROJECT_ID = "KEY_PROJECT_ID"

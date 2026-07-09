@@ -19,6 +19,15 @@ class LoginRepo(private val service: LoginApi) : BaseRepository() {
         service.register(RegisterBody(userName, password, nickName, deptId))
     }, stateLiveData)
 
+    suspend fun resetPassword(
+        userName: String,
+        nickName: String,
+        password: String,
+        stateLiveData: StateLiveData<Boolean>
+    ) = executeResp({
+        service.resetPassword(ResetPasswordBody(userName, nickName, password))
+    }, stateLiveData)
+
     suspend fun loadDeptList(): Result<List<Pair<Long, String>>> = try {
         val resp = service.getDeptList()
         if (resp.isSuccess) {
