@@ -75,6 +75,43 @@ data class MyGoalResponse(
     val objectives: List<OkrObjective>? = null
 )
 
+/** GET /mobile/okr/alignment-tree Web 对齐树 */
+data class OkrAlignmentTreeResponse(
+    val periodType: String,
+    val periodLabel: String? = null,
+    val departments: List<OkrDepartment>? = null,
+    val objectives: List<OkrAlignmentObjective> = emptyList(),
+    val stats: OkrAlignmentTreeStats? = null
+)
+
+/** 与 OkrObjective 一致，补充负责人/部门展示名 */
+data class OkrAlignmentObjective(
+    val id: Long,
+    val title: String,
+    val userId: Long? = null,
+    val ownerName: String? = null,
+    val deptId: Long? = null,
+    val deptName: String? = null,
+    val periodType: String? = null,
+    val periodLabel: String? = null,
+    val startDate: String? = null,
+    val endDate: String? = null,
+    val status: Int = 0,
+    val statusLabel: String? = null,
+    val progress: Int = 0,
+    val progressText: String? = null,
+    val parentKrId: Long? = null,
+    val parentKr: OkrParentKr? = null,
+    val keyResults: List<OkrKeyResult>? = null
+)
+
+data class OkrAlignmentTreeStats(
+    val objectiveCount: Int = 0,
+    val krCount: Int = 0,
+    val rootChainCount: Int = 0,
+    val orphanObjectiveCount: Int = 0
+)
+
 data class OkrDepartment(
     val id: Long,
     val name: String

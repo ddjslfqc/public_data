@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OKR 对齐树 · 组织全景</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --bg: #eef1f8;
+      --panel: #ffffff;
+      --text: #000000;
+      --sub: #686d79;
+      --muted: #a7afc3;
+      --line: #e4e7ee;
+      --blue: #1365ec;
+      --blue-soft: #e8f0fe;
+      --green: #00aa60;
+      --green-soft: #e6f7ef;
+      --orange: #ea9300;
+      --orange-soft: #fff4e5;
+      --purple: #6a2df6;
+      --purple-soft: #f3efff;
+      --red: #d6413f;
+      --radius: 12px;
+      --font: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .topbar {
+      background: #0a3d8f;
+      color: #fff;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .topbar h1 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .topbar p {
+      font-size: 12px;
+      opacity: 0.85;
+      margin-top: 4px;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .toolbar label {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+    .toolbar select, .toolbar input {
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--text);
+      min-width: 120px;
+    }
+    .toolbar button {
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #fff;
+      color: #0a3d8f;
+    }
+    .toolbar button:hover { opacity: 0.92; }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 16px;
+      padding: 16px;
+      height: calc(100vh - 72px);
+    }
+    @media (max-width: 960px) {
+      .layout {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+    }
+    .chart-wrap, .detail-panel {
+      background: var(--panel);
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+    .chart-wrap {
+      display: flex;
+      flex-direction: column;
+      min-height: 520px;
+    }
+    .chart-head {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .chart-head span {
+      font-size: 13px;
+      color: var(--sub);
+    }
+    .legend {
+      display: flex;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--sub);
+    }
+    .legend i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    #tree-chart {
+      flex: 1;
+      min-height: 460px;
+    }
+    .detail-panel {
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 104px);
+    }
+    .detail-head {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .detail-head h2 {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .detail-head .meta {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--sub);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .tag-o { background: var(--purple-soft); color: var(--purple); }
+    .tag-kr { background: var(--blue-soft); color: var(--blue); }
+    .tag-user { background: var(--green-soft); color: var(--green); }
+    .tag-warn { background: var(--orange-soft); color: var(--orange); }
+    .detail-body {
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .detail-empty {
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .progress-row {
+      margin-bottom: 16px;
+    }
+    .progress-row label {
+      font-size: 12px;
+      color: var(--sub);
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .progress-track {
+      height: 8px;
+      background: #eef1f8;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #1365ec, #6a2df6);
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--sub);
+      margin: 16px 0 8px;
+    }
+    .kr-list {
+      list-style: none;
+    }
+    .kr-item {
+      background: #f7f8fa;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .kr-item .kr-title { font-weight: 600; margin-bottom: 4px; }
+    .kr-item .kr-meta { font-size: 11px; color: var(--sub); }
+    .align-link {
+      background: var(--blue-soft);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--blue);
+      line-height: 1.5;
+    }
+    .hint-bar {
+      margin: 0 16px 16px;
+      padding: 10px 14px;
+      background: var(--blue-soft);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--blue);
+      line-height: 1.5;
+    }
+    .footer-note {
+      padding: 0 16px 16px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>OKR 对齐树 · 组织全景</h1>
+      <p>独立 Web 页，通过 URL 访问；点击树节点查看负责人、进度与 KR 详情</p>
+    </div>
+    <div class="toolbar">
+      <label>周期</label>
+      <select id="period-select">
+        <option value="quarter-2">Q2 2026</option>
+        <option value="quarter-3" selected>Q3 2026</option>
+        <option value="quarter-4">Q4 2026</option>
+      </select>
+      <label>部门</label>
+      <select id="dept-select">
+        <option value="">全部</option>
+      </select>
+      <button type="button" id="btn-refresh">刷新</button>
+    </div>
+  </header>
+
+  <div class="hint-bar" id="hint-bar">
+    点击树节点查看详情。URL 可带参数：<code>?api=http://47.110.156.186:9220&amp;userId=10001</code> 对接后端；
+    未配置时使用演示数据。
+  </div>
+
+  <div class="layout">
+    <section class="chart-wrap">
+      <div class="chart-head">
+        <span id="tree-summary">加载中…</span>
+        <div class="legend">
+          <span><i style="background:#6a2df6"></i>目标 O</span>
+          <span><i style="background:#1365ec"></i>关键结果 KR</span>
+        </div>
+      </div>
+      <div id="tree-chart"></div>
+    </section>
+
+    <aside class="detail-panel">
+      <div class="detail-head" id="detail-head" style="display:none">
+        <h2 id="detail-title">—</h2>
+        <div class="meta" id="detail-meta"></div>
+      </div>
+      <div class="detail-body" id="detail-body">
+        <div class="detail-empty" id="detail-empty">
+          请在左侧点击一个节点<br />查看负责人与 OKR 详情
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <p class="footer-note">
+    接口文档：<code>docs/okr-alignment-tree-api.md</code> ·
+    <code>GET /mobile/okr/alignment-tree?periodType=&amp;deptId=</code>
+  </p>
+
+  <script>
+    /** 节点元数据，点击详情用 */
+    const nodeIndex = new Map();
+    let lastStats = { chainCount: 0, nodeCount: 0, orphanCount: 0 };
+
+    /** URL 参数：?api=...&userId=... */
+    function readConfig() {
+      const p = new URLSearchParams(location.search);
+      return {
+        apiBase: (p.get('api') || '').replace(/\/$/, ''),
+        userId: p.get('userId') || '10001'
+      };
+    }
+
+    function krProgress(kr) {
+      if (kr.achieved || kr.status === 1) return 100;
+      const target = Number(kr.targetValue) || 0;
+      if (target <= 0) return 0;
+      return Math.min(100, Math.round((Number(kr.currentValue) || 0) / target * 100));
+    }
+
+    function krValueLabel(kr) {
+      const unit = kr.unit || '';
+      const cur = kr.currentValue ?? 0;
+      const tgt = kr.targetValue ?? 0;
+      return unit === '%' ? `${cur}/${tgt}%` : `${cur}/${tgt}${unit}`;
+    }
+
+    function ownerName(obj, users) {
+      if (obj.ownerName) return obj.ownerName;
+      const u = users?.find(x => x.id === obj.userId);
+      return u?.nickName || u?.userName || (obj.userId ? `用户${obj.userId}` : '—');
+    }
+
+    /** 扁平 objectives → 多链森林（虚拟根） */
+    function buildTreeFromObjectives(payload) {
+      nodeIndex.clear();
+      const objectives = payload.objectives || [];
+      const periodLabel = payload.periodLabel || payload.periodType || '';
+      const allKrIds = new Set();
+
+      objectives.forEach(o => {
+        (o.keyResults || []).forEach(kr => allKrIds.add(kr.id));
+      });
+
+      // 1) 注册 meta
+      objectives.forEach(o => {
+        const objNodeId = `obj-${o.id}`;
+        const alignTo = o.parentKr ? {
+          krTitle: o.parentKr.title,
+          objectiveTitle: o.parentKr.objective?.title || '—',
+          orphan: o.parentKrId != null && !allKrIds.has(o.parentKrId)
+        } : null;
+        nodeIndex.set(objNodeId, {
+          id: objNodeId,
+          type: 'OBJECTIVE',
+          title: o.title,
+          ownerName: o.ownerName || '—',
+          deptName: o.deptName || '',
+          period: periodLabel,
+          progress: o.progress ?? 0,
+          statusLabel: o.statusLabel || '',
+          keyResults: (o.keyResults || []).map(kr => ({
+            id: kr.id,
+            title: kr.title,
+            progress: krProgress(kr),
+            valueLabel: krValueLabel(kr)
+          })),
+          alignTo
+        });
+        (o.keyResults || []).forEach(kr => {
+          const krNodeId = `kr-${kr.id}`;
+          nodeIndex.set(krNodeId, {
+            id: krNodeId,
+            type: 'KR',
+            title: kr.title,
+            ownerName: o.ownerName || '—',
+            deptName: o.deptName || '',
+            period: periodLabel,
+            progress: krProgress(kr),
+            statusLabel: kr.achieved ? '已达成' : '进行中',
+            valueLabel: krValueLabel(kr),
+            keyResults: [],
+            alignTo: null,
+            parentObjectiveTitle: o.title
+          });
+        });
+      });
+
+      // 2) parentKrId → 下级 O 列表（同一 KR 可挂多条链）
+      const alignedUnderKr = new Map();
+      objectives.forEach(o => {
+        if (o.parentKrId != null) {
+          if (!alignedUnderKr.has(o.parentKrId)) alignedUnderKr.set(o.parentKrId, []);
+          alignedUnderKr.get(o.parentKrId).push(o);
+        }
+      });
+
+      // 3) 链顶：无 parentKrId，或上级 KR 不在本数据集
+      const rootObjectives = objectives.filter(o =>
+        o.parentKrId == null || !allKrIds.has(o.parentKrId)
+      );
+      const orphanCount = rootObjectives.filter(o =>
+        o.parentKrId != null && !allKrIds.has(o.parentKrId)
+      ).length;
+
+      const visited = new Set();
+
+      function buildObjectiveBranch(o) {
+        if (visited.has(o.id)) return null;
+        visited.add(o.id);
+        const objNodeId = `obj-${o.id}`;
+        const meta = nodeIndex.get(objNodeId);
+        const children = [];
+
+        (o.keyResults || []).forEach(kr => {
+          const krNodeId = `kr-${kr.id}`;
+          const krMeta = nodeIndex.get(krNodeId);
+          const krChildren = [];
+          (alignedUnderKr.get(kr.id) || []).forEach(childObj => {
+            const branch = buildObjectiveBranch(childObj);
+            if (branch) krChildren.push(branch);
+          });
+          children.push(makeChartNode(krNodeId, krMeta, krChildren, true));
+        });
+
+        return makeChartNode(objNodeId, meta, children, false);
+      }
+
+      const chainTrees = rootObjectives
+        .map(o => buildObjectiveBranch(o))
+        .filter(Boolean);
+
+      lastStats = {
+        chainCount: chainTrees.length,
+        nodeCount: nodeIndex.size,
+        orphanCount
+      };
+
+      if (chainTrees.length === 0) {
+        return makeChartNode('root', {
+          title: periodLabel ? `${periodLabel}（暂无 OKR）` : '暂无数据',
+          progress: 0, ownerName: '—'
+        }, [], false);
+      }
+      if (chainTrees.length === 1) return chainTrees[0];
+
+      return makeChartNode('root', {
+        title: `${periodLabel || '组织'} OKR`,
+        progress: 0,
+        ownerName: `${chainTrees.length} 条对齐链`
+      }, chainTrees, false);
+    }
+
+    function makeChartNode(nodeId, meta, children, isKr) {
+      const title = meta?.title || nodeId;
+      const sub = meta?.type === 'OBJECTIVE'
+        ? `O · ${meta.ownerName || '—'} · ${meta.progress ?? 0}%`
+        : meta?.type === 'KR'
+          ? `KR · ${meta.progress ?? 0}%`
+          : (meta?.ownerName || '');
+      const orphan = meta?.alignTo?.orphan;
+      return {
+        name: sub ? `${title}\n${sub}` : title,
+        nodeId,
+        itemStyle: {
+          color: isKr ? '#1365ec' : (nodeId === 'root' ? '#0a3d8f' : '#6a2df6'),
+          borderColor: orphan ? '#ea9300' : '#fff',
+          borderWidth: orphan ? 2 : 2
+        },
+        label: { fontSize: 11, lineHeight: 16, color: '#fff' },
+        children: children.length ? children : undefined
+      };
+    }
+
+    /** 演示：扁平结构（与后端契约一致） */
+    function buildMockPayload(periodType, deptId) {
+      const objectives = [
+        {
+          id: 1, title: '2026 公司级战略目标', userId: 1, ownerName: '张总',
+          deptId: 1, deptName: '公司管理层', progress: 38, statusLabel: '进行中',
+          parentKrId: null, parentKr: null,
+          keyResults: [
+            { id: 10, title: '营收同比增长 20%', targetValue: 20, currentValue: 8, unit: '%' },
+            { id: 11, title: '客户满意度 ≥ 95%', targetValue: 95, currentValue: 88, unit: '%' }
+          ]
+        },
+        {
+          id: 2, title: '华东区 Q3 业务目标', userId: 2, ownerName: '李经理',
+          deptId: 3, deptName: '华东区', progress: 55, statusLabel: '进行中',
+          parentKrId: 10,
+          parentKr: { id: 10, title: '营收同比增长 20%', objective: { id: 1, title: '2026 公司级战略目标' } },
+          keyResults: [
+            { id: 20, title: '新签约客户 50 家', targetValue: 50, currentValue: 30, unit: '家' }
+          ]
+        },
+        {
+          id: 3, title: '研发效能与交付目标', userId: 3, ownerName: '王主管',
+          deptId: 2, deptName: '研发部', progress: 43, statusLabel: '进行中',
+          parentKrId: 10,
+          parentKr: { id: 10, title: '营收同比增长 20%', objective: { id: 1, title: '2026 公司级战略目标' } },
+          keyResults: [
+            { id: 30, title: 'OKR 模块上线并联调', targetValue: 20, currentValue: 13, unit: '项' }
+          ]
+        },
+        {
+          id: 4, title: 'Q3 个人 · 互评与 OKR', userId: 4, ownerName: '陈宇翔',
+          deptId: 2, deptName: '研发部', progress: 43, statusLabel: '进行中',
+          parentKrId: 30,
+          parentKr: { id: 30, title: 'OKR 模块上线并联调', objective: { id: 3, title: '研发效能与交付目标' } },
+          keyResults: [
+            { id: 40, title: '360 互评闭环', targetValue: 10, currentValue: 7, unit: '项' }
+          ]
+        },
+        {
+          id: 5, title: 'Q3 个人 · 客户拓展', userId: 5, ownerName: '杨洋',
+          deptId: 3, deptName: '华东区', progress: 72, statusLabel: '进行中',
+          parentKrId: 20,
+          parentKr: { id: 20, title: '新签约客户 50 家', objective: { id: 2, title: '华东区 Q3 业务目标' } },
+          keyResults: [
+            { id: 50, title: '拜访重点客户 20 家', targetValue: 20, currentValue: 16, unit: '家' }
+          ]
+        }
+      ];
+      let filtered = objectives;
+      if (deptId === '2') filtered = objectives.filter(o => o.deptId === 2 || o.id === 1);
+      if (deptId === '3') filtered = objectives.filter(o => o.deptId === 3 || o.id === 1);
+      return {
+        periodType,
+        periodLabel: periodType.replace('quarter-', 'Q') + ' 2026',
+        objectives: filtered
+      };
+    }
+
+    async function loadDepartments(apiBase, userId) {
+      if (!apiBase) return;
+      try {
+        const res = await fetch(`${apiBase}/mobile/okr/align-options`, {
+          headers: { 'X-User-Id': userId }
+        });
+        const json = await res.json();
+        if (json.code !== 200 || !json.data?.departments) return;
+        const sel = document.getElementById('dept-select');
+        const current = sel.value;
+        sel.innerHTML = '<option value="">全部</option>';
+        json.data.departments.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = String(d.id);
+          opt.textContent = d.name;
+          sel.appendChild(opt);
+        });
+        sel.value = current;
+      } catch (e) {
+        console.warn('加载部门失败', e);
+      }
+    }
+
+    async function fetchTreePayload(periodType, deptId) {
+      const { apiBase, userId } = readConfig();
+      if (apiBase) {
+        const q = new URLSearchParams({ periodType });
+        if (deptId) q.set('deptId', deptId);
+        const res = await fetch(`${apiBase}/mobile/okr/alignment-tree?${q}`, {
+          headers: { 'X-User-Id': userId }
+        });
+        const json = await res.json();
+        if (json.code === 200 && json.data) return json.data;
+        throw new Error(json.msg || '接口返回失败');
+      }
+      return buildMockPayload(periodType, deptId);
+    }
+
+    let chart;
+
+    function renderDetail(nodeId) {
+      if (nodeId === 'root') return;
+      const meta = nodeIndex.get(nodeId);
+      const head = document.getElementById('detail-head');
+      const empty = document.getElementById('detail-empty');
+      const body = document.getElementById('detail-body');
+
+      if (!meta) {
+        head.style.display = 'none';
+        empty.style.display = 'block';
+        body.innerHTML = '';
+        body.appendChild(empty);
+        return;
+      }
+
+      empty.style.display = 'none';
+      head.style.display = 'block';
+      document.getElementById('detail-title').textContent = meta.title;
+
+      const typeTag = meta.type === 'OBJECTIVE'
+        ? '<span class="tag tag-o">目标 O</span>'
+        : '<span class="tag tag-kr">关键结果 KR</span>';
+      document.getElementById('detail-meta').innerHTML = [
+        typeTag,
+        `<span class="tag tag-user">${meta.ownerName || '—'}</span>`,
+        meta.deptName ? `<span>${meta.deptName}</span>` : '',
+        meta.period ? `<span>${meta.period}</span>` : '',
+        meta.statusLabel ? `<span class="tag tag-warn">${meta.statusLabel}</span>` : ''
+      ].join('');
+
+      let html = `
+        <div class="progress-row">
+          <label><span>整体进度</span><span>${meta.progress ?? 0}%</span></label>
+          <div class="progress-track"><div class="progress-fill" style="width:${meta.progress ?? 0}%"></div></div>
+        </div>`;
+
+      if (meta.alignTo) {
+        const orphanHint = meta.alignTo.orphan
+          ? '<br/><span style="color:#ea9300">⚠ 上级 KR 不在当前周期/筛选范围内</span>' : '';
+        html += `
+          <div class="section-label">对齐关系</div>
+          <div class="align-link">
+            ↑ 对齐上级 KR：<strong>${meta.alignTo.krTitle}</strong><br />
+            所属目标：${meta.alignTo.objectiveTitle}${orphanHint}
+          </div>`;
+      }
+      if (meta.parentObjectiveTitle) {
+        html += `<div class="section-label">所属目标</div><div class="kr-item">${meta.parentObjectiveTitle}</div>`;
+      }
+      if (meta.valueLabel) {
+        html += `<div class="section-label">当前值</div><div class="kr-item">${meta.valueLabel}</div>`;
+      }
+      if (meta.keyResults?.length) {
+        html += `<div class="section-label">关键结果 KR（${meta.keyResults.length}）</div><ul class="kr-list">`;
+        meta.keyResults.forEach(kr => {
+          html += `<li class="kr-item"><div class="kr-title">${kr.title}</div>
+            <div class="kr-meta">进度 ${kr.progress ?? 0}% · ${kr.valueLabel || ''}</div></li>`;
+        });
+        html += '</ul>';
+      }
+      body.innerHTML = html;
+    }
+
+    function countNodes(node) {
+      let n = 1;
+      (node.children || []).forEach(c => { n += countNodes(c); });
+      return n;
+    }
+
+    async function loadAndRender() {
+      const periodType = document.getElementById('period-select').value;
+      const deptId = document.getElementById('dept-select').value;
+      const summaryEl = document.getElementById('tree-summary');
+      summaryEl.textContent = '加载中…';
+
+      try {
+        const payload = await fetchTreePayload(periodType, deptId);
+        const treeData = buildTreeFromObjectives(payload);
+        const stats = payload.stats || lastStats;
+
+        summaryEl.textContent =
+          `${stats.chainCount ?? lastStats.chainCount} 条对齐链 · ${countNodes(treeData)} 个展示节点 · ${periodType}` +
+          (stats.orphanObjectiveCount ? ` · ${stats.orphanObjectiveCount} 条孤立对齐` : '') +
+          (deptId ? ' · 已筛部门' : '');
+
+        if (!chart) {
+          chart = echarts.init(document.getElementById('tree-chart'));
+          window.addEventListener('resize', () => chart.resize());
+          chart.on('click', params => {
+            const nodeId = params.data?.nodeId;
+            if (nodeId) renderDetail(nodeId);
+          });
+        }
+
+        chart.setOption({
+          tooltip: {
+            trigger: 'item',
+            formatter: p => {
+              const m = nodeIndex.get(p.data?.nodeId);
+              if (!m) return p.name;
+              return `<strong>${m.title}</strong><br/>${m.ownerName || ''} · ${m.progress ?? 0}%`;
+            }
+          },
+          series: [{
+            type: 'tree',
+            data: [treeData],
+            top: '2%',
+            left: '6%',
+            bottom: '2%',
+            right: '20%',
+            symbol: 'roundRect',
+            symbolSize: [128, 40],
+            orient: 'LR',
+            expandAndCollapse: true,
+            initialTreeDepth: 5,
+            label: { position: 'inside', verticalAlign: 'middle', align: 'center', color: '#fff', fontSize: 10 },
+            leaves: { label: { position: 'inside', align: 'center' } },
+            lineStyle: { color: '#c5cad6', width: 1.5, curveness: 0.35 },
+            emphasis: { focus: 'descendant' },
+            animationDuration: 400
+          }]
+        }, true);
+
+        renderDetail(null);
+        document.getElementById('detail-empty').style.display = 'block';
+        document.getElementById('detail-head').style.display = 'none';
+        const body = document.getElementById('detail-body');
+        body.innerHTML = '';
+        body.appendChild(document.getElementById('detail-empty'));
+      } catch (e) {
+        summaryEl.textContent = '加载失败：' + (e.message || e);
+        console.error(e);
+      }
+    }
+
+    (async function init() {
+      const { apiBase, userId } = readConfig();
+      if (apiBase) {
+        document.getElementById('hint-bar').innerHTML =
+          `已连接 <code>${apiBase}</code> · X-User-Id: <code>${userId}</code> · 接口文档见 okr-alignment-tree-api.md`;
+        await loadDepartments(apiBase, userId);
+      }
+      document.getElementById('btn-refresh').addEventListener('click', loadAndRender);
+      document.getElementById('period-select').addEventListener('change', loadAndRender);
+      document.getElementById('dept-select').addEventListener('change', loadAndRender);
+      loadAndRender();
+    })();
+  </script>
+</body>
+</html>

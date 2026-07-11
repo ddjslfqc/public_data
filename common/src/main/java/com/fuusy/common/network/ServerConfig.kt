@@ -19,8 +19,7 @@ object ServerConfig {
     }
 
     /**
-     * 当前环境配置
-     * 修改这里可以一键切换环境
+     * 当前环境配置（远程默认）
      */
     private val currentEnvironment = Environment.REMOTE
 
@@ -40,7 +39,7 @@ object ServerConfig {
      * 服务器地址配置
      */
     private val serverUrls = mapOf(
-        Environment.LOCAL to "http://127.0.0.1:8085/",
+        Environment.LOCAL to "http://127.0.0.1:9220/",
         Environment.REMOTE to "http://8.130.120.35:9220/",
         Environment.WORK_REMOTE to "http://47.110.156.186:9220/",
         Environment.YUN_REMOTE to "http://8.130.120.35:9220"
@@ -53,37 +52,43 @@ object ServerConfig {
 
     /**
      * 获取当前环境的服务器地址
-     * 优先使用自定义配置的IP地址
      */
     fun getBaseUrl(): String {
+        if (IpConfigUtils.isUseLocalServer()) {
+            return IpConfigUtils.getLocalServerUrl()
+        }
         return if (IpConfigUtils.hasCustomConfig()) {
             IpConfigUtils.getMainServerUrl()
         } else {
-            serverUrls[currentEnvironment] ?: serverUrls[Environment.LOCAL]!!
+            serverUrls[currentEnvironment] ?: serverUrls[Environment.REMOTE]!!
         }
     }
 
     /**
      * 获取工单服务器地址
-     * 优先使用自定义配置的IP地址
      */
     fun getWorkOrderBaseUrl(): String {
+        if (IpConfigUtils.isUseLocalServer()) {
+            return IpConfigUtils.getLocalServerUrl()
+        }
         return if (IpConfigUtils.hasCustomConfig()) {
             IpConfigUtils.getWorkOrderServerUrl()
         } else {
-            serverUrls[currentWorkOrderEnvironment] ?: serverUrls[Environment.LOCAL]!!
+            serverUrls[currentWorkOrderEnvironment] ?: serverUrls[Environment.WORK_REMOTE]!!
         }
     }
 
     /**
      * 获取云台服务器地址
-     * 优先使用自定义配置的IP地址
      */
     fun getYunBaseUrl(): String {
+        if (IpConfigUtils.isUseLocalServer()) {
+            return IpConfigUtils.getLocalServerUrl()
+        }
         return if (IpConfigUtils.hasCustomConfig()) {
             IpConfigUtils.getYunServerUrl()
         } else {
-            serverUrls[currentYunEnvironment] ?: serverUrls[Environment.LOCAL]!!
+            serverUrls[currentYunEnvironment] ?: serverUrls[Environment.YUN_REMOTE]!!
         }
     }
 
@@ -91,21 +96,22 @@ object ServerConfig {
      * 获取当前环境类型
      */
     fun getCurrentEnvironment(): Environment {
-        return currentEnvironment
+        return if (IpConfigUtils.isUseLocalServer()) Environment.LOCAL else currentEnvironment
     }
 
     /**
      * 判断是否为本地环境
      */
-    fun isLocalEnvironment(): Boolean {
-        return currentEnvironment == Environment.LOCAL
-    }
+    fun isLocalEnvironment(): Boolean = IpConfigUtils.isUseLocalServer()
 
     /**
-     * 清除自定义配置，恢复到默认配置
+     * 当前生效的服务器描述（调试用）
      */
-    fun clearCustomConfig() {
-        // 这里可以添加清除自定义配置的逻辑
-        // 目前通过IpConfigUtils.hasCustomConfig()来判断是否使用自定义配置
+    fun getActiveServerLabel(): String {
+        return if (IpConfigUtils.isUseLocalServer()) {
+            "本地 ${IpConfigUtils.getLocalServerIp()}:${IpConfigUtils.getLocalServerPort()}"
+        } else {
+            "远程测试服"
+        }
     }
 }

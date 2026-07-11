@@ -12,6 +12,7 @@ import com.fuusy.hiddendanger.data.KrApproveRequest
 import com.fuusy.hiddendanger.data.KrCommentCreateRequest
 import com.fuusy.hiddendanger.data.KrUpdateProgressRequest
 import com.fuusy.hiddendanger.data.MyGoalResponse
+import com.fuusy.hiddendanger.data.OkrAlignmentTreeResponse
 import com.fuusy.hiddendanger.data.OkrApi
 import com.fuusy.hiddendanger.data.OkrAttachmentDto
 import com.fuusy.hiddendanger.data.OkrKrComment
@@ -46,6 +47,12 @@ class OkrRepository {
 
     suspend fun getMyGoal(periodType: String?): Result<MyGoalResponse> =
         safeCall { api.getMyGoal(periodType) }
+
+    suspend fun getAlignmentTree(
+        periodType: String,
+        deptId: Long? = null
+    ): Result<OkrAlignmentTreeResponse> =
+        safeCall { api.getAlignmentTree(periodType, deptId) }
 
     suspend fun getObjectiveDetail(objectiveId: Long): Result<OkrObjective> =
         safeCall { api.getObjectiveDetail(objectiveId) }

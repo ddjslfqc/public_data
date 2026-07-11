@@ -28,6 +28,7 @@ class KrDetailActivity : AppCompatActivity() {
     private lateinit var binding: ActivityKrDetailBinding
     private val detailViewModel: KrDetailViewModel by viewModels()
     private lateinit var krItem: GoalKrItem
+    private var readOnly: Boolean = false
     private lateinit var commentAdapter: KrCommentAdapter
     private val updateRecordAdapter = KrUpdateRecordAdapter()
 
@@ -52,6 +53,7 @@ class KrDetailActivity : AppCompatActivity() {
             return
         }
         krItem = item
+        readOnly = intent.getBooleanExtra(EXTRA_READ_ONLY, false)
 
         binding = ActivityKrDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -65,6 +67,7 @@ class KrDetailActivity : AppCompatActivity() {
                 }
             )
         }
+        binding.layoutCommentInput.isVisible = !readOnly
         setupComments()
         setupUpdateRecords()
         observeDetailViewModel()
@@ -95,10 +98,10 @@ class KrDetailActivity : AppCompatActivity() {
             }
         }
 
-        val canUpdate = KrProgressHelper.canUpdateProgress(krItem)
+        val canUpdate = !readOnly && KrProgressHelper.canUpdateProgress(krItem)
         binding.btnUpdateProgress.isVisible = canUpdate
 
-        val blocked = KrProgressHelper.updateBlockedReason(krItem)
+        val blocked = if (readOnly) null else KrProgressHelper.updateBlockedReason(krItem)
         binding.tvBlockedHint.isVisible = !canUpdate && blocked != null
         binding.tvBlockedHint.text = blocked
     }
@@ -187,10 +190,13 @@ class KrDetailActivity : AppCompatActivity() {
     }
 
     companion object {
-        fun start(context: Context, item: GoalKrItem) {
+        const val EXTRA_READ_ONLY = "extra_read_only"
+
+        fun start(context: Context, item: GoalKrItem, readOnly: Boolean = false) {
             context.startActivity(
                 Intent(context, KrDetailActivity::class.java).apply {
                     KrNavHelper.putExtra(this, item)
+                    putExtra(EXTRA_READ_ONLY, readOnly)
                 }
             )
         }

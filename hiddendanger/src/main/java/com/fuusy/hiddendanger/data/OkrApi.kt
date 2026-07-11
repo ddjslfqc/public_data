@@ -23,6 +23,13 @@ interface OkrApi {
         @Query("periodType") periodType: String? = null
     ): BaseResp<MyGoalResponse>
 
+    /** 组织 OKR 对齐树（Web 全景页）；返回扁平 objectives，前端按 parentKrId 拼多链 */
+    @GET("mobile/okr/alignment-tree")
+    suspend fun getAlignmentTree(
+        @Query("periodType") periodType: String,
+        @Query("deptId") deptId: Long? = null
+    ): BaseResp<OkrAlignmentTreeResponse>
+
     @GET("mobile/okr/detail/{id}")
     suspend fun getObjectiveDetail(
         @Path("id") objectiveId: Long
