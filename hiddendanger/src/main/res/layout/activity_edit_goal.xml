@@ -289,9 +289,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
-                        android:checked="true"
+                        android:checked="false"
                         app:thumbTint="#FFFFFF"
-                        app:trackTint="#1365EC" />
+                        app:trackTint="@color/switch_align_track_tint" />
                 </RelativeLayout>
 
                 <TextView
