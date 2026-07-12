@@ -49,7 +49,7 @@
 
 **请求**
 ```
-GET /mobile/workorder/list?status={status}
+GET /mobile/workorder/list?status={status}&scope={scope}
 Headers: X-User-Id: {userId}
 ```
 
@@ -57,6 +57,15 @@ Headers: X-User-Id: {userId}
 |------|------|------|------|
 | userId | Long | 是 | 用户ID（从Header获取） |
 | status | String | 否 | 状态筛选（见下方状态值说明），不传则返回全部 |
+| scope | String | 否 | 列表范围，默认 `related` |
+
+**scope 说明**
+
+| 值 | 含义 |
+|----|------|
+| `related`（默认） | 我相关的：指派我处理的 + 我提报的（已指派他人处理中的除外） |
+| `handled_completed` | 我作为处理人完成的工单 |
+| `all` | 组织内全部工单 |
 
 **状态值说明**
 
