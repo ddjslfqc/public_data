@@ -14,6 +14,7 @@ import com.fuusy.common.auth.AuthRepository
 import com.fuusy.hiddendanger.util.SessionHelper
 import com.fuusy.hiddendanger.ui.album.AlbumMediaItem
 import com.fuusy.project.workorder.MobileWorkOrderRepository
+import com.fuusy.project.workorder.WorkOrderListScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -126,7 +127,10 @@ class PersonalViewModel(application: Application) : AndroidViewModel(application
                         if (rating > 0) String.format("%.1f", rating) else "--"
                     )
                 }.onFailure {
-                    val completedCount = workOrderRepo.list(WorkOrderStatus.COMPLETED)
+                    val completedCount = workOrderRepo.list(
+                        WorkOrderStatus.COMPLETED,
+                        WorkOrderListScope.HANDLED_COMPLETED
+                    )
                         .getOrNull()?.size ?: 0
                     _completedTaskCount.postValue(completedCount)
                     _averageRating.postValue("--")

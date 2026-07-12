@@ -38,13 +38,8 @@ class SimpleOptionAdapter(
             val isSelected = option == selectedValue
             checkIcon.visibility = if (isSelected) View.VISIBLE else View.GONE
 
-            // 设置文本颜色 - 使用兼容性方法
-            val textColor = if (isSelected) {
-                ContextCompat.getColor(itemView.context, R.color.red)
-            } else {
-                ContextCompat.getColor(itemView.context, R.color.text_primary)
-            }
-            textView.setTextColor(textColor)
+            val selectedColor = 0xFF1365EC.toInt()
+            textView.setTextColor(if (isSelected) selectedColor else ContextCompat.getColor(itemView.context, R.color.text_primary))
 
             itemView.setOnClickListener {
                 onItemClick(option)

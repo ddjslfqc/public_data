@@ -65,6 +65,10 @@ object OkrPeriodHelper {
         )
     }
 
+    /** 360 互评：仅上一已结束季度 + 当年各季度（不含年度） */
+    fun peerEvalPeriodTabs(): List<OkrPeriodOption> =
+        defaultPeriodTabs().filter { it.value != "year" }
+
     fun peerEvalQuarterLabel(): String = quarterLabel(peerEvalPeriod())
 
     /** 我的目标页：仅当选中 Tab 为当前 360 互评周期（上一已结束季度）时展示互评区块 */

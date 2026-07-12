@@ -90,6 +90,7 @@ object WorkOrderMapper {
         status = apiStatusToLocal(dto.status),
         nodeName = dto.statusLabel,
         submitUser = dto.recordCreatorName.orEmpty(),
+        recordCreatorId = dto.recordCreator,
         submitTime = dto.recordTime.orEmpty(),
         responsibleDepartment = dto.responsibleDeptName,
         responsibleDeptId = dto.responsibleDept,
@@ -125,10 +126,11 @@ object WorkOrderMapper {
             status = apiStatusToLocal(dto.status),
             nodeName = dto.statusLabel,
             submitUser = dto.recordCreatorName.orEmpty(),
+            recordCreatorId = dto.recordCreator,
             submitTime = dto.recordTime.orEmpty(),
             responsibleDepartment = dto.responsibleDeptName,
             responsibleDeptId = dto.responsibleDept,
-            responsiblePerson = dto.rectificationPersonName,
+            responsiblePerson = dto.rectificationPersonName ?: dto.rectificationPerson,
             rectificationPersonId = dto.rectificationPerson,
             attachments = dto.attachments?.map { att ->
                 Attachment(

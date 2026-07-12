@@ -19,6 +19,8 @@ import com.fuusy.hiddendanger.data.OkrKrComment
 import com.fuusy.hiddendanger.data.OkrKrDetailResponse
 import com.fuusy.hiddendanger.data.OkrObjective
 import com.fuusy.hiddendanger.data.OkrUpdateRecordItem
+import com.fuusy.hiddendanger.data.OkrReviewPrep
+import com.fuusy.hiddendanger.data.PeerEvalOrgOverviewResponse
 import com.fuusy.hiddendanger.data.PendingKrItem
 import com.fuusy.hiddendanger.data.PendingUpdateRecordItem
 import com.fuusy.hiddendanger.data.UpdateRecordApproveRequest
@@ -53,6 +55,41 @@ class OkrRepository {
         deptId: Long? = null
     ): Result<OkrAlignmentTreeResponse> =
         safeCall { api.getAlignmentTree(periodType, deptId) }
+
+    /** 员工名录，用于补全组织 OKR 负责人显示名 */
+    suspend fun getColleagueDirectory(): Result<Map<Long, String>> = try {
+        val resp = api.getPeerEvalColleagues()
+        if (!resp.isSuccess) {
+            Result.failure(IllegalStateException(resp.errorMsg ?: "加载员工名录失败(${resp.errorCode})"))
+        } else {
+            val map = resp.data.orEmpty().associate { colleague ->
+                colleague.id to colleague.displayName()
+            }
+            Result.success(map)
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getPeerEvalOrgOverview(
+        period: String,
+        deptId: Long? = null
+    ): Result<PeerEvalOrgOverviewResponse> =
+        safeCall { api.getPeerEvalOrgOverview(period, deptId) }
+
+    suspend fun getPeerEvalOrgReviewPrep(
+        period: String,
+        userId: Long
+    ): Result<OkrReviewPrep?> = try {
+        val resp = api.getPeerEvalOrgReviewPrep(period, userId)
+        if (resp.isSuccess) {
+            Result.success(resp.data)
+        } else {
+            Result.failure(IllegalStateException(resp.errorMsg ?: "加载复盘失败(${resp.errorCode})"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 
     suspend fun getObjectiveDetail(objectiveId: Long): Result<OkrObjective> =
         safeCall { api.getObjectiveDetail(objectiveId) }

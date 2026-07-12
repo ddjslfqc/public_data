@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.fuusy.common.data.WorkOrderItem
 import com.fuusy.common.data.WorkOrderStatus
 import com.fuusy.project.workorder.MobileWorkOrderRepository
+import com.fuusy.project.workorder.WorkOrderListScope
 import kotlinx.coroutines.launch
 
 class WorkOrderListViewModel(application: Application) : AndroidViewModel(application) {
@@ -28,11 +29,17 @@ class WorkOrderListViewModel(application: Application) : AndroidViewModel(applic
     private val _allForCount = MutableLiveData<List<WorkOrderItem>>(emptyList())
     val allForCount: LiveData<List<WorkOrderItem>> = _allForCount
 
+    private var listScope: String = WorkOrderListScope.ALL
+
+    fun setListScope(scope: String) {
+        listScope = scope
+    }
+
     fun load(status: WorkOrderStatus? = null) {
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
-            repo.list(status).fold(
+            repo.list(status, listScope).fold(
                 onSuccess = { _orders.value = it },
                 onFailure = { _error.value = it.message ?: "加载失败" }
             )
@@ -44,7 +51,7 @@ class WorkOrderListViewModel(application: Application) : AndroidViewModel(applic
 
     fun refreshTabCounts() {
         viewModelScope.launch {
-            repo.list(null).fold(
+            repo.list(null, listScope).fold(
                 onSuccess = { _allForCount.value = it },
                 onFailure = { /* Tab 计数失败不影响列表 */ }
             )

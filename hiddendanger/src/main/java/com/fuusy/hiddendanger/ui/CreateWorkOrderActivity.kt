@@ -32,6 +32,9 @@ import android.app.Dialog
 import android.view.View
 import android.graphics.Color
 import android.widget.LinearLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.bigkoo.pickerview.builder.TimePickerBuilder
 import java.text.SimpleDateFormat
 
@@ -136,6 +139,17 @@ class CreateWorkOrderActivity : BaseVmActivity<ActivityCreateWorkOrderBinding>()
     }
 
     private fun setupToolbar() {
+        window.statusBarColor = Color.WHITE
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility =
+            window.decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+
+        ViewCompat.setOnApplyWindowInsetsListener(mBinding.appBar) { view, insets ->
+            view.updatePadding(top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top)
+            insets
+        }
+        ViewCompat.requestApplyInsets(mBinding.appBar)
+
         mBinding.btnBack.setOnClickListener {
             handleBackAction()
         }

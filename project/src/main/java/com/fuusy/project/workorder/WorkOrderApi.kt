@@ -18,7 +18,10 @@ import retrofit2.http.Query
 interface WorkOrderApi {
 
     @GET("mobile/workorder/list")
-    suspend fun list(@Query("status") status: String? = null): BaseResp<List<WorkOrderListDto>>
+    suspend fun list(
+        @Query("status") status: String? = null,
+        @Query("scope") scope: String? = null
+    ): BaseResp<List<WorkOrderListDto>>
 
     @GET("mobile/workorder/all")
     suspend fun all(@Query("status") status: String? = null): BaseResp<List<WorkOrderListDto>>

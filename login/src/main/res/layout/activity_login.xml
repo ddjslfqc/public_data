@@ -27,6 +27,9 @@
                 android:id="@+id/iv_logo"
                 android:layout_width="82dp"
                 android:layout_height="82dp"
+                android:clickable="true"
+                android:contentDescription="应用 Logo"
+                android:focusable="true"
                 android:src="@mipmap/logo_new"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -327,7 +330,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="设备已授权·v1.0.1"
+                    android:text="设备已授权·v1.0.1 · 长按 Logo 配置服务器"
                     android:textColor="@color/login_text_gray"
                     android:textSize="12sp" />
             </LinearLayout>

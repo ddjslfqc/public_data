@@ -6,14 +6,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.fuusy.hiddendanger.data.MyGoalResponse
-import com.fuusy.hiddendanger.data.OkrAlignmentTreeResponse
-import com.fuusy.hiddendanger.data.OkrDepartment
+import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.data.OkrPeriodOption
-import com.fuusy.hiddendanger.data.OrgOkrMapper
-import com.fuusy.hiddendanger.data.OrgOkrUserSummary
 import com.fuusy.hiddendanger.repository.OkrRepository
 import com.fuusy.hiddendanger.repository.PeerEvalRepository
-import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import kotlinx.coroutines.launch
 
 class MyGoalsViewModel(application: Application) : AndroidViewModel(application) {
@@ -48,17 +44,7 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
     private val _peerEvalReceivedScore = MutableLiveData<Double?>(null)
     val peerEvalReceivedScore: LiveData<Double?> = _peerEvalReceivedScore
 
-    private val _alignmentTree = MutableLiveData<OkrAlignmentTreeResponse?>()
-    val alignmentTree: LiveData<OkrAlignmentTreeResponse?> = _alignmentTree
-
-    private val _orgUsers = MutableLiveData<List<OrgOkrUserSummary>>(emptyList())
-    val orgUsers: LiveData<List<OrgOkrUserSummary>> = _orgUsers
-
-    private val _orgDepartments = MutableLiveData<List<OkrDepartment>>(emptyList())
-    val orgDepartments: LiveData<List<OkrDepartment>> = _orgDepartments
-
     private var currentPeriod: String? = null
-    private var orgDeptId: Long? = null
 
     fun load(periodType: String? = null, includeBadges: Boolean = true) {
         val query = periodType ?: currentPeriod
@@ -77,47 +63,14 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    /** 切换季度 Tab 时只拉目标，角标与季度无关不必重复请求 */
     fun loadGoalsOnly(periodType: String? = null) = load(periodType, includeBadges = false)
 
-    fun loadOrgOkr(periodType: String? = null, deptId: Long? = orgDeptId) {
-        val query = periodType ?: currentPeriod ?: OkrPeriodHelper.currentQuarterValue()
-        currentPeriod = query
-        orgDeptId = deptId
-        viewModelScope.launch {
-            _loading.value = true
-            _error.value = null
-            repo.getAlignmentTree(query, deptId).fold(
-                onSuccess = { tree ->
-                    _alignmentTree.value = tree
-                    _orgDepartments.value = tree.departments.orEmpty()
-                    _orgUsers.value = OrgOkrMapper.groupByUser(tree.objectives)
-                },
-                onFailure = {
-                    _alignmentTree.value = null
-                    _orgUsers.value = emptyList()
-                    _error.value = it.message ?: "加载组织 OKR 失败"
-                }
-            )
-            _loading.value = false
-        }
-    }
-
-    fun setOrgDeptFilter(deptId: Long?) {
-        orgDeptId = deptId
-        loadOrgOkr(currentPeriod, deptId)
-    }
-
-    fun orgDeptFilter(): Long? = orgDeptId
-
-    /** 仅刷新 KR/评论角标，不碰互评接口 */
     fun refreshBadgesWithoutPeerEval() {
         viewModelScope.launch {
             refreshBadgesInternal(includePeerEval = false)
         }
     }
 
-    /** 从 360 互评返回：只刷新任务角标（提交/保存会 invalidate 缓存） */
     fun refreshBadgesAfterPeerEval() {
         viewModelScope.launch {
             refreshKrBadgesInternal()
@@ -127,7 +80,6 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    /** 切到互评周期 Tab 时懒加载 360 卡片数据 */
     fun refreshPeerEvalBadges(includeReceived: Boolean = true) {
         viewModelScope.launch {
             if (!shouldLoadPeerEval()) return@launch

@@ -10,6 +10,7 @@ import com.fuusy.common.data.WorkOrderItem
 import com.fuusy.common.data.WorkOrderStatus
 import com.fuusy.common.utils.LoadingStatus
 import com.fuusy.project.workorder.MobileWorkOrderRepository
+import com.fuusy.project.workorder.WorkOrderListScope
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -67,7 +68,7 @@ class HistoryOrderViewModel(application: Application) : AndroidViewModel(applica
     fun fetchOrderListFromNet() {
         viewModelScope.launch {
             loadingStatus.postValue(LoadingStatus.Loading)
-            mobileWorkOrderRepo.list(null).fold(
+            mobileWorkOrderRepo.list(null, WorkOrderListScope.RELATED).fold(
                 onSuccess = { items ->
                     allOrders.clear()
                     allOrders.addAll(items)

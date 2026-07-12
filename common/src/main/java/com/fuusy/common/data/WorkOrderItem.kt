@@ -16,6 +16,7 @@ data class WorkOrderItem(
     val rectificationPersonId: String? = null, // rectificationPerson
     val attachments: List<Attachment?>? = emptyList(),
     val submitUser: String = "", // recordCreatorName
+    val recordCreatorId: String? = null, // recordCreator
     val submitTime: String = "", // recordTime
     val status: WorkOrderStatus = WorkOrderStatus.PROCESSING,
     var rejectionReason: String? = null,

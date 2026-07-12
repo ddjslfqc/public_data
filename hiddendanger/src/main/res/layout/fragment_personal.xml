@@ -147,15 +147,17 @@
                 android:background="@drawable/bg_personal_menu_card"
                 android:orientation="vertical">
 
-                <include
-                    android:id="@+id/menu_archive"
-                    layout="@layout/item_personal_menu" />
-
-                <View
+                <TextView
                     android:layout_width="match_parent"
-                    android:layout_height="0.5dp"
-                    android:layout_marginStart="48dp"
-                    android:background="#14000000" />
+                    android:layout_height="wrap_content"
+                    android:paddingStart="18dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="18dp"
+                    android:paddingBottom="6dp"
+                    android:text="OKR 与互评"
+                    android:textColor="#898FA0"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
                 <include
                     android:id="@+id/menu_goal"
@@ -166,6 +168,28 @@
                     android:layout_height="0.5dp"
                     android:layout_marginStart="48dp"
                     android:background="#14000000" />
+
+                <include
+                    android:id="@+id/menu_org_team"
+                    layout="@layout/item_personal_menu" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:layout_marginStart="48dp"
+                    android:background="#14000000" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="18dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="18dp"
+                    android:paddingBottom="6dp"
+                    android:text="其他"
+                    android:textColor="#898FA0"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
                 <include
                     android:id="@+id/menu_evaluation"

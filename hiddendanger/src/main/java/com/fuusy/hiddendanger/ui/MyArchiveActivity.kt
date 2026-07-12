@@ -127,7 +127,10 @@ class MyArchiveActivity : AppCompatActivity() {
     private fun openCompletedOrders() {
         ARouter.getInstance()
             .build("/project/HistoryOrderActivity")
-            .withBoolean(com.fuusy.project.ui.activity.HistoryOrderActivity.EXTRA_SHOW_COMPLETED, true)
+            .withString(
+                com.fuusy.project.ui.activity.HistoryOrderActivity.EXTRA_LIST_MODE,
+                com.fuusy.project.ui.activity.HistoryOrderActivity.MODE_COMPLETED
+            )
             .navigation()
     }
 

@@ -16,7 +16,7 @@ import com.fuusy.login.R
 
 class IpConfigDialog(context: Context) : Dialog(context) {
 
-    private lateinit var swUseLocal: SwitchCompat
+    private lateinit var swUseLocal: Switch
     private lateinit var layoutLocal: LinearLayout
     private lateinit var layoutRemote: LinearLayout
     private lateinit var etLocalIp: EditText

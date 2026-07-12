@@ -45,6 +45,9 @@ data class PeerEvalColleague(
     val deptId: Long? = null,
     val deptName: String? = null
 ) {
+    fun displayName(): String =
+        nickName?.takeIf { it.isNotBlank() } ?: userName?.takeIf { it.isNotBlank() } ?: "成员 $id"
+
     fun toPeerUser(): OkrPeerUser = OkrPeerUser(
         userId = id,
         nickName = nickName?.takeIf { it.isNotBlank() } ?: userName,

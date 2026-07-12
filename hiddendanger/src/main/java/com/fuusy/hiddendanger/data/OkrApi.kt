@@ -174,4 +174,16 @@ interface OkrApi {
 
     @GET("mobile/okr/peer-eval/colleagues")
     suspend fun getPeerEvalColleagues(): BaseResp<List<PeerEvalColleague>>
+
+    @GET("mobile/okr/peer-eval/org/overview")
+    suspend fun getPeerEvalOrgOverview(
+        @Query("period") period: String,
+        @Query("deptId") deptId: Long? = null
+    ): BaseResp<PeerEvalOrgOverviewResponse>
+
+    @GET("mobile/okr/peer-eval/org/review-prep")
+    suspend fun getPeerEvalOrgReviewPrep(
+        @Query("period") period: String,
+        @Query("userId") userId: Long
+    ): BaseResp<OkrReviewPrep>
 }

@@ -134,8 +134,19 @@ class LoginActivity : BaseVmActivity<ActivityLoginBinding>() {
 
     private fun initListener() {
         mBinding?.run {
-            // Logo 连续点击，弹出 IP 配置
+            // Logo 连续点击或长按，弹出服务器配置
+            ivLogo.isClickable = true
+            ivLogo.isFocusable = true
             ivLogo.setOnClickListener { handleLogoClick() }
+            ivLogo.setOnLongClickListener {
+                showIpConfigDialog()
+                true
+            }
+            tvSystemName.setOnClickListener { handleLogoClick() }
+            tvSystemName.setOnLongClickListener {
+                showIpConfigDialog()
+                true
+            }
 
             // 输入监听
             val textWatcher = object : TextWatcher {
@@ -228,6 +239,8 @@ class LoginActivity : BaseVmActivity<ActivityLoginBinding>() {
             showIpConfigDialog()
             clickCount = 0
         } else {
+            val remain = 3 - clickCount
+            showToast("再点${remain}次打开服务器配置（或长按 Logo）")
             handler.postDelayed(clickRunnable, 2000)
         }
     }

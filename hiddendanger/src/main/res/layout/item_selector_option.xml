@@ -29,7 +29,7 @@
         android:id="@+id/ivCheck"
         android:layout_width="20dp"
         android:layout_height="20dp"
-        android:src="@mipmap/yes_check"
+        android:src="@drawable/ic_peer_pick_checked"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

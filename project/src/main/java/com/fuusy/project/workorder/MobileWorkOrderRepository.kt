@@ -42,12 +42,16 @@ class MobileWorkOrderRepository {
             .create(WorkOrderApi::class.java)
     }
 
-    suspend fun list(status: WorkOrderStatus? = null): Result<List<WorkOrderItem>> =
-        safeList { authApi.list(WorkOrderMapper.localStatusToQuery(status)) }
+    suspend fun list(
+        status: WorkOrderStatus? = null,
+        scope: String = WorkOrderListScope.RELATED
+    ): Result<List<WorkOrderItem>> =
+        safeList { authApi.list(WorkOrderMapper.localStatusToQuery(status), scope) }
             .map { list -> list.map { WorkOrderMapper.listDtoToItem(it) } }
 
-    /** 兼容旧调用：拉当前用户全部状态工单 */
-    suspend fun listAll(): Result<List<WorkOrderItem>> = list(null)
+    /** 兼容旧调用：拉当前用户相关工单 */
+    suspend fun listAll(scope: String = WorkOrderListScope.RELATED): Result<List<WorkOrderItem>> =
+        list(null, scope)
 
     suspend fun listPublic(status: WorkOrderStatus? = null): Result<List<WorkOrderItem>> =
         safeList { publicApi.all(WorkOrderMapper.localStatusToQuery(status)) }

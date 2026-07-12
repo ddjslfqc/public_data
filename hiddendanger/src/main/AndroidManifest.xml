@@ -59,6 +59,18 @@
             android:label="我的目标" />
 
         <activity
+            android:name=".ui.OrgTeamActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="团队成员" />
+
+        <activity
+            android:name=".ui.OrgOkrActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="全员 OKR" />
+
+        <activity
             android:name=".ui.EvaluationRecordActivity"
             android:exported="false"
             android:theme="@style/HiddenDangerTheme"
@@ -101,7 +113,7 @@
             android:name=".ui.OkrPeerEvalActivity"
             android:exported="false"
             android:theme="@style/HiddenDangerTheme"
-            android:label="360互评"
+            android:label="我的互评"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
@@ -122,6 +134,12 @@
             android:exported="false"
             android:theme="@style/HiddenDangerTheme"
             android:label="收到的评价" />
+
+        <activity
+            android:name=".ui.PeerEvalOrgActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="组织互评" />
 
         <activity android:name="com.fuusy.hiddendanger.ui.DraftBoxActivity" />
 

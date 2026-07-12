@@ -83,19 +83,10 @@ class PersonalFragment : BaseVmFragment<FragmentPersonalBinding, PersonalViewMod
 
     private fun setupMenuItems() {
         bindMenu(
-            binding = mDataBinding.menuArchive,
-            icon = R.drawable.ic_personal_archive,
-            title = "我的档案"
-        ) {
-            ARouter.getInstance()
-                .build("/hiddendanger/MyArchiveActivity")
-                .navigation()
-        }
-
-        bindMenu(
             binding = mDataBinding.menuGoal,
             icon = R.drawable.ic_personal_goal,
-            title = "我的目标"
+            title = "我的目标",
+            subtitle = "个人 OKR"
         ) {
             ARouter.getInstance()
                 .build("/hiddendanger/MyGoalsActivity")
@@ -103,9 +94,19 @@ class PersonalFragment : BaseVmFragment<FragmentPersonalBinding, PersonalViewMod
         }
 
         bindMenu(
+            binding = mDataBinding.menuOrgTeam,
+            icon = R.drawable.ic_personal_team,
+            title = "团队成员",
+            subtitle = "查看 OKR 与复盘"
+        ) {
+            OrgTeamActivity.start(requireContext())
+        }
+
+        bindMenu(
             binding = mDataBinding.menuEvaluation,
-            icon = R.drawable.ic_personal_evaluation,
-            title = "评价记录"
+            icon = R.drawable.ic_personal_archive,
+            title = "评价记录",
+            subtitle = "工单评价历史"
         ) {
             ARouter.getInstance()
                 .build("/hiddendanger/EvaluationRecordActivity")
@@ -128,10 +129,17 @@ class PersonalFragment : BaseVmFragment<FragmentPersonalBinding, PersonalViewMod
         binding: com.fuusy.hiddendanger.databinding.ItemPersonalMenuBinding,
         icon: Int,
         title: String,
+        subtitle: String? = null,
         onClick: () -> Unit
     ) {
         binding.ivIcon.setImageResource(icon)
         binding.tvTitle.text = title
+        if (subtitle.isNullOrBlank()) {
+            binding.tvSubtitle.visibility = android.view.View.GONE
+        } else {
+            binding.tvSubtitle.visibility = android.view.View.VISIBLE
+            binding.tvSubtitle.text = subtitle
+        }
         binding.rootMenuItem.setOnClickListener { onClick() }
     }
 

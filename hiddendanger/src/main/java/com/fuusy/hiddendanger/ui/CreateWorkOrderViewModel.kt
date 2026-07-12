@@ -290,12 +290,14 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
         val idx = items.indexOfFirst { it.key == key }
         if (idx == -1) return
         val old = items[idx]
-        val defaultLabel = options.firstOrNull()?.label ?: ""
+        val currentCode = formValueMap[key]
+        val matched = options.firstOrNull { it.value == currentCode }
+        val selected = matched ?: options.firstOrNull()
         items[idx] = old.copy(
             options = options.map { DynamicFormAdapter.OptionItem(it.value, it.label) },
-            value = defaultLabel
+            value = selected?.label ?: ""
         )
-        formValueMap[key] = options.firstOrNull()?.value.orEmpty()
+        formValueMap[key] = selected?.value.orEmpty()
         _formItemsLiveData.value = items
     }
 

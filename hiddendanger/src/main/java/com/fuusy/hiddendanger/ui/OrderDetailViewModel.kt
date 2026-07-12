@@ -151,7 +151,7 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
         basicType.value = formatEmptyValue(item.workOrderType ?: item.hiddenDangerCategory)
         basicPriority.value = formatEmptyValue(priorityLabel)
         basicHandlerDept.value = formatEmptyValue(item.responsibleDepartment)
-        basicHandler.value = formatHandler(item.responsiblePerson)
+        basicHandler.value = formatHandler(item.responsiblePerson, item.rectificationPersonId)
 
         submitUserName.value = formatEmptyValue(item.submitUser)
         dispatchTime.value = formatEmptyValue(item.submitTime)
@@ -179,9 +179,9 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
         return if (label.isNotBlank() && label != code) "$code $label" else code
     }
 
-    private fun formatHandler(person: String?): String {
-        if (WorkOrderOptions.isPublicGrabPerson(person)) return "公开抢单"
-        return person.orEmpty()
+    private fun formatHandler(name: String?, personId: String?): String {
+        if (WorkOrderOptions.isPublicGrabPerson(personId)) return "公开抢单"
+        return name?.takeIf { it.isNotBlank() } ?: personId.orEmpty()
     }
 
     private fun formatEmptyValue(value: String?): String {

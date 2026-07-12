@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -21,6 +22,7 @@ import com.fuusy.project.databinding.FragmentHomeBinding
 import com.fuusy.project.databinding.ItemHomeLeaderBinding
 import com.fuusy.project.ui.model.HomePendingOrderItem
 import com.fuusy.project.workorder.MobileWorkOrderRepository
+import com.fuusy.project.workorder.WorkOrderListScope
 import com.fuusy.project.workorder.WorkOrderRankingItemDto
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -54,9 +56,17 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         applyStatusBarPadding()
         setupGreeting()
+        resetDashboardUi()
         setupPendingOrders()
         setupClicks()
         refreshDashboard()
+    }
+
+    private fun resetDashboardUi() {
+        binding.tvCompletedCount.text = "0"
+        binding.tvAverageRating.text = "--"
+        binding.cardRanking.isVisible = false
+        renderLeaderboard(emptyList())
     }
 
     private fun applyStatusBarPadding() {
@@ -84,15 +94,25 @@ class HomeFragment : Fragment() {
 
     private fun refreshDashboard() {
         viewLifecycleOwner.lifecycleScope.launch {
-            workOrderRepo.dashboard().onSuccess { data ->
-                binding.tvCompletedCount.text = data.completedCount.toString()
-                val rating = data.averageRating
-                binding.tvAverageRating.text =
-                    if (rating > 0) String.format("%.1f", rating) else "--"
-                renderLeaderboard(data.rankingTop3.orEmpty())
-            }
+            workOrderRepo.dashboard()
+                .onSuccess { data ->
+                    binding.tvCompletedCount.text = data.completedCount.toString()
+                    binding.tvAverageRating.text = formatAverageRating(data.averageRating)
+                    val ranking = data.rankingTop3.orEmpty()
+                    binding.cardRanking.isVisible = ranking.isNotEmpty()
+                    renderLeaderboard(ranking)
+                }
+                .onFailure {
+                    binding.tvCompletedCount.text = "0"
+                    binding.tvAverageRating.text = "--"
+                    binding.cardRanking.isVisible = false
+                    renderLeaderboard(emptyList())
+                }
         }
     }
+
+    private fun formatAverageRating(rating: Double): String =
+        if (rating > 0) String.format("%.1f", rating) else "--"
 
     private fun renderLeaderboard(items: List<WorkOrderRankingItemDto>) {
         val avatarBgs = intArrayOf(
@@ -101,13 +121,11 @@ class HomeFragment : Fragment() {
             R.drawable.bg_home_avatar_green
         )
         val bindings = listOf(binding.leader1, binding.leader2, binding.leader3)
-        bindings.forEachIndexed { index, include ->
-            val row = ItemHomeLeaderBinding.bind(include.root)
-            val item = items.getOrNull(index)
-            if (item == null) {
-                row.root.visibility = View.INVISIBLE
-                return@forEachIndexed
-            }
+        bindings.forEach { include ->
+            ItemHomeLeaderBinding.bind(include.root).root.visibility = View.GONE
+        }
+        items.take(3).forEachIndexed { index, item ->
+            val row = ItemHomeLeaderBinding.bind(bindings[index].root)
             row.root.visibility = View.VISIBLE
             val name = item.nickName?.takeIf { it.isNotBlank() } ?: "用户"
             row.tvAvatar.text = name.firstOrNull()?.toString() ?: "?"
@@ -122,10 +140,11 @@ class HomeFragment : Fragment() {
             WorkOrderStatus.PENDING,
             WorkOrderStatus.PROCESSING,
             WorkOrderStatus.DRAFT,
-            WorkOrderStatus.EVAL
+            WorkOrderStatus.EVAL,
+            WorkOrderStatus.REJECT
         )
         viewLifecycleOwner.lifecycleScope.launch {
-            val items = workOrderRepo.listAll()
+            val items = workOrderRepo.listAll(WorkOrderListScope.RELATED)
                 .getOrNull()
                 .orEmpty()
                 .filter { it.status in activeStatuses }
@@ -150,23 +169,21 @@ class HomeFragment : Fragment() {
                 .build("/project/WorkOrderRankingActivity")
                 .navigation()
         }
-        binding.tvOrdersMore.setOnClickListener { openWorkOrderTab() }
+        binding.tvOrdersMore.setOnClickListener { openRelatedTasks() }
     }
 
     private fun openCompletedOrders() {
-        (activity as? ProjectDetailActivity)?.switchToWorkOrderTab(showCompleted = true)
-            ?: ARouter.getInstance()
-                .build("/project/HistoryOrderActivity")
-                .withBoolean(HistoryOrderActivity.EXTRA_SHOW_COMPLETED, true)
-                .navigation()
+        ARouter.getInstance()
+            .build("/project/HistoryOrderActivity")
+            .withString(HistoryOrderActivity.EXTRA_LIST_MODE, HistoryOrderActivity.MODE_COMPLETED)
+            .navigation()
     }
 
-    private fun openWorkOrderTab() {
-        (activity as? ProjectDetailActivity)?.switchToWorkOrderTab(showActivePending = true)
-            ?: ARouter.getInstance()
-                .build("/project/HistoryOrderActivity")
-                .withBoolean(HistoryOrderActivity.EXTRA_SHOW_ACTIVE_PENDING, true)
-                .navigation()
+    private fun openRelatedTasks() {
+        ARouter.getInstance()
+            .build("/project/HistoryOrderActivity")
+            .withString(HistoryOrderActivity.EXTRA_LIST_MODE, HistoryOrderActivity.MODE_RELATED)
+            .navigation()
     }
 
     override fun onResume() {

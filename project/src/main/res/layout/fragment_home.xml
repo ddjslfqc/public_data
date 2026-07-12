@@ -40,6 +40,7 @@
                     android:id="@+id/tv_greeting"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
                     android:text="早上好，欢迎回来"
                     android:textColor="@color/home_text_secondary"
                     android:textSize="14sp"
@@ -82,10 +83,11 @@
                         android:id="@+id/tv_completed_count"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="28"
+                        android:text="0"
                         android:textColor="#FFFFFF"
                         android:textSize="26sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        tools:text="0" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -111,10 +113,11 @@
                         android:id="@+id/tv_average_rating"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="4.5"
+                        android:text="--"
                         android:textColor="#FFFFFF"
                         android:textSize="26sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        tools:text="--" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -127,13 +130,14 @@
                 </FrameLayout>
             </LinearLayout>
 
-            <!-- UWB 调试入口 -->
+            <!-- UWB 调试入口（已关闭） -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/card_uwb_debug"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="12dp"
                 android:layout_marginTop="12dp"
+                android:visibility="gone"
                 android:foreground="?android:attr/selectableItemBackground"
                 app:cardBackgroundColor="@color/home_card_bg"
                 app:cardCornerRadius="16dp"
@@ -188,13 +192,16 @@
 
             <!-- 排行榜 -->
             <androidx.cardview.widget.CardView
+                android:id="@+id/card_ranking"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="12dp"
                 android:layout_marginTop="12dp"
+                android:visibility="gone"
                 app:cardBackgroundColor="@color/home_card_bg"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="0dp">
+                app:cardElevation="0dp"
+                tools:visibility="visible">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -304,7 +311,7 @@
                             android:layout_centerVertical="true"
                             android:layout_marginStart="8dp"
                             android:layout_toEndOf="@id/iv_order_icon"
-                            android:text="待处理工单"
+                            android:text="我相关的任务"
                             android:textColor="#000000"
                             android:textSize="16sp"
                             android:textStyle="bold" />
