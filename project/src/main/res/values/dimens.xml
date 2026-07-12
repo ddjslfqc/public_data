@@ -3,4 +3,7 @@
     <dimen name="wo_filter_tab_height">32dp</dimen>
     <dimen name="wo_filter_tab_radius">16dp</dimen>
     <dimen name="wo_filter_tab_padding_h">14dp</dimen>
+    <dimen name="bottom_nav_height">56dp</dimen>
+    <dimen name="bottom_nav_icon_size">24dp</dimen>
+    <dimen name="fab_margin_bottom">24dp</dimen>
 </resources>

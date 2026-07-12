@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <LinearLayout
+        android:id="@+id/tab_home"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingTop="6dp"
+        android:paddingBottom="4dp">
+
+        <ImageView
+            android:id="@+id/tab_home_icon"
+            android:layout_width="@dimen/bottom_nav_icon_size"
+            android:layout_height="@dimen/bottom_nav_icon_size"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_nav_home" />
+
+        <TextView
+            android:id="@+id/tab_home_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="首页"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tab_video"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingTop="6dp"
+        android:paddingBottom="4dp">
+
+        <ImageView
+            android:id="@+id/tab_video_icon"
+            android:layout_width="@dimen/bottom_nav_icon_size"
+            android:layout_height="@dimen/bottom_nav_icon_size"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_nav_video" />
+
+        <TextView
+            android:id="@+id/tab_video_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="视频"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tab_work_order"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingTop="6dp"
+        android:paddingBottom="4dp">
+
+        <ImageView
+            android:id="@+id/tab_work_order_icon"
+            android:layout_width="@dimen/bottom_nav_icon_size"
+            android:layout_height="@dimen/bottom_nav_icon_size"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_nav_work_order" />
+
+        <TextView
+            android:id="@+id/tab_work_order_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="工单"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tab_profile"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingTop="6dp"
+        android:paddingBottom="4dp">
+
+        <ImageView
+            android:id="@+id/tab_profile_icon"
+            android:layout_width="@dimen/bottom_nav_icon_size"
+            android:layout_height="@dimen/bottom_nav_icon_size"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_nav_profile" />
+
+        <TextView
+            android:id="@+id/tab_profile_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="我的"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+</merge>

@@ -105,20 +105,27 @@
                     android:layout_weight="1" />
 
                 <!-- 底部导航栏 -->
-                <com.google.android.material.bottomnavigation.BottomNavigationView
-                    android:id="@+id/BottomLayout"
-                    style="@style/Widget.Project.BottomNavigationView"
+                <LinearLayout
+                    android:id="@+id/bottom_nav_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@android:color/white"
-                    android:elevation="8dp"
-                    app:itemIconSize="20dp"
-                    app:itemIconTint="@color/icon_color_selector"
-                    app:itemTextAppearanceActive="@style/BottomNavText.Active"
-                    app:itemTextAppearanceInactive="@style/BottomNavText.Inactive"
-                    app:itemTextColor="@color/text_color_selector"
-                    app:labelVisibilityMode="labeled"
-                    app:menu="@menu/bottom_navigation_menu" />
+                    android:clipChildren="true"
+                    android:clipToPadding="true"
+                    android:elevation="6dp"
+                    android:orientation="vertical">
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@drawable/bg_bottom_nav_top_line" />
+
+                    <com.fuusy.project.widget.BottomTabBar
+                        android:id="@+id/bottom_tab_bar"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/bottom_nav_height"
+                        android:background="@android:color/white" />
+                </LinearLayout>
 
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>

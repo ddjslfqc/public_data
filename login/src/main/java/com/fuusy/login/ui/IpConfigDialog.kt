@@ -51,6 +51,7 @@ class IpConfigDialog(context: Context) : Dialog(context) {
     private fun loadCurrentConfig() {
         val useLocal = IpConfigUtils.isUseLocalServer()
         swUseLocal.isChecked = useLocal
+        swUseLocal.isEnabled = true
         etLocalIp.setText(IpConfigUtils.getLocalServerIp())
         etLocalPort.setText(IpConfigUtils.getLocalServerPort())
         updateModeVisibility(useLocal)

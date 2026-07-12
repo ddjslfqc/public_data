@@ -15,21 +15,6 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
-    <style name="Widget.Project.BottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView">
-        <item name="android:minHeight">48dp</item>
-        <item name="itemIconSize">20dp</item>
-        <item name="itemPaddingTop">2dp</item>
-        <item name="itemPaddingBottom">2dp</item>
-    </style>
-
-    <style name="BottomNavText.Active" parent="TextAppearance.MaterialComponents.Caption">
-        <item name="android:textSize">10sp</item>
-    </style>
-
-    <style name="BottomNavText.Inactive" parent="TextAppearance.MaterialComponents.Caption">
-        <item name="android:textSize">10sp</item>
-    </style>
-
     <!-- 透明对话框样式 -->
     <style name="TransparentDialog" parent="Theme.AppCompat.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>

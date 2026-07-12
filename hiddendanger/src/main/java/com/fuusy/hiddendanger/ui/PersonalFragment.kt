@@ -66,6 +66,7 @@ class PersonalFragment : BaseVmFragment<FragmentPersonalBinding, PersonalViewMod
         })
 
         setupMenuItems()
+        setupStatCards()
 
         mDataBinding.btnLogout.setOnClickListener {
             AppDialogHelper.showConfirm(
@@ -123,6 +124,25 @@ class PersonalFragment : BaseVmFragment<FragmentPersonalBinding, PersonalViewMod
                 smallIcon = R.drawable.ic_personal_setting
             )
         }
+    }
+
+    private fun setupStatCards() {
+        mDataBinding.cardStatCompleted.setOnClickListener { openCompletedOrders() }
+        mDataBinding.cardStatRating.setOnClickListener {
+            ARouter.getInstance()
+                .build("/hiddendanger/EvaluationRecordActivity")
+                .navigation()
+        }
+    }
+
+    private fun openCompletedOrders() {
+        ARouter.getInstance()
+            .build("/project/HistoryOrderActivity")
+            .withString(
+                com.fuusy.project.ui.activity.HistoryOrderActivity.EXTRA_LIST_MODE,
+                com.fuusy.project.ui.activity.HistoryOrderActivity.MODE_COMPLETED
+            )
+            .navigation()
     }
 
     private fun bindMenu(

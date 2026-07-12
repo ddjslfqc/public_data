@@ -1,15 +1,20 @@
 package com.fuusy.project.ui.activity
 
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.GravityCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.alibaba.android.arouter.facade.annotation.Route
-import com.google.android.material.navigation.NavigationBarView
 import com.alibaba.android.arouter.launcher.ARouter
 import com.fuusy.common.base.BaseActivity
 import com.fuusy.common.support.Constants
@@ -48,7 +53,9 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
         FlvThumbnailLoader.init(applicationContext)
         getSelectedProjectsFromIntent()
         initFragments(savedInstanceState)
+        setupSystemBars()
         initBottomNavigation()
+        applyBottomNavInsets()
         initClickListeners()
         initDrawer()
         switchToFragment(homeFragment)
@@ -138,8 +145,34 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
     }
 
     private fun initBottomNavigation() {
-        mBinding.BottomLayout.setOnItemSelectedListener(bottomNavListener())
-        mBinding.BottomLayout.selectedItemId = R.id.navigation_home
+        mBinding.bottomTabBar.setOnTabSelectedListener { tabId ->
+            when (tabId) {
+                R.id.navigation_home -> switchToFragment(homeFragment)
+                R.id.navigation_video -> showVideoFragment()
+                R.id.navigation_work_order -> showWorkOrderFragment()
+                R.id.navigation_profile -> showPersonalFragment()
+            }
+        }
+        mBinding.bottomTabBar.selectTab(R.id.navigation_home)
+    }
+
+    /** 系统导航栏与底部 Tab 同色，避免底部黑条 */
+    private fun setupSystemBars() {
+        window.navigationBarColor = Color.WHITE
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
+    }
+
+    /** 底部 Tab 适配手势条/导航栏：留白加在白色容器上，Tab 本身固定高度 */
+    private fun applyBottomNavInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(mBinding.bottomNavContainer) { view, insets ->
+            val navBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+            view.updatePadding(bottom = navBottom)
+            insets
+        }
+        ViewCompat.requestApplyInsets(mBinding.bottomNavContainer)
     }
 
     fun switchToVideoTab() {
@@ -156,38 +189,12 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
     }
 
     private fun selectBottomTab(itemId: Int) {
-        val bottomNav = mBinding.BottomLayout
-        bottomNav.setOnItemSelectedListener(null)
-        bottomNav.selectedItemId = itemId
-        bottomNav.setOnItemSelectedListener(bottomNavListener())
-        // selectedItemId 在 listener 为 null 时不会触发切换，需显式切 Fragment
+        mBinding.bottomTabBar.selectTab(itemId)
         when (itemId) {
             R.id.navigation_home -> switchToFragment(homeFragment)
             R.id.navigation_video -> showVideoFragment()
             R.id.navigation_work_order -> showWorkOrderFragment()
             R.id.navigation_profile -> showPersonalFragment()
-        }
-    }
-
-    private fun bottomNavListener() = NavigationBarView.OnItemSelectedListener { item ->
-        when (item.itemId) {
-            R.id.navigation_home -> {
-                switchToFragment(homeFragment)
-                true
-            }
-            R.id.navigation_video -> {
-                showVideoFragment()
-                true
-            }
-            R.id.navigation_work_order -> {
-                showWorkOrderFragment()
-                true
-            }
-            R.id.navigation_profile -> {
-                showPersonalFragment()
-                true
-            }
-            else -> false
         }
     }
 

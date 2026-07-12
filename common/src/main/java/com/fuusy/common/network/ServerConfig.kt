@@ -110,6 +110,8 @@ object ServerConfig {
     fun getActiveServerLabel(): String {
         return if (IpConfigUtils.isUseLocalServer()) {
             "本地 ${IpConfigUtils.getLocalServerIp()}:${IpConfigUtils.getLocalServerPort()}"
+        } else if (IpConfigUtils.hasCustomConfig()) {
+            "自定义远程服"
         } else {
             "远程测试服"
         }

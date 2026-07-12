@@ -62,6 +62,7 @@ class VideoListFragment : Fragment() {
         setupTabs()
         setupSearch()
         setupSettings()
+        setEmptyState("暂无视频", "当前项目暂未接入摄像头")
         updateTabStyle()
         loadVideoList()
     }
@@ -214,8 +215,30 @@ class VideoListFragment : Fragment() {
         }
         Log.d(TAG, "筛选结果: tab=$currentFilter, search=$searchQuery, count=${filtered.size}")
         adapter.submitList(filtered)
-        binding.llEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
-        binding.rvVideoList.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
+        val isEmpty = filtered.isEmpty()
+        binding.layoutEmpty.root.visibility = if (isEmpty) View.VISIBLE else View.GONE
+        binding.rvVideoList.visibility = if (isEmpty) View.GONE else View.VISIBLE
+        if (isEmpty) {
+            updateEmptyState()
+        }
+    }
+
+    private fun updateEmptyState() {
+        when {
+            searchQuery.isNotBlank() -> setEmptyState(
+                "未找到匹配的摄像头",
+                "试试其他关键词或切换筛选条件"
+            )
+            currentFilter == FilterType.ONLINE -> setEmptyState("暂无在线摄像头", "当前没有在线状态的摄像头")
+            currentFilter == FilterType.ALARM -> setEmptyState("暂无报警摄像头", "当前没有处于报警状态的摄像头")
+            currentFilter == FilterType.OFFLINE -> setEmptyState("暂无离线摄像头", "当前没有离线状态的摄像头")
+            else -> setEmptyState("暂无视频", "当前项目暂未接入摄像头")
+        }
+    }
+
+    private fun setEmptyState(title: String, subtitle: String) {
+        binding.layoutEmpty.tvEmptyTitle.text = title
+        binding.layoutEmpty.tvEmptySubtitle.text = subtitle
     }
 
     private fun loadVideoList(fromRefresh: Boolean = false) {
@@ -232,9 +255,6 @@ class VideoListFragment : Fragment() {
             } else {
                 showToast("加载失败：${result.exceptionOrNull()?.message ?: "网络异常"}")
                 emptyList()
-            }
-            if (allVideos.isEmpty() && result.isSuccess) {
-                showToast("暂无视频数据")
             }
             updateTabCounts()
             updateTabStyle()
