@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import androidx.core.view.isVisible
 import com.fuusy.hiddendanger.data.PendingUpdateRecordItem
 import com.fuusy.hiddendanger.databinding.ItemPendingKrBinding
 
@@ -26,7 +27,15 @@ class PendingProgressAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = getItem(position)
         holder.binding.apply {
-            tvObjectiveTitle.text = item.objectiveTitle.orEmpty()
+            val roleLabel = item.approvalRoleLabel?.takeIf { it.isNotBlank() }
+            tvContextLine.isVisible = !item.contextLine.isNullOrBlank() || !roleLabel.isNullOrBlank()
+            tvContextLine.text = item.contextLine ?: roleLabel?.let { "您作为${it}审批" }.orEmpty()
+            tvObjectiveTitle.text = buildString {
+                append("提交人 ").append(item.submitterName.orEmpty())
+                if (!item.submitterDeptName.isNullOrBlank()) {
+                    append(" · ").append(item.submitterDeptName)
+                }
+            }
             tvKrTitle.text = item.krTitle.orEmpty()
             val unit = item.unit.orEmpty()
             val oldValue = item.currentValue?.toString().orEmpty()

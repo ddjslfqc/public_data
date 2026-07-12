@@ -23,13 +23,46 @@ object KrProgressHelper {
     fun updateBlockedReason(item: GoalKrItem): String? = when {
         OkrPeriodHelper.isPeriodEnded(item.periodEndDate) -> "该目标周期已结束，无法更新进度"
         item.achieved || item.status == 1 -> "该 KR 已完成"
-        item.approvalStatus == 0 -> "等待目标创建人审批 KR，通过后可更新进度"
+        item.approvalStatus == 0 -> item.pendingApproverHint ?: "等待审批 KR，通过后可更新进度"
         item.approvalStatus == 2 -> "KR 已被拒绝，无法更新进度"
-        item.progressApprovalStatus == 0 -> "进度更新已提交，等待目标创建人审批"
+        item.progressApprovalStatus == 0 -> progressPendingStatusHint(item)
         !isKrOwner(item) -> "仅 KR 负责人可更新进度"
         else -> null
     }
 
     fun progressStatusLabel(item: GoalKrItem): String? =
-        com.fuusy.hiddendanger.data.OkrPeriodHelper.progressApprovalLabel(item.progressApprovalStatus)
+        when {
+            item.progressApprovalStatus == 0 -> progressPendingStatusHint(item)
+            else -> OkrPeriodHelper.progressApprovalLabel(item.progressApprovalStatus)
+        }
+
+    fun progressSubmitMessage(item: GoalKrItem): String {
+        val name = item.nextProgressApproverName
+        val role = item.nextProgressApproverRoleLabel
+        return if (!name.isNullOrBlank() && !role.isNullOrBlank()) {
+            "提交后将由 $name（$role）审批，通过后进度才会生效"
+        } else if (!name.isNullOrBlank()) {
+            "提交后将由 $name 审批，通过后进度才会生效"
+        } else {
+            "提交后将进入审批流程，通过后进度才会生效"
+        }
+    }
+
+    fun progressSubmitSuccessMessage(item: GoalKrItem): String =
+        when {
+            !item.nextProgressApproverName.isNullOrBlank() && !item.nextProgressApproverRoleLabel.isNullOrBlank() ->
+                "进度已提交，等待 ${item.nextProgressApproverName}（${item.nextProgressApproverRoleLabel}）审批"
+            !item.nextProgressApproverName.isNullOrBlank() ->
+                "进度已提交，等待 ${item.nextProgressApproverName} 审批"
+            else -> "进度已提交，等待审批"
+        }
+
+    private fun progressPendingStatusHint(item: GoalKrItem): String =
+        when {
+            !item.pendingProgressApproverName.isNullOrBlank() && !item.pendingProgressApproverRoleLabel.isNullOrBlank() ->
+                "进度更新已提交，等待 ${item.pendingProgressApproverName}（${item.pendingProgressApproverRoleLabel}）审批"
+            !item.pendingProgressApproverName.isNullOrBlank() ->
+                "进度更新已提交，等待 ${item.pendingProgressApproverName} 审批"
+            else -> "进度更新已提交，等待审批"
+        }
 }

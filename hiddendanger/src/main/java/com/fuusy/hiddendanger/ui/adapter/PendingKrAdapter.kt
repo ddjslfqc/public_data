@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import androidx.core.view.isVisible
 import com.fuusy.hiddendanger.data.PendingKrItem
 import com.fuusy.hiddendanger.databinding.ItemPendingKrBinding
 
@@ -27,6 +28,18 @@ class PendingKrAdapter(
         val item = getItem(position)
         holder.binding.apply {
             tvObjectiveTitle.text = item.objectiveTitle.orEmpty()
+            val roleLabel = item.approvalRoleLabel?.takeIf { it.isNotBlank() }
+            val context = buildString {
+                if (!roleLabel.isNullOrBlank()) {
+                    append("您作为").append(roleLabel).append("审批")
+                }
+                item.contextLine?.takeIf { it.isNotBlank() }?.let {
+                    if (isNotEmpty()) append("\n")
+                    append(it)
+                }
+            }
+            tvContextLine.isVisible = context.isNotBlank()
+            tvContextLine.text = context
             tvKrTitle.text = item.title
             val unit = item.unit.orEmpty()
             val target = item.targetValue?.toString().orEmpty()

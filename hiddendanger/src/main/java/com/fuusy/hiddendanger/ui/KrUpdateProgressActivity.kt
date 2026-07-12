@@ -92,7 +92,7 @@ class KrUpdateProgressActivity : AppCompatActivity() {
             AppDialogHelper.showConfirm(
                 context = this,
                 title = "提交进度",
-                message = "提交后将由目标创建人审批，审批通过后进度才会生效",
+                message = KrProgressHelper.progressSubmitMessage(krItem),
                 confirmText = "提交"
             ) {
                 viewModel.submit(this, binding.etRemark.text?.toString())
@@ -152,7 +152,7 @@ class KrUpdateProgressActivity : AppCompatActivity() {
         }
         viewModel.submitted.observe(this) { done ->
             if (done != true) return@observe
-            Toast.makeText(this, "进度已提交，等待目标创建人审批", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, KrProgressHelper.progressSubmitSuccessMessage(krItem), Toast.LENGTH_SHORT).show()
             val updated = viewModel.updatedItem.value ?: krItem.copy(
                 pendingProgressValue = viewModel.currentValue,
                 progressApprovalStatus = 0

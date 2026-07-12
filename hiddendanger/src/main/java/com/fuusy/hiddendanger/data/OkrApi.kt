@@ -44,6 +44,10 @@ interface OkrApi {
     @GET("mobile/okr/align-options")
     suspend fun getAlignOptions(): BaseResp<AlignOptionsResponse>
 
+    /** 全部部门（用于创建目标时选择所属部门） */
+    @GET("mobile/okr/dept-options")
+    suspend fun getDeptOptions(): BaseResp<List<OkrDepartment>>
+
     /** 获取指定用户可对齐的 KR 列表 */
     @GET("mobile/okr/alignable-krs")
     suspend fun getAlignableKrs(

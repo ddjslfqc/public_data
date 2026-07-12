@@ -54,6 +54,12 @@ class PersonalFragment : BaseVmFragment<FragmentPersonalBinding, PersonalViewMod
             mDataBinding.tvAverageRating.text = it
         })
 
+        mViewModel.okrPendingApprovalCount.observe(viewLifecycleOwner, Observer { count ->
+            val subtitle = if (count > 0) "$count 条待处理" else "KR 与进度审批"
+            mDataBinding.menuOkrApproval.tvSubtitle.visibility = android.view.View.VISIBLE
+            mDataBinding.menuOkrApproval.tvSubtitle.text = subtitle
+        })
+
         mViewModel.logout.observe(viewLifecycleOwner, Observer {
             if (it) {
                 showToast("已退出登录")
@@ -91,6 +97,17 @@ class PersonalFragment : BaseVmFragment<FragmentPersonalBinding, PersonalViewMod
         ) {
             ARouter.getInstance()
                 .build("/hiddendanger/MyGoalsActivity")
+                .navigation()
+        }
+
+        bindMenu(
+            binding = mDataBinding.menuOkrApproval,
+            icon = R.drawable.ic_personal_evaluation,
+            title = "待我审批",
+            subtitle = "KR 与进度审批"
+        ) {
+            ARouter.getInstance()
+                .build("/hiddendanger/KrApprovalActivity")
                 .navigation()
         }
 

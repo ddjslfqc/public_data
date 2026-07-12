@@ -11,6 +11,7 @@ import com.fuusy.common.data.WorkOrderStatus
 import com.fuusy.common.data.local.AppDatabase
 import com.fuusy.common.data.local.WorkOrderRepository
 import com.fuusy.common.auth.AuthRepository
+import com.fuusy.hiddendanger.repository.OkrRepository
 import com.fuusy.hiddendanger.util.SessionHelper
 import com.fuusy.hiddendanger.ui.album.AlbumMediaItem
 import com.fuusy.project.workorder.MobileWorkOrderRepository
@@ -37,6 +38,7 @@ class PersonalViewModel(application: Application) : AndroidViewModel(application
     private val db = AppDatabase.getInstance(application)
     private val repository = WorkOrderRepository(db)
     private val workOrderRepo = MobileWorkOrderRepository()
+    private val okrRepo = OkrRepository()
 
     private val _userInfo = MutableLiveData<UserInfo>()
     val userInfo: LiveData<UserInfo> = _userInfo
@@ -52,6 +54,9 @@ class PersonalViewModel(application: Application) : AndroidViewModel(application
 
     private val _draftCount = MutableLiveData<Int>()
     val draftCount: LiveData<Int> = _draftCount
+
+    private val _okrPendingApprovalCount = MutableLiveData(0)
+    val okrPendingApprovalCount: LiveData<Int> = _okrPendingApprovalCount
 
     private val _albumList = MutableLiveData<List<AlbumMediaItem>>()
     val albumList: LiveData<List<AlbumMediaItem>> = _albumList
@@ -137,6 +142,11 @@ class PersonalViewModel(application: Application) : AndroidViewModel(application
                 }
                 val draftOrders = repository.getWorkOrdersByStatus(WorkOrderStatus.DRAFT)
                 _draftCount.postValue(draftOrders.size)
+
+                var pendingCount = 0
+                okrRepo.getPendingKrs().onSuccess { pendingCount += it.size }
+                okrRepo.getPendingUpdateRecords().onSuccess { pendingCount += it.size }
+                _okrPendingApprovalCount.postValue(pendingCount)
                 
                 // 优先用全局缓存
                 _albumList.value = getPreloadedMedia()

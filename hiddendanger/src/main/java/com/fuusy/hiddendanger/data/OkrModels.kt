@@ -12,6 +12,7 @@ data class OkrObjectiveBrief(
     val id: Long,
     val title: String,
     @SerializedName("userId") val userId: Long? = null,
+    val ownerName: String? = null,
     val status: Int? = null,
     val progress: Int? = null,
     val periodType: String? = null,
@@ -41,6 +42,11 @@ data class OkrKeyResult(
     val userId: Long? = null,
     val progressApprovalStatus: Int? = null,
     val pendingProgressValue: Double? = null,
+    val pendingApproverHint: String? = null,
+    val pendingProgressApproverName: String? = null,
+    val pendingProgressApproverRoleLabel: String? = null,
+    val nextProgressApproverName: String? = null,
+    val nextProgressApproverRoleLabel: String? = null,
     val attachments: List<OkrKrAttachment>? = null,
     val comments: List<OkrKrComment>? = null
 )
@@ -66,6 +72,7 @@ data class OkrObjective(
     val parentKr: OkrParentKr? = null,
     val parentObjective: OkrObjectiveBrief? = null,
     val deptId: Long? = null,
+    val ownerName: String? = null,
     val keyResults: List<OkrKeyResult>? = null
 )
 
@@ -119,12 +126,15 @@ data class OkrDepartment(
 
 data class OkrUser(
     val id: Long,
+    /** align-options 接口返回的展示名 */
+    val name: String? = null,
     @SerializedName("nickName") val nickName: String? = null,
     @SerializedName("userName") val userName: String? = null,
     val deptId: Long? = null
 ) {
     val displayName: String
         get() = nickName?.takeIf { it.isNotBlank() }
+            ?: name?.takeIf { it.isNotBlank() }
             ?: userName?.takeIf { it.isNotBlank() }
             ?: "用户$id"
 }
@@ -179,7 +189,13 @@ data class PendingKrItem(
     val objectiveTitle: String? = null,
     val objectiveUserId: Long? = null,
     val deptId: Long? = null,
-    val createTime: String? = null
+    val createTime: String? = null,
+    val krOwnerName: String? = null,
+    val krOwnerDeptName: String? = null,
+    val objectiveOwnerName: String? = null,
+    val approvalRole: String? = null,
+    val approvalRoleLabel: String? = null,
+    val contextLine: String? = null
 )
 
 data class KrApproveRequest(
@@ -238,7 +254,11 @@ data class PendingUpdateRecordItem(
     val status: Int? = null,
     val userId: Long? = null,
     val createTime: String? = null,
-    val attachments: List<OkrUpdateRecordAttachment>? = null
+    val attachments: List<OkrUpdateRecordAttachment>? = null,
+    val submitterName: String? = null,
+    val submitterDeptName: String? = null,
+    val approvalRoleLabel: String? = null,
+    val contextLine: String? = null
 ) {
     val krTitle: String?
         get() = okrTitle ?: title
@@ -303,6 +323,11 @@ data class OkrKrDetailResponse(
     val updateTime: String? = null,
     val progressApprovalStatus: Int? = null,
     val pendingProgressValue: Double? = null,
+    val pendingApproverHint: String? = null,
+    val pendingProgressApproverName: String? = null,
+    val pendingProgressApproverRoleLabel: String? = null,
+    val nextProgressApproverName: String? = null,
+    val nextProgressApproverRoleLabel: String? = null,
     val objective: OkrObjectiveBrief? = null,
     val attachments: List<OkrKrAttachment>? = null,
     val comments: List<OkrKrComment>? = null,
@@ -356,7 +381,9 @@ fun List<OkrObjective>.toAlignableKrs(): List<AlignableKr> =
                 status = kr.status,
                 objective = OkrObjectiveBrief(
                     id = objective.id,
-                    title = objective.title
+                    title = objective.title,
+                    userId = objective.userId,
+                    ownerName = objective.ownerName
                 )
             )
         }

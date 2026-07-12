@@ -213,7 +213,7 @@
                 android:lineSpacingExtra="3dp"
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="12dp"
-                android:text="目标创建后无需审批；KR 指派给他人需审批；进度更新提交后需目标创建人审批通过方可生效。"
+                android:text="KR 指派需审批；进度更新优先由直属上级或对齐上级审批通过后方可生效。"
                 android:textColor="#EA9300"
                 android:textSize="12sp" />
 
@@ -248,7 +248,7 @@
                             android:layout_weight="1"
                             android:ellipsize="end"
                             android:maxLines="1"
-                            android:text="KR 审批"
+                            android:text="待我审批"
                             android:textColor="#000000"
                             android:textSize="14sp"
                             android:textStyle="bold" />

@@ -39,6 +39,9 @@ class EditGoalViewModel(application: Application) : AndroidViewModel(application
     private val _alignableKrs = MutableLiveData<List<AlignableKr>>(emptyList())
     val alignableKrs: LiveData<List<AlignableKr>> = _alignableKrs
 
+    private val _deptOptions = MutableLiveData<List<OkrDepartment>>(emptyList())
+    val deptOptions: LiveData<List<OkrDepartment>> = _deptOptions
+
     var alignType: GoalAlignType = GoalAlignType.DEPARTMENT
     var selectedDept: OkrDepartment? = null
     var selectedUser: OkrUser? = null
@@ -48,16 +51,26 @@ class EditGoalViewModel(application: Application) : AndroidViewModel(application
     fun loadAlignOptions() {
         viewModelScope.launch {
             _loading.value = true
+            repo.getDeptOptions().fold(
+                onSuccess = { depts ->
+                    _deptOptions.value = depts
+                    if (ownDept == null) {
+                        val loginDeptId = com.fuusy.common.utils.SpUtils.getLong("user_dept_id", 0L)
+                        ownDept = depts.find { it.id == loginDeptId }
+                            ?: depts.firstOrNull()
+                    }
+                },
+                onFailure = { _error.value = it.message }
+            )
             repo.getAlignOptions().fold(
                 onSuccess = { options ->
                     _alignOptions.value = options
-                    if (ownDept == null) {
-                        val loginDeptId = com.fuusy.common.utils.SpUtils.getLong("user_dept_id", 0L)
-                        ownDept = options.departments?.find { it.id == loginDeptId }
-                            ?: options.departments?.firstOrNull()
-                    }
                     if (selectedDept == null) {
                         selectedDept = options.departments?.firstOrNull()
+                            ?: ownDept
+                    }
+                    if (selectedUser == null) {
+                        selectedUser = options.users?.firstOrNull()
                     }
                     refreshAlignableKrs()
                 },

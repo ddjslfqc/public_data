@@ -60,6 +60,11 @@ object KrNavHelper {
             userId = kr.userId,
             progressApprovalStatus = kr.progressApprovalStatus,
             pendingProgressValue = kr.pendingProgressValue,
+            pendingApproverHint = kr.pendingApproverHint,
+            pendingProgressApproverName = kr.pendingProgressApproverName,
+            pendingProgressApproverRoleLabel = kr.pendingProgressApproverRoleLabel,
+            nextProgressApproverName = kr.nextProgressApproverName,
+            nextProgressApproverRoleLabel = kr.nextProgressApproverRoleLabel,
             valueLabel = OkrPeriodHelper.krValueLabel(kr),
             progressPercent = OkrPeriodHelper.krProgressPercent(kr),
             achieved = kr.achieved || kr.status == 1,
@@ -82,13 +87,18 @@ object KrNavHelper {
         userId = userId,
         progressApprovalStatus = progressApprovalStatus,
         pendingProgressValue = pendingProgressValue,
+        pendingApproverHint = pendingApproverHint,
+        pendingProgressApproverName = pendingProgressApproverName,
+        pendingProgressApproverRoleLabel = pendingProgressApproverRoleLabel,
+        nextProgressApproverName = nextProgressApproverName,
+        nextProgressApproverRoleLabel = nextProgressApproverRoleLabel,
         achieved = status == 1,
         attachments = attachments,
         comments = comments
     )
 
-    fun putExtra(intent: Intent, item: GoalKrItem) {
-        intent.putExtra(EXTRA_KR_JSON, gson.toJson(item))
+    fun putExtra(intent: Intent, item: GoalKrItem): Intent {
+        return intent.putExtra(EXTRA_KR_JSON, gson.toJson(item))
     }
 
     fun fromIntent(intent: Intent): GoalKrItem? {

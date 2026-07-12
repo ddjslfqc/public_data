@@ -15,6 +15,7 @@ import com.fuusy.hiddendanger.data.MyGoalResponse
 import com.fuusy.hiddendanger.data.OkrAlignmentTreeResponse
 import com.fuusy.hiddendanger.data.OkrApi
 import com.fuusy.hiddendanger.data.OkrAttachmentDto
+import com.fuusy.hiddendanger.data.OkrDepartment
 import com.fuusy.hiddendanger.data.OkrKrComment
 import com.fuusy.hiddendanger.data.OkrKrDetailResponse
 import com.fuusy.hiddendanger.data.OkrObjective
@@ -107,6 +108,9 @@ class OkrRepository {
 
     suspend fun getAlignOptions(): Result<AlignOptionsResponse> =
         safeCall { api.getAlignOptions() }
+
+    suspend fun getDeptOptions(): Result<List<OkrDepartment>> =
+        safeListCall { api.getDeptOptions() }
 
     suspend fun getAlignableKrs(userId: Long): Result<List<AlignableKr>> =
         safeListCall { api.getAlignableKrs(userId) }

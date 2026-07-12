@@ -34,7 +34,12 @@ class GoalKrAdapter(
                 item.approvalStatus != 1 &&
                 progressLabel == null
             tvKrApproval.isVisible = !item.achieved && (progressLabel != null || showKrApproval)
-            tvKrApproval.text = progressLabel ?: item.approvalLabel
+            val krApprovalText = when {
+                progressLabel != null -> progressLabel
+                item.approvalStatus == 0 -> item.pendingApproverHint ?: item.approvalLabel
+                else -> item.approvalLabel
+            }
+            tvKrApproval.text = krApprovalText
 
             rowProgress.isVisible = true
             val showValue = shouldShowValueLabel(item)

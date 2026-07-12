@@ -92,6 +92,8 @@ class EditGoalActivity : AppCompatActivity() {
         }
         viewModel.alignOptions.observe(this) {
             updateScopeLabel()
+        }
+        viewModel.deptOptions.observe(this) {
             updateOwnDeptLabel()
         }
     }
@@ -157,7 +159,9 @@ class EditGoalActivity : AppCompatActivity() {
 
     private fun updateScopeLabel() {
         val text = when (viewModel.alignType) {
-            GoalAlignType.DEPARTMENT -> viewModel.selectedDept?.name ?: "请选择部门"
+            GoalAlignType.DEPARTMENT -> viewModel.selectedDept?.name
+                ?: alignmentDepartments().firstOrNull()?.name
+                ?: "请选择部门"
             GoalAlignType.SUPERVISOR -> viewModel.selectedUser?.displayName ?: "请选择人员"
         }
         binding.tvAlignLevel.text = text
@@ -168,7 +172,7 @@ class EditGoalActivity : AppCompatActivity() {
     }
 
     private fun showOwnDeptPicker() {
-        val depts = viewModel.alignOptions.value?.departments.orEmpty()
+        val depts = viewModel.deptOptions.value.orEmpty()
         if (depts.isEmpty()) {
             Toast.makeText(this, "暂无可选部门", Toast.LENGTH_SHORT).show()
             return
@@ -182,8 +186,11 @@ class EditGoalActivity : AppCompatActivity() {
     private fun showScopePicker() {
         when (viewModel.alignType) {
             GoalAlignType.DEPARTMENT -> {
-                val depts = viewModel.alignOptions.value?.departments.orEmpty()
-                if (depts.isEmpty()) return
+                val depts = alignmentDepartments()
+                if (depts.isEmpty()) {
+                    Toast.makeText(this, "暂无可选部门", Toast.LENGTH_SHORT).show()
+                    return
+                }
                 showEntityPicker("选择部门", depts.map { it.name }) { index ->
                     viewModel.selectedDept = depts[index]
                     viewModel.selectedParentKr = null
@@ -194,7 +201,10 @@ class EditGoalActivity : AppCompatActivity() {
             }
             GoalAlignType.SUPERVISOR -> {
                 val users = viewModel.alignOptions.value?.users.orEmpty()
-                if (users.isEmpty()) return
+                if (users.isEmpty()) {
+                    Toast.makeText(this, "暂无可选人员", Toast.LENGTH_SHORT).show()
+                    return
+                }
                 showEntityPicker("选择人员", users.map { it.displayName }) { index ->
                     viewModel.selectedUser = users[index]
                     viewModel.selectedParentKr = null
@@ -251,8 +261,24 @@ class EditGoalActivity : AppCompatActivity() {
     }
 
     private fun krLabel(kr: AlignableKr): String {
-        val o = kr.objective?.title.orEmpty()
-        return if (o.isNotBlank()) "${kr.title}（$o）" else kr.title
+        val owner = kr.objective?.ownerName.orEmpty()
+        val objectiveTitle = kr.objective?.title.orEmpty()
+        return buildString {
+            append(kr.title)
+            if (owner.isNotBlank() || objectiveTitle.isNotBlank()) {
+                append("（")
+                if (owner.isNotBlank()) append(owner)
+                if (owner.isNotBlank() && objectiveTitle.isNotBlank()) append(" · ")
+                if (objectiveTitle.isNotBlank()) append(objectiveTitle)
+                append("）")
+            }
+        }
+    }
+
+    private fun alignmentDepartments(): List<com.fuusy.hiddendanger.data.OkrDepartment> {
+        val fromAlign = viewModel.alignOptions.value?.departments.orEmpty()
+        if (fromAlign.isNotEmpty()) return fromAlign
+        return viewModel.deptOptions.value.orEmpty()
     }
 
     private fun showEntityPicker(title: String, options: List<String>, onSelected: (Int) -> Unit) {
