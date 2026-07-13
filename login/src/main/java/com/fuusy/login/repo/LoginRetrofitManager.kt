@@ -11,13 +11,37 @@ import java.util.concurrent.TimeUnit
 object LoginRetrofitManager {
 	private val mOkClient = RetrofitManager.client
 
-	private val mRetrofit: Retrofit = Retrofit.Builder()
-		.baseUrl(ServerConfig.getWorkOrderBaseUrl()) // 使用全局服务器配置
-		.client(mOkClient)
-		.addConverterFactory(GsonConverterFactory.create())
-		.build()
+	@Volatile
+	private var cachedBaseUrl: String? = null
+	@Volatile
+	private var mRetrofit: Retrofit? = null
+
+	private fun retrofit(): Retrofit {
+		val baseUrl = ServerConfig.getWorkOrderBaseUrl()
+		val existing = mRetrofit
+		if (existing != null && cachedBaseUrl == baseUrl) return existing
+		return synchronized(this) {
+			val again = mRetrofit
+			if (again != null && cachedBaseUrl == baseUrl) return@synchronized again
+			cachedBaseUrl = baseUrl
+			Retrofit.Builder()
+				.baseUrl(baseUrl)
+				.client(mOkClient)
+				.addConverterFactory(GsonConverterFactory.create())
+				.build()
+				.also { mRetrofit = it }
+		}
+	}
+
+	/** 服务器配置变更后调用，避免继续走旧的 Base URL */
+	fun invalidate() {
+		synchronized(this) {
+			cachedBaseUrl = null
+			mRetrofit = null
+		}
+	}
 
 	fun <T> getService(serviceClass: Class<T>): T {
-		return mRetrofit.create(serviceClass)
+		return retrofit().create(serviceClass)
 	}
 } 

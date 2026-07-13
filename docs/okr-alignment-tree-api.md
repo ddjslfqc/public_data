@@ -287,14 +287,14 @@ public BaseResp<OkrAlignmentTreeResponse> alignmentTree(
 ## 6. 联调
 
 ```bash
-curl -s 'http://47.110.156.186:9220/mobile/okr/alignment-tree?periodType=quarter-3' \
+curl -s 'https://ios.yceil.com/mobile/okr/alignment-tree?periodType=quarter-3' \
   -H 'X-User-Id: 10001' | jq .
 ```
 
 Web 页 URL 参数（可选）：
 
 ```text
-okr-alignment-tree.html?api=http://47.110.156.186:9220&userId=10001
+okr-alignment-tree.html?api=https://ios.yceil.com&userId=10001
 ```
 
 ---

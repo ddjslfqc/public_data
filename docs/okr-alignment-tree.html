@@ -265,7 +265,7 @@
   </header>
 
   <div class="hint-bar" id="hint-bar">
-    点击树节点查看详情。URL 可带参数：<code>?api=http://47.110.156.186:9220&amp;userId=10001</code> 对接后端；
+    点击树节点查看详情。默认对接 <code>https://ios.yceil.com</code>；URL 可覆盖：<code>?api=https://ios.yceil.com&amp;userId=10001</code>；
     未配置时使用演示数据。
   </div>
 
@@ -308,7 +308,7 @@
     function readConfig() {
       const p = new URLSearchParams(location.search);
       return {
-        apiBase: (p.get('api') || '').replace(/\/$/, ''),
+        apiBase: (p.get('api') || 'https://ios.yceil.com').replace(/\/$/, ''),
         userId: p.get('userId') || '10001'
       };
     }

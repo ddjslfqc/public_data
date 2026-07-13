@@ -11,19 +11,17 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class AppVersionRepository {
 
-    private val api: AppVersionApi by lazy {
+    private fun api(): AppVersionApi =
         Retrofit.Builder()
-            // 与 mobile/auth 等同属移动端网关，走工单/主业务服务器
             .baseUrl(ServerConfig.getWorkOrderBaseUrl())
             .client(RetrofitManager.client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(AppVersionApi::class.java)
-    }
 
     suspend fun checkUpdate(context: Context): Result<AppVersionCheckResult> = try {
         val versionCode = currentVersionCode(context)
-        val resp = api.checkUpdate(versionCode = versionCode)
+        val resp = api().checkUpdate(versionCode = versionCode)
         if (resp.isSuccess && resp.data != null) {
             Result.success(resp.data!!)
         } else {

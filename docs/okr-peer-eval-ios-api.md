@@ -12,13 +12,13 @@
 与 OKR / 工单同源：
 
 ```text
-http://47.110.156.186:9220/
+https://ios.yceil.com/
 ```
 
 完整路径示例：
 
 ```text
-GET http://47.110.156.186:9220/mobile/okr/peer-eval/tasks?period=quarter-2
+GET https://ios.yceil.com/mobile/okr/peer-eval/tasks?period=quarter-2
 ```
 
 ### 1.2 请求头（必填）

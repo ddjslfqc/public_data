@@ -37,6 +37,15 @@
             android:layout_height="wrap_content" />
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/tv_active_url"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="当前生效："
+        android:textSize="13sp"
+        android:textColor="#E65100"
+        android:layout_marginBottom="12dp" />
+
     <LinearLayout
         android:id="@+id/layout_local"
         android:layout_width="match_parent"
@@ -106,7 +115,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="主服务器：8.130.120.35:9220\n工单服务器：47.110.156.186:9220"
+            android:text="主服务器：8.130.120.35:9220\n工单/OKR服务器：https://ios.yceil.com"
             android:textSize="13sp"
             android:textColor="#999999"
             android:lineSpacingExtra="4dp"

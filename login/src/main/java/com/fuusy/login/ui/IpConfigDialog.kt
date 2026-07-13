@@ -11,8 +11,11 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
 import android.widget.Switch
+import com.fuusy.common.network.ServerConfig
 import com.fuusy.common.utils.IpConfigUtils
 import com.fuusy.login.R
+import com.fuusy.login.repo.LoginRetrofitManager
+import android.widget.TextView
 
 class IpConfigDialog(context: Context) : Dialog(context) {
 
@@ -23,6 +26,7 @@ class IpConfigDialog(context: Context) : Dialog(context) {
     private lateinit var etLocalPort: EditText
     private lateinit var btnSave: Button
     private lateinit var btnCancel: Button
+    private lateinit var tvActiveUrl: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,6 +50,11 @@ class IpConfigDialog(context: Context) : Dialog(context) {
         etLocalPort = findViewById(R.id.et_local_port)
         btnSave = findViewById(R.id.btn_save)
         btnCancel = findViewById(R.id.btn_cancel)
+        tvActiveUrl = findViewById(R.id.tv_active_url)
+    }
+
+    private fun refreshActiveUrl() {
+        tvActiveUrl.text = "当前生效：${ServerConfig.getWorkOrderBaseUrl()}"
     }
 
     private fun loadCurrentConfig() {
@@ -53,8 +62,9 @@ class IpConfigDialog(context: Context) : Dialog(context) {
         swUseLocal.isChecked = useLocal
         swUseLocal.isEnabled = true
         etLocalIp.setText(IpConfigUtils.getLocalServerIp())
-        etLocalPort.setText(IpConfigUtils.getLocalServerPort())
+        etLocalPort.setText(IpConfigUtils.getLocalServerPort().ifEmpty { "9220" })
         updateModeVisibility(useLocal)
+        refreshActiveUrl()
     }
 
     private fun setupListeners() {
@@ -79,11 +89,16 @@ class IpConfigDialog(context: Context) : Dialog(context) {
                 return
             }
             IpConfigUtils.saveLocalServer(ip, port)
-            Toast.makeText(context, "已切换为本地：$ip:$port", Toast.LENGTH_SHORT).show()
+            LoginRetrofitManager.invalidate()
+            val url = ServerConfig.getWorkOrderBaseUrl()
+            Toast.makeText(context, "已切换为本地：$url", Toast.LENGTH_LONG).show()
         } else {
-            IpConfigUtils.setUseLocalServer(false)
-            Toast.makeText(context, "已切换为远程测试服", Toast.LENGTH_SHORT).show()
+            IpConfigUtils.clearLocalServer()
+            LoginRetrofitManager.invalidate()
+            val url = ServerConfig.getWorkOrderBaseUrl()
+            Toast.makeText(context, "已切换为远程：$url", Toast.LENGTH_LONG).show()
         }
+        refreshActiveUrl()
         dismiss()
     }
 }

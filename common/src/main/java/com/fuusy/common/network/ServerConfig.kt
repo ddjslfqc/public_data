@@ -41,7 +41,7 @@ object ServerConfig {
     private val serverUrls = mapOf(
         Environment.LOCAL to "http://127.0.0.1:9220/",
         Environment.REMOTE to "http://8.130.120.35:9220/",
-        Environment.WORK_REMOTE to "http://47.110.156.186:9220/",
+        Environment.WORK_REMOTE to "https://ios.yceil.com/",
         Environment.YUN_REMOTE to "http://8.130.120.35:9220"
     )
 
