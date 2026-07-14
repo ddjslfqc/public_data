@@ -147,17 +147,18 @@ class PersonalViewModel(application: Application) : AndroidViewModel(application
                 val draftOrders = repository.getWorkOrdersByStatus(WorkOrderStatus.DRAFT)
                 _draftCount.postValue(draftOrders.size)
 
-                // 刷新部门负责人标志（不依赖重新登录）
-                AuthRepository.refreshProfile().onSuccess {
-                    _isDeptLeader.postValue(DeptRoleHelper.isDeptLeader())
-                }.onFailure {
-                    _isDeptLeader.postValue(DeptRoleHelper.isDeptLeader())
-                }
+                // 临时假逻辑：不调未部署的 profile，按本地「王健」判定
+                DeptRoleHelper.refreshFromLocalUser()
+                _isDeptLeader.postValue(DeptRoleHelper.isDeptLeader())
 
                 var pendingCount = 0
                 if (DeptRoleHelper.isDeptLeader()) {
-                    okrRepo.getPendingKrs().onSuccess { pendingCount += it.size }
-                    okrRepo.getPendingUpdateRecords().onSuccess { pendingCount += it.size }
+                    okrRepo.getPendingKrs().onSuccess { list ->
+                        pendingCount += list.count { DeptRoleHelper.isRdDept(it.krOwnerDeptName) }
+                    }
+                    okrRepo.getPendingUpdateRecords().onSuccess { list ->
+                        pendingCount += list.count { DeptRoleHelper.isRdDept(it.submitterDeptName) }
+                    }
                 }
                 _okrPendingApprovalCount.postValue(pendingCount)
                 

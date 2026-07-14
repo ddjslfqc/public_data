@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.fuusy.common.auth.DeptRoleHelper
 import com.fuusy.hiddendanger.data.KrApproveRequest
 import com.fuusy.hiddendanger.data.PendingKrItem
 import com.fuusy.hiddendanger.data.PendingUpdateRecordItem
@@ -34,12 +35,24 @@ class KrApprovalViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
+            DeptRoleHelper.refreshFromLocalUser()
+            if (!DeptRoleHelper.isDeptLeader()) {
+                _krItems.value = emptyList()
+                _progressItems.value = emptyList()
+                _error.value = "仅部门负责人可审批"
+                _loading.value = false
+                return@launch
+            }
             repo.getPendingKrs().fold(
-                onSuccess = { _krItems.value = it },
+                onSuccess = { list ->
+                    _krItems.value = list.filter { DeptRoleHelper.isRdDept(it.krOwnerDeptName) }
+                },
                 onFailure = { _krItems.value = emptyList() }
             )
             repo.getPendingUpdateRecords().fold(
-                onSuccess = { _progressItems.value = it },
+                onSuccess = { list ->
+                    _progressItems.value = list.filter { DeptRoleHelper.isRdDept(it.submitterDeptName) }
+                },
                 onFailure = { _progressItems.value = emptyList() }
             )
             _loading.value = false

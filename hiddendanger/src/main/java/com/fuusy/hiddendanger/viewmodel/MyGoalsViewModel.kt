@@ -5,7 +5,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.fuusy.common.auth.AuthRepository
 import com.fuusy.common.auth.DeptRoleHelper
 import com.fuusy.hiddendanger.data.MyGoalResponse
 import com.fuusy.hiddendanger.data.OkrPeriodHelper
@@ -62,11 +61,8 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
                 onFailure = { _error.value = it.message ?: "加载失败" }
             )
             if (includeBadges) {
-                AuthRepository.refreshProfile().onSuccess {
-                    _isDeptLeader.value = DeptRoleHelper.isDeptLeader()
-                }.onFailure {
-                    _isDeptLeader.value = DeptRoleHelper.isDeptLeader()
-                }
+                DeptRoleHelper.refreshFromLocalUser()
+                _isDeptLeader.value = DeptRoleHelper.isDeptLeader()
                 refreshBadgesInternal(includePeerEval = shouldLoadPeerEval())
             }
             _loading.value = false
@@ -108,6 +104,7 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private suspend fun refreshKrBadgesInternal() {
+        DeptRoleHelper.refreshFromLocalUser()
         if (!DeptRoleHelper.isDeptLeader()) {
             _pendingCount.value = 0
             _isDeptLeader.value = false
@@ -121,11 +118,15 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
         var krCount = 0
         var progressCount = 0
         repo.getPendingKrs().fold(
-            onSuccess = { krPending -> krCount = krPending.size },
+            onSuccess = { krPending ->
+                krCount = krPending.count { DeptRoleHelper.isRdDept(it.krOwnerDeptName) }
+            },
             onFailure = { krCount = 0 }
         )
         repo.getPendingUpdateRecords().fold(
-            onSuccess = { progressPending -> progressCount = progressPending.size },
+            onSuccess = { progressPending ->
+                progressCount = progressPending.count { DeptRoleHelper.isRdDept(it.submitterDeptName) }
+            },
             onFailure = { progressCount = 0 }
         )
         _pendingCount.value = krCount + progressCount

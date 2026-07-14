@@ -112,11 +112,15 @@ class LoginActivity : BaseVmActivity<ActivityLoginBinding>() {
                 SpUtils.put("user_company", data?.company ?: "")
                 SpUtils.put("user_department", data?.department ?: "")
                 SpUtils.put("user_dept_id", data?.deptId ?: 0L)
-                com.fuusy.common.auth.DeptRoleHelper.setDeptLeader(data?.deptLeader == true)
+                // 临时：不读后台 deptLeader，本地按「王健」放开审批入口
+                com.fuusy.common.auth.DeptRoleHelper.refreshFromLocalUser()
 
                 data?.let { userData ->
                     UserIdProvider.update(userData.id.toLong())
                     DbHelper.insertUserInfo(this@LoginActivity, userData)
+                    // 入库后名字可能以 nickName 为准，再刷一次
+                    SpUtils.put("user_name", userData.displayName())
+                    com.fuusy.common.auth.DeptRoleHelper.refreshFromLocalUser()
                 }
 
                 LiveDataBus.get().with(KEY_LIVEDATA_BUS_LOGIN).postValue(data)
