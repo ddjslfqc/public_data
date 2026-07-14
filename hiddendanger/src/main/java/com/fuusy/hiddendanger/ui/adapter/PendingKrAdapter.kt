@@ -27,15 +27,41 @@ class PendingKrAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = getItem(position)
         holder.binding.apply {
-            tvObjectiveTitle.text = item.objectiveTitle.orEmpty()
+            // 与「进度更新」卡片对齐：顶部先看清是谁提交/指派的
+            val ownerName = item.krOwnerName?.takeIf { it.isNotBlank() }
+                ?: item.objectiveOwnerName?.takeIf { it.isNotBlank() }
+            tvObjectiveTitle.text = buildString {
+                if (!ownerName.isNullOrBlank()) {
+                    append("提交人 ").append(ownerName)
+                    item.krOwnerDeptName?.takeIf { it.isNotBlank() }?.let {
+                        append(" · ").append(it)
+                    }
+                } else {
+                    append(item.objectiveTitle.orEmpty())
+                }
+            }
             val roleLabel = item.approvalRoleLabel?.takeIf { it.isNotBlank() }
             val context = buildString {
                 if (!roleLabel.isNullOrBlank()) {
                     append("您作为").append(roleLabel).append("审批")
                 }
-                item.contextLine?.takeIf { it.isNotBlank() }?.let {
-                    if (isNotEmpty()) append("\n")
-                    append(it)
+                item.objectiveTitle?.takeIf { it.isNotBlank() }?.let {
+                    if (isNotEmpty()) append(" · ")
+                    append("所属目标 ").append(it)
+                }
+                // 兼容旧接口：若顶部没拼出提交人，则继续展示后端 contextLine
+                if (ownerName.isNullOrBlank()) {
+                    item.contextLine?.takeIf { it.isNotBlank() }?.let {
+                        if (isNotEmpty()) append("\n")
+                        append(it)
+                    }
+                } else {
+                    item.objectiveOwnerName
+                        ?.takeIf { it.isNotBlank() && it != ownerName }
+                        ?.let {
+                            if (isNotEmpty()) append(" · ")
+                            append("目标创建人 ").append(it)
+                        }
                 }
             }
             tvContextLine.isVisible = context.isNotBlank()

@@ -66,8 +66,11 @@ class EditGoalViewModel(application: Application) : AndroidViewModel(application
                 onSuccess = { options ->
                     _alignOptions.value = options
                     if (selectedDept == null) {
-                        selectedDept = options.departments?.firstOrNull()
-                            ?: ownDept
+                        // 对齐「部门目标」默认跟所属部门一致，避免展示列表第一项（如研发）造成歧义
+                        val alignDepts = options.departments.orEmpty()
+                        selectedDept = ownDept?.let { own ->
+                            alignDepts.find { it.id == own.id } ?: own
+                        } ?: alignDepts.firstOrNull()
                     }
                     if (selectedUser == null) {
                         selectedUser = options.users?.firstOrNull()

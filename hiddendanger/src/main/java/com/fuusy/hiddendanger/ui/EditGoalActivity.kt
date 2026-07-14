@@ -95,6 +95,7 @@ class EditGoalActivity : AppCompatActivity() {
         }
         viewModel.deptOptions.observe(this) {
             updateOwnDeptLabel()
+            updateScopeLabel()
         }
     }
 

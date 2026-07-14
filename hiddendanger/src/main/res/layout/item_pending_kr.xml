@@ -16,7 +16,7 @@
         android:maxLines="2"
         android:textColor="#686D79"
         android:textSize="12sp"
-        tools:text="负责人 杨洋 · 售后部门" />
+        tools:text="提交人 杨洋 · 售后部门" />
 
     <TextView
         android:id="@+id/tv_context_line"
@@ -26,7 +26,7 @@
         android:textColor="#898FA0"
         android:textSize="11sp"
         android:visibility="gone"
-        tools:text="您作为直属上级审批"
+        tools:text="您作为直属上级审批 · 所属目标 完成海门交付"
         tools:visibility="visible" />
 
     <TextView
