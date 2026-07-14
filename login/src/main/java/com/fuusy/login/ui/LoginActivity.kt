@@ -112,6 +112,7 @@ class LoginActivity : BaseVmActivity<ActivityLoginBinding>() {
                 SpUtils.put("user_company", data?.company ?: "")
                 SpUtils.put("user_department", data?.department ?: "")
                 SpUtils.put("user_dept_id", data?.deptId ?: 0L)
+                com.fuusy.common.auth.DeptRoleHelper.setDeptLeader(data?.deptLeader == true)
 
                 data?.let { userData ->
                     UserIdProvider.update(userData.id.toLong())

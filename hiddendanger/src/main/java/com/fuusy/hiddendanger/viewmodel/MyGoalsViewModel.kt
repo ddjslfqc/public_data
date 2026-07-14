@@ -5,6 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.fuusy.common.auth.AuthRepository
+import com.fuusy.common.auth.DeptRoleHelper
 import com.fuusy.hiddendanger.data.MyGoalResponse
 import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.data.OkrPeriodOption
@@ -28,6 +30,9 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
 
     private val _pendingCount = MutableLiveData(0)
     val pendingCount: LiveData<Int> = _pendingCount
+
+    private val _isDeptLeader = MutableLiveData(DeptRoleHelper.isDeptLeader())
+    val isDeptLeader: LiveData<Boolean> = _isDeptLeader
 
     private val _receivedCommentCount = MutableLiveData(0)
     val receivedCommentCount: LiveData<Int> = _receivedCommentCount
@@ -57,6 +62,11 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
                 onFailure = { _error.value = it.message ?: "加载失败" }
             )
             if (includeBadges) {
+                AuthRepository.refreshProfile().onSuccess {
+                    _isDeptLeader.value = DeptRoleHelper.isDeptLeader()
+                }.onFailure {
+                    _isDeptLeader.value = DeptRoleHelper.isDeptLeader()
+                }
                 refreshBadgesInternal(includePeerEval = shouldLoadPeerEval())
             }
             _loading.value = false
@@ -98,6 +108,16 @@ class MyGoalsViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private suspend fun refreshKrBadgesInternal() {
+        if (!DeptRoleHelper.isDeptLeader()) {
+            _pendingCount.value = 0
+            _isDeptLeader.value = false
+            repo.getReceivedComments().fold(
+                onSuccess = { _receivedCommentCount.value = it.size },
+                onFailure = { _receivedCommentCount.value = 0 }
+            )
+            return
+        }
+        _isDeptLeader.value = true
         var krCount = 0
         var progressCount = 0
         repo.getPendingKrs().fold(

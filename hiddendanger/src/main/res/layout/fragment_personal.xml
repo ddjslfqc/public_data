@@ -178,6 +178,7 @@
                     layout="@layout/item_personal_menu" />
 
                 <View
+                    android:id="@+id/divider_okr_approval"
                     android:layout_width="match_parent"
                     android:layout_height="0.5dp"
                     android:layout_marginStart="48dp"

@@ -128,6 +128,13 @@ class MyGoalsActivity : AppCompatActivity() {
             binding.tvPendingBadge.text = if (count > 99) "99+" else count.toString()
             binding.tvPendingBadge.isVisible = count > 0
         }
+        viewModel.isDeptLeader.observe(this) { isLeader ->
+            binding.cardKrApproval.isVisible = isLeader == true
+            // 非负责人时评论入口占满整行
+            val commentsLp = binding.cardKrComments.layoutParams as? LinearLayout.LayoutParams
+            commentsLp?.marginStart = if (isLeader == true) dp(4) else 0
+            binding.cardKrComments.layoutParams = commentsLp
+        }
         viewModel.receivedCommentCount.observe(this) { count ->
             binding.tvCommentBadge.text = if (count > 99) "99+" else count.toString()
             binding.tvCommentBadge.isVisible = count > 0

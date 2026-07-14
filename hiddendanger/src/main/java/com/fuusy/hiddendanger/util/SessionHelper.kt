@@ -5,6 +5,7 @@ import com.fuusy.common.network.RetrofitManager
 import com.fuusy.common.network.UserIdProvider
 import com.fuusy.common.support.Constants
 import com.fuusy.common.utils.SpUtils
+import com.fuusy.common.auth.DeptRoleHelper
 import com.fuusy.service.repo.DbHelper
 
 object SessionHelper {
@@ -20,6 +21,7 @@ object SessionHelper {
         SpUtils.removeValue("user_company")
         SpUtils.removeValue("user_department")
         SpUtils.removeValue("user_dept_id")
+        DeptRoleHelper.clear()
         SpUtils.removeValue("selected_project")
         DbHelper.deleteUserInfo(context)
     }

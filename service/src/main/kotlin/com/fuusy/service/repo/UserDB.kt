@@ -5,7 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.room.*
 import com.google.gson.annotations.SerializedName
 
-@Database(entities = [LoginResp::class], version = 4, exportSchema = false)
+@Database(entities = [LoginResp::class], version = 5, exportSchema = false)
 abstract class UserDB : RoomDatabase() {
 
     abstract val userDao: UserDao
@@ -40,6 +40,9 @@ data class LoginResp(
     @SerializedName("admin")
     val admin: String = "",
     val company: String = "",
+    /** 是否部门负责人（sys_dept.leader） */
+    @SerializedName("deptLeader")
+    val deptLeader: Boolean = false,
 ) {
     fun displayName(): String = nickName.ifBlank { username }
 

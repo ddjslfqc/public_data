@@ -11,6 +11,7 @@ import com.fuusy.common.data.WorkOrderStatus
 import com.fuusy.common.data.local.AppDatabase
 import com.fuusy.common.data.local.WorkOrderRepository
 import com.fuusy.common.auth.AuthRepository
+import com.fuusy.common.auth.DeptRoleHelper
 import com.fuusy.hiddendanger.repository.OkrRepository
 import com.fuusy.hiddendanger.util.SessionHelper
 import com.fuusy.hiddendanger.ui.album.AlbumMediaItem
@@ -57,6 +58,9 @@ class PersonalViewModel(application: Application) : AndroidViewModel(application
 
     private val _okrPendingApprovalCount = MutableLiveData(0)
     val okrPendingApprovalCount: LiveData<Int> = _okrPendingApprovalCount
+
+    private val _isDeptLeader = MutableLiveData(DeptRoleHelper.isDeptLeader())
+    val isDeptLeader: LiveData<Boolean> = _isDeptLeader
 
     private val _albumList = MutableLiveData<List<AlbumMediaItem>>()
     val albumList: LiveData<List<AlbumMediaItem>> = _albumList
@@ -143,9 +147,18 @@ class PersonalViewModel(application: Application) : AndroidViewModel(application
                 val draftOrders = repository.getWorkOrdersByStatus(WorkOrderStatus.DRAFT)
                 _draftCount.postValue(draftOrders.size)
 
+                // 刷新部门负责人标志（不依赖重新登录）
+                AuthRepository.refreshProfile().onSuccess {
+                    _isDeptLeader.postValue(DeptRoleHelper.isDeptLeader())
+                }.onFailure {
+                    _isDeptLeader.postValue(DeptRoleHelper.isDeptLeader())
+                }
+
                 var pendingCount = 0
-                okrRepo.getPendingKrs().onSuccess { pendingCount += it.size }
-                okrRepo.getPendingUpdateRecords().onSuccess { pendingCount += it.size }
+                if (DeptRoleHelper.isDeptLeader()) {
+                    okrRepo.getPendingKrs().onSuccess { pendingCount += it.size }
+                    okrRepo.getPendingUpdateRecords().onSuccess { pendingCount += it.size }
+                }
                 _okrPendingApprovalCount.postValue(pendingCount)
                 
                 // 优先用全局缓存

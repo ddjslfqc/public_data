@@ -60,6 +60,12 @@ class PersonalFragment : BaseVmFragment<FragmentPersonalBinding, PersonalViewMod
             mDataBinding.menuOkrApproval.tvSubtitle.text = subtitle
         })
 
+        mViewModel.isDeptLeader.observe(viewLifecycleOwner, Observer { isLeader ->
+            val visible = if (isLeader) android.view.View.VISIBLE else android.view.View.GONE
+            mDataBinding.menuOkrApproval.rootMenuItem.visibility = visible
+            mDataBinding.dividerOkrApproval.visibility = visible
+        })
+
         mViewModel.logout.observe(viewLifecycleOwner, Observer {
             if (it) {
                 showToast("已退出登录")
