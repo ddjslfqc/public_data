@@ -27,17 +27,16 @@ class PendingKrAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = getItem(position)
         holder.binding.apply {
-            // 与「进度更新」卡片对齐：顶部先看清是谁提交/指派的
+            // 顶部固定展示提交人；名字由 ViewModel 用名录补齐
             val ownerName = item.krOwnerName?.takeIf { it.isNotBlank() }
                 ?: item.objectiveOwnerName?.takeIf { it.isNotBlank() }
+                ?: item.userId?.let { "用户$it" }
+                ?: item.objectiveUserId?.let { "用户$it" }
+                ?: "未知"
             tvObjectiveTitle.text = buildString {
-                if (!ownerName.isNullOrBlank()) {
-                    append("提交人 ").append(ownerName)
-                    item.krOwnerDeptName?.takeIf { it.isNotBlank() }?.let {
-                        append(" · ").append(it)
-                    }
-                } else {
-                    append(item.objectiveTitle.orEmpty())
+                append("提交人 ").append(ownerName)
+                item.krOwnerDeptName?.takeIf { it.isNotBlank() }?.let {
+                    append(" · ").append(it)
                 }
             }
             val roleLabel = item.approvalRoleLabel?.takeIf { it.isNotBlank() }
@@ -49,20 +48,12 @@ class PendingKrAdapter(
                     if (isNotEmpty()) append(" · ")
                     append("所属目标 ").append(it)
                 }
-                // 兼容旧接口：若顶部没拼出提交人，则继续展示后端 contextLine
-                if (ownerName.isNullOrBlank()) {
-                    item.contextLine?.takeIf { it.isNotBlank() }?.let {
-                        if (isNotEmpty()) append("\n")
-                        append(it)
+                item.objectiveOwnerName
+                    ?.takeIf { it.isNotBlank() && it != ownerName }
+                    ?.let {
+                        if (isNotEmpty()) append(" · ")
+                        append("目标创建人 ").append(it)
                     }
-                } else {
-                    item.objectiveOwnerName
-                        ?.takeIf { it.isNotBlank() && it != ownerName }
-                        ?.let {
-                            if (isNotEmpty()) append(" · ")
-                            append("目标创建人 ").append(it)
-                        }
-                }
             }
             tvContextLine.isVisible = context.isNotBlank()
             tvContextLine.text = context

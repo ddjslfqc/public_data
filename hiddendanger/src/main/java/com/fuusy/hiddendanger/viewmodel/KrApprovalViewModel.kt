@@ -43,20 +43,69 @@ class KrApprovalViewModel(application: Application) : AndroidViewModel(applicati
                 _loading.value = false
                 return@launch
             }
+
+            // 不改审批接口：用已有名录 / 对齐树把 userId → 姓名、部门补上
+            val directory = repo.getColleagueDirectoryDetailed().getOrDefault(emptyMap())
+
             repo.getPendingKrs().fold(
                 onSuccess = { list ->
-                    _krItems.value = list.filter { DeptRoleHelper.isRdDept(it.krOwnerDeptName) }
+                    val enriched = list.map { enrichKr(it, directory) }
+                    _krItems.value = enriched.filter {
+                        DeptRoleHelper.isRdDept(it.krOwnerDeptName)
+                    }
                 },
                 onFailure = { _krItems.value = emptyList() }
             )
             repo.getPendingUpdateRecords().fold(
                 onSuccess = { list ->
-                    _progressItems.value = list.filter { DeptRoleHelper.isRdDept(it.submitterDeptName) }
+                    val enriched = list.map { enrichProgress(it, directory) }
+                    _progressItems.value = enriched.filter {
+                        DeptRoleHelper.isRdDept(it.submitterDeptName)
+                    }
                 },
                 onFailure = { _progressItems.value = emptyList() }
             )
             _loading.value = false
         }
+    }
+
+    private fun enrichKr(
+        item: PendingKrItem,
+        directory: Map<Long, OkrRepository.ColleagueProfile>
+    ): PendingKrItem {
+        if (!item.krOwnerName.isNullOrBlank() && !item.objectiveOwnerName.isNullOrBlank()) {
+            return item
+        }
+        val ownerId = item.userId ?: item.objectiveUserId
+        val ownerProfile = ownerId?.let { directory[it] }
+        val objectiveProfile = item.objectiveUserId?.let { directory[it] }
+        val ownerName = item.krOwnerName?.takeIf { it.isNotBlank() }
+            ?: ownerProfile?.name
+            ?: ownerId?.let { "用户$it" }
+        val ownerDept = item.krOwnerDeptName?.takeIf { it.isNotBlank() }
+            ?: ownerProfile?.deptName
+        val objectiveOwner = item.objectiveOwnerName?.takeIf { it.isNotBlank() }
+            ?: objectiveProfile?.name
+        return item.copy(
+            krOwnerName = ownerName,
+            krOwnerDeptName = ownerDept,
+            objectiveOwnerName = objectiveOwner
+        )
+    }
+
+    private fun enrichProgress(
+        item: PendingUpdateRecordItem,
+        directory: Map<Long, OkrRepository.ColleagueProfile>
+    ): PendingUpdateRecordItem {
+        if (!item.submitterName.isNullOrBlank()) return item
+        val uid = item.userId ?: return item
+        val profile = directory[uid] ?: return item.copy(
+            submitterName = "用户$uid"
+        )
+        return item.copy(
+            submitterName = profile.name,
+            submitterDeptName = item.submitterDeptName?.takeIf { it.isNotBlank() } ?: profile.deptName
+        )
     }
 
     fun approveKr(krId: Long, pass: Boolean, remark: String?) {

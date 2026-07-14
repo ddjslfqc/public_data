@@ -19,6 +19,7 @@ import com.fuusy.hiddendanger.data.OkrDepartment
 import com.fuusy.hiddendanger.data.OkrKrComment
 import com.fuusy.hiddendanger.data.OkrKrDetailResponse
 import com.fuusy.hiddendanger.data.OkrObjective
+import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.data.OkrUpdateRecordItem
 import com.fuusy.hiddendanger.data.OkrReviewPrep
 import com.fuusy.hiddendanger.data.PeerEvalOrgOverviewResponse
@@ -58,19 +59,49 @@ class OkrRepository {
         safeCall { api.getAlignmentTree(periodType, deptId) }
 
     /** 员工名录，用于补全组织 OKR 负责人显示名 */
-    suspend fun getColleagueDirectory(): Result<Map<Long, String>> = try {
-        val resp = api.getPeerEvalColleagues()
-        if (!resp.isSuccess) {
-            Result.failure(IllegalStateException(resp.errorMsg ?: "加载员工名录失败(${resp.errorCode})"))
-        } else {
-            val map = resp.data.orEmpty().associate { colleague ->
-                colleague.id to colleague.displayName()
-            }
-            Result.success(map)
+    suspend fun getColleagueDirectory(): Result<Map<Long, String>> =
+        getColleagueDirectoryDetailed().map { detailed ->
+            detailed.mapValues { it.value.name }
         }
+
+    /** 员工名录（姓名 + 部门），客户端补全审批提交人时用，不改审批接口 */
+    suspend fun getColleagueDirectoryDetailed(): Result<Map<Long, ColleagueProfile>> = try {
+        val names = linkedMapOf<Long, ColleagueProfile>()
+        val colleaguesResp = api.getPeerEvalColleagues()
+        if (colleaguesResp.isSuccess) {
+            colleaguesResp.data.orEmpty().forEach { c ->
+                names[c.id] = ColleagueProfile(
+                    name = c.displayName(),
+                    deptName = c.deptName
+                )
+            }
+        }
+        // 对齐树再补一轮（覆盖 period 内有目标的人）
+        val periods = listOf(
+            OkrPeriodHelper.currentQuarterValue(),
+            OkrPeriodHelper.peerEvalPeriod()
+        ).distinct()
+        periods.forEach { period ->
+            runCatching { api.getAlignmentTree(period, null) }.getOrNull()?.takeIf { it.isSuccess }
+                ?.data?.objectives.orEmpty().forEach { obj ->
+                    val uid = obj.userId ?: return@forEach
+                    val existing = names[uid]
+                    val name = obj.ownerName?.takeIf { it.isNotBlank() }
+                        ?: existing?.name
+                        ?: "用户$uid"
+                    val dept = obj.deptName?.takeIf { it.isNotBlank() } ?: existing?.deptName
+                    names[uid] = ColleagueProfile(name = name, deptName = dept)
+                }
+        }
+        Result.success(names)
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    data class ColleagueProfile(
+        val name: String,
+        val deptName: String? = null
+    )
 
     suspend fun getPeerEvalOrgOverview(
         period: String,
