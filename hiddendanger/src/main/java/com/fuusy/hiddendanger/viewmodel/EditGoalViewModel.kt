@@ -14,7 +14,6 @@ import com.fuusy.hiddendanger.data.OkrDepartment
 import com.fuusy.hiddendanger.data.OkrObjective
 import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.data.OkrUser
-import com.fuusy.hiddendanger.data.toAlignableKrs
 import com.fuusy.hiddendanger.repository.OkrRepository
 import com.fuusy.hiddendanger.ui.model.GoalAlignType
 import com.fuusy.hiddendanger.ui.model.GoalKrEditItem
@@ -42,7 +41,7 @@ class EditGoalViewModel(application: Application) : AndroidViewModel(application
     private val _deptOptions = MutableLiveData<List<OkrDepartment>>(emptyList())
     val deptOptions: LiveData<List<OkrDepartment>> = _deptOptions
 
-    var alignType: GoalAlignType = GoalAlignType.DEPARTMENT
+    var alignType: GoalAlignType = GoalAlignType.SUPERVISOR
     var selectedDept: OkrDepartment? = null
     var selectedUser: OkrUser? = null
     var selectedParentKr: AlignableKr? = null
@@ -65,13 +64,6 @@ class EditGoalViewModel(application: Application) : AndroidViewModel(application
             repo.getAlignOptions().fold(
                 onSuccess = { options ->
                     _alignOptions.value = options
-                    if (selectedDept == null) {
-                        // 对齐「部门目标」默认跟所属部门一致，避免展示列表第一项（如研发）造成歧义
-                        val alignDepts = options.departments.orEmpty()
-                        selectedDept = ownDept?.let { own ->
-                            alignDepts.find { it.id == own.id } ?: own
-                        } ?: alignDepts.firstOrNull()
-                    }
                     if (selectedUser == null) {
                         selectedUser = options.users?.firstOrNull()
                     }
@@ -85,22 +77,11 @@ class EditGoalViewModel(application: Application) : AndroidViewModel(application
 
     fun refreshAlignableKrs() {
         viewModelScope.launch {
-            when (alignType) {
-                GoalAlignType.DEPARTMENT -> {
-                    val deptId = selectedDept?.id ?: return@launch
-                    repo.getAlignObjectives(deptId = deptId, targetUserId = null).fold(
-                        onSuccess = { objectives -> applyAlignableList(objectives.toAlignableKrs()) },
-                        onFailure = { _error.value = it.message }
-                    )
-                }
-                GoalAlignType.SUPERVISOR -> {
-                    val userId = selectedUser?.id ?: return@launch
-                    repo.getAlignableKrs(userId).fold(
-                        onSuccess = { applyAlignableList(it) },
-                        onFailure = { _error.value = it.message }
-                    )
-                }
-            }
+            val userId = selectedUser?.id ?: return@launch
+            repo.getAlignableKrs(userId).fold(
+                onSuccess = { applyAlignableList(it) },
+                onFailure = { _error.value = it.message }
+            )
         }
     }
 

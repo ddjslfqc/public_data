@@ -16,6 +16,6 @@ data class GoalKrEditItem(
 }
 
 enum class GoalAlignType {
-    DEPARTMENT,
+    /** 仅保留：对齐上级人员 OKR */
     SUPERVISOR
 }

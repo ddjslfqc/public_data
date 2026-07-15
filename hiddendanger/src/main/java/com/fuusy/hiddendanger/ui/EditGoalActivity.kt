@@ -122,50 +122,19 @@ class EditGoalActivity : AppCompatActivity() {
             binding.llAlignContent.isVisible = checked
         }
 
-        binding.tabAlignDept.setOnClickListener { selectAlignType(GoalAlignType.DEPARTMENT) }
-        binding.tabAlignSupervisor.setOnClickListener { selectAlignType(GoalAlignType.SUPERVISOR) }
-
         binding.rowAlignLevel.setOnClickListener { showScopePicker() }
         binding.rowAlignTarget.setOnClickListener { showAlignKrPicker() }
 
-        selectAlignType(GoalAlignType.DEPARTMENT)
-    }
-
-    private fun selectAlignType(type: GoalAlignType) {
-        viewModel.alignType = type
-        val selectedBg = R.drawable.bg_goal_align_selected
-        val normalBg = R.drawable.bg_goal_align_normal
-
-        binding.tabAlignDept.setBackgroundResource(
-            if (type == GoalAlignType.DEPARTMENT) selectedBg else normalBg
-        )
-        binding.tabAlignSupervisor.setBackgroundResource(
-            if (type == GoalAlignType.SUPERVISOR) selectedBg else normalBg
-        )
-        binding.tvAlignDeptLabel.setTextColor(
-            if (type == GoalAlignType.DEPARTMENT) Color.WHITE else Color.BLACK
-        )
-        binding.tvAlignSupervisorLabel.setTextColor(
-            if (type == GoalAlignType.SUPERVISOR) Color.WHITE else Color.BLACK
-        )
-
-        binding.tvAlignScopeLabel.text =
-            if (type == GoalAlignType.DEPARTMENT) "选择部门 *" else "选择人员 *"
-
-        viewModel.selectedParentKr = null
+        viewModel.alignType = GoalAlignType.SUPERVISOR
+        binding.tvAlignScopeLabel.text = "选择上级 *"
         binding.tvAlignTarget.text = "请选择要对齐的 KR"
         updateScopeLabel()
         viewModel.refreshAlignableKrs()
     }
 
     private fun updateScopeLabel() {
-        val text = when (viewModel.alignType) {
-            GoalAlignType.DEPARTMENT -> viewModel.selectedDept?.name
-                ?: alignmentDepartments().firstOrNull()?.name
-                ?: "请选择部门"
-            GoalAlignType.SUPERVISOR -> viewModel.selectedUser?.displayName ?: "请选择人员"
-        }
-        binding.tvAlignLevel.text = text
+        binding.tvAlignLevel.text =
+            viewModel.selectedUser?.displayName ?: "请选择上级"
     }
 
     private fun updateOwnDeptLabel() {
@@ -185,35 +154,17 @@ class EditGoalActivity : AppCompatActivity() {
     }
 
     private fun showScopePicker() {
-        when (viewModel.alignType) {
-            GoalAlignType.DEPARTMENT -> {
-                val depts = alignmentDepartments()
-                if (depts.isEmpty()) {
-                    Toast.makeText(this, "暂无可选部门", Toast.LENGTH_SHORT).show()
-                    return
-                }
-                showEntityPicker("选择部门", depts.map { it.name }) { index ->
-                    viewModel.selectedDept = depts[index]
-                    viewModel.selectedParentKr = null
-                    binding.tvAlignTarget.text = "请选择要对齐的 KR"
-                    updateScopeLabel()
-                    viewModel.refreshAlignableKrs()
-                }
-            }
-            GoalAlignType.SUPERVISOR -> {
-                val users = viewModel.alignOptions.value?.users.orEmpty()
-                if (users.isEmpty()) {
-                    Toast.makeText(this, "暂无可选人员", Toast.LENGTH_SHORT).show()
-                    return
-                }
-                showEntityPicker("选择人员", users.map { it.displayName }) { index ->
-                    viewModel.selectedUser = users[index]
-                    viewModel.selectedParentKr = null
-                    binding.tvAlignTarget.text = "请选择要对齐的 KR"
-                    updateScopeLabel()
-                    viewModel.refreshAlignableKrs()
-                }
-            }
+        val users = viewModel.alignOptions.value?.users.orEmpty()
+        if (users.isEmpty()) {
+            Toast.makeText(this, "暂无可选上级", Toast.LENGTH_SHORT).show()
+            return
+        }
+        showEntityPicker("选择上级", users.map { it.displayName }) { index ->
+            viewModel.selectedUser = users[index]
+            viewModel.selectedParentKr = null
+            binding.tvAlignTarget.text = "请选择要对齐的 KR"
+            updateScopeLabel()
+            viewModel.refreshAlignableKrs()
         }
     }
 
@@ -274,12 +225,6 @@ class EditGoalActivity : AppCompatActivity() {
                 append("）")
             }
         }
-    }
-
-    private fun alignmentDepartments(): List<com.fuusy.hiddendanger.data.OkrDepartment> {
-        val fromAlign = viewModel.alignOptions.value?.departments.orEmpty()
-        if (fromAlign.isNotEmpty()) return fromAlign
-        return viewModel.deptOptions.value.orEmpty()
     }
 
     private fun showEntityPicker(title: String, options: List<String>, onSelected: (Int) -> Unit) {

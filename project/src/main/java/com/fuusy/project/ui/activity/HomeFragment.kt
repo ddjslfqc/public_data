@@ -65,7 +65,8 @@ class HomeFragment : Fragment() {
     private fun resetDashboardUi() {
         binding.tvCompletedCount.text = "0"
         binding.tvAverageRating.text = "--"
-        binding.cardRanking.isVisible = false
+        // 排行榜暂隐藏，保留代码便于后续恢复
+        binding.cardRanking.isVisible = SHOW_HOME_RANKING
         renderLeaderboard(emptyList())
     }
 
@@ -99,14 +100,18 @@ class HomeFragment : Fragment() {
                     binding.tvCompletedCount.text = data.completedCount.toString()
                     binding.tvAverageRating.text = formatAverageRating(data.averageRating)
                     val ranking = data.rankingTop3.orEmpty()
-                    binding.cardRanking.isVisible = ranking.isNotEmpty()
-                    renderLeaderboard(ranking)
+                    binding.cardRanking.isVisible = SHOW_HOME_RANKING && ranking.isNotEmpty()
+                    if (SHOW_HOME_RANKING) {
+                        renderLeaderboard(ranking)
+                    }
                 }
                 .onFailure {
                     binding.tvCompletedCount.text = "0"
                     binding.tvAverageRating.text = "--"
                     binding.cardRanking.isVisible = false
-                    renderLeaderboard(emptyList())
+                    if (SHOW_HOME_RANKING) {
+                        renderLeaderboard(emptyList())
+                    }
                 }
         }
     }
@@ -204,6 +209,9 @@ class HomeFragment : Fragment() {
     }
 
     companion object {
+        /** 首页排行榜开关：false 隐藏，true 按接口数据展示（布局与逻辑保留） */
+        private const val SHOW_HOME_RANKING = false
+
         fun newInstance(projectId: String? = null): HomeFragment {
             return HomeFragment().apply {
                 arguments = Bundle().apply {
