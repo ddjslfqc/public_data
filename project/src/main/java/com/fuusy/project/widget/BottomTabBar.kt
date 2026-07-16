@@ -3,6 +3,7 @@ package com.fuusy.project.widget
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -17,6 +18,11 @@ class BottomTabBar @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : LinearLayout(context, attrs) {
+
+    companion object {
+        /** 底部「视频」Tab 开关：false 隐藏，true 显示（布局与逻辑保留） */
+        const val SHOW_VIDEO_TAB = false
+    }
 
     private data class TabItem(
         @IdRes val id: Int,
@@ -47,6 +53,10 @@ class BottomTabBar @JvmOverloads constructor(
         findViewById<LinearLayout>(R.id.tab_work_order).setOnClickListener { onTabClicked(R.id.navigation_work_order) }
         findViewById<LinearLayout>(R.id.tab_profile).setOnClickListener { onTabClicked(R.id.navigation_profile) }
 
+        // 视频 Tab 暂隐藏，保留布局与切换逻辑便于恢复
+        findViewById<View>(R.id.tab_video).visibility =
+            if (SHOW_VIDEO_TAB) View.VISIBLE else View.GONE
+
         refreshAppearance()
     }
 
@@ -55,12 +65,14 @@ class BottomTabBar @JvmOverloads constructor(
     }
 
     fun selectTab(@IdRes tabId: Int) {
+        if (!SHOW_VIDEO_TAB && tabId == R.id.navigation_video) return
         if (selectedTabId == tabId) return
         selectedTabId = tabId
         refreshAppearance()
     }
 
     private fun onTabClicked(@IdRes tabId: Int) {
+        if (!SHOW_VIDEO_TAB && tabId == R.id.navigation_video) return
         if (selectedTabId == tabId) return
         selectedTabId = tabId
         refreshAppearance()

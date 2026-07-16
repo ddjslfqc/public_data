@@ -18,7 +18,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.alibaba.android.arouter.launcher.ARouter
 import com.fuusy.common.data.WorkOrderItem
+import com.fuusy.common.data.WorkOrderOptions
 import com.fuusy.common.data.WorkOrderStatus
+import com.fuusy.common.network.UserIdProvider
 import com.fuusy.common.utils.LoadingUtils
 import com.fuusy.common.utils.ToastUtil
 import com.fuusy.hiddendanger.R
@@ -190,11 +192,21 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
 
     private fun renderBottomActions(item: WorkOrderItem) {
         binding.bottomBar.removeAllViews()
+        val me = UserIdProvider.current()?.toString()?.trim().orEmpty()
+        val isHandler = me.isNotEmpty() &&
+            !WorkOrderOptions.isPublicGrabPerson(item.rectificationPersonId) &&
+            me == item.rectificationPersonId?.trim()
+        val isCreator = me.isNotEmpty() && me == item.recordCreatorId?.trim()
+
         when (item.status) {
             WorkOrderStatus.DRAFT -> {
-                binding.bottomBar.isVisible = true
-                addActionButton("撤回", style = ButtonStyle.SECONDARY) { confirmWithdraw(item) }
-                addActionButton("提交", style = ButtonStyle.PRIMARY) { confirmSubmit(item) }
+                if (isCreator) {
+                    binding.bottomBar.isVisible = true
+                    addActionButton("撤回", style = ButtonStyle.SECONDARY) { confirmWithdraw(item) }
+                    addActionButton("提交", style = ButtonStyle.PRIMARY) { confirmSubmit(item) }
+                } else {
+                    binding.bottomBar.isVisible = false
+                }
             }
             WorkOrderStatus.PENDING -> {
                 binding.bottomBar.isVisible = true
@@ -203,20 +215,32 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
                 }
             }
             WorkOrderStatus.REJECT -> {
-                binding.bottomBar.isVisible = true
-                addActionButton("修改后重新提交", style = ButtonStyle.PRIMARY, fullWidth = true) {
-                    resubmit(item)
+                if (isCreator) {
+                    binding.bottomBar.isVisible = true
+                    addActionButton("修改后重新提交", style = ButtonStyle.PRIMARY, fullWidth = true) {
+                        resubmit(item)
+                    }
+                } else {
+                    binding.bottomBar.isVisible = false
                 }
             }
             WorkOrderStatus.PROCESSING -> {
-                binding.bottomBar.isVisible = true
-                addActionButton("驳回", style = ButtonStyle.SECONDARY) { showRejectDialog(item) }
-                addActionButton("完成", style = ButtonStyle.PRIMARY) { showCompleteDialog(item) }
+                if (isHandler) {
+                    binding.bottomBar.isVisible = true
+                    addActionButton("驳回", style = ButtonStyle.SECONDARY) { showRejectDialog(item) }
+                    addActionButton("提交处理结果", style = ButtonStyle.PRIMARY) { showCompleteDialog(item) }
+                } else {
+                    binding.bottomBar.isVisible = false
+                }
             }
             WorkOrderStatus.EVAL -> {
-                binding.bottomBar.isVisible = true
-                addActionButton("去评价", style = ButtonStyle.PRIMARY, fullWidth = true) {
-                    showEvaluateDialog(item)
+                if (isCreator) {
+                    binding.bottomBar.isVisible = true
+                    addActionButton("去评价", style = ButtonStyle.PRIMARY, fullWidth = true) {
+                        showEvaluateDialog(item)
+                    }
+                } else {
+                    binding.bottomBar.isVisible = false
                 }
             }
             WorkOrderStatus.COMPLETED -> {
@@ -311,11 +335,11 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
     private fun showCompleteDialog(item: WorkOrderItem) {
         AppDialogHelper.showInput(
             context = this,
-            title = "完成工单",
-            label = "请输入完成说明：",
-            hint = "请输入完成说明...",
+            title = "提交处理结果",
+            label = "请输入处理说明：",
+            hint = "请描述处理情况...",
             required = true,
-            confirmText = "确认"
+            confirmText = "提交"
         ) { desc ->
             runApprove(item, pass = true, opinion = desc)
         }

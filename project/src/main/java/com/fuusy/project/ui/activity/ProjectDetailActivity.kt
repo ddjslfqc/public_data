@@ -25,6 +25,7 @@ import com.fuusy.project.ui.FlvThumbnailLoader
 import com.fuusy.project.bean.AppDatabase
 import com.fuusy.project.bean.ProjectItem
 import com.fuusy.project.databinding.ActivityProjectDetailContainerBinding
+import com.fuusy.project.widget.BottomTabBar
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
@@ -176,6 +177,7 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
     }
 
     fun switchToVideoTab() {
+        if (!BottomTabBar.SHOW_VIDEO_TAB) return
         selectBottomTab(R.id.navigation_video)
     }
 
@@ -189,6 +191,7 @@ class ProjectDetailActivity : BaseActivity<ActivityProjectDetailContainerBinding
     }
 
     private fun selectBottomTab(itemId: Int) {
+        if (!BottomTabBar.SHOW_VIDEO_TAB && itemId == R.id.navigation_video) return
         mBinding.bottomTabBar.selectTab(itemId)
         when (itemId) {
             R.id.navigation_home -> switchToFragment(homeFragment)

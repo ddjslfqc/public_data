@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.alibaba.android.arouter.launcher.ARouter
 import com.fuusy.common.data.WorkOrderItem
 import com.fuusy.common.data.WorkOrderStatus
+import com.fuusy.common.network.UserIdProvider
 import com.fuusy.project.R
 import com.fuusy.project.databinding.ItemHistoryOrderBinding
 
@@ -18,6 +19,11 @@ class HistoryOrderAdapter(
 ) : ListAdapter<WorkOrderItem, HistoryOrderAdapter.VH>(DiffCallback()) {
 
     class VH(val binding: ItemHistoryOrderBinding) : RecyclerView.ViewHolder(binding.root)
+
+    private fun isCreator(item: WorkOrderItem): Boolean {
+        val me = UserIdProvider.current()?.toString()?.trim().orEmpty()
+        return me.isNotEmpty() && me == item.recordCreatorId?.trim()
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val binding = ItemHistoryOrderBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -44,22 +50,25 @@ class HistoryOrderAdapter(
         binding.tvAction.visibility = View.GONE
         when (item.status) {
             WorkOrderStatus.EVAL -> {
-                binding.tvAction.visibility = View.VISIBLE
-                binding.tvAction.text = "⭐ 去评价"
-                binding.tvAction.setOnClickListener {
-                    onEvalClick?.invoke(item) ?: openDetail(item)
+                if (isCreator(item)) {
+                    binding.tvAction.visibility = View.VISIBLE
+                    binding.tvAction.text = "⭐ 去评价"
+                    binding.tvAction.setOnClickListener {
+                        onEvalClick?.invoke(item) ?: openDetail(item)
+                    }
+                } else {
+                    binding.tvAction.setOnClickListener(null)
                 }
             }
             WorkOrderStatus.REJECT -> {
-                binding.tvAction.visibility = View.VISIBLE
-                binding.tvAction.text = "重新提交"
-                binding.tvAction.setOnClickListener {
-                    ARouter.getInstance()
-                        .build("/hiddendanger/CreateWorkOrderActivity")
-                        .withSerializable("draft_data", item)
-                        .withBoolean("is_resubmit", true)
-                        .withString("resubmit_id", item.id)
-                        .navigation()
+                if (isCreator(item)) {
+                    binding.tvAction.visibility = View.VISIBLE
+                    binding.tvAction.text = "重新提交"
+                    binding.tvAction.setOnClickListener {
+                        openResubmit(item)
+                    }
+                } else {
+                    binding.tvAction.setOnClickListener(null)
                 }
             }
             else -> binding.tvAction.setOnClickListener(null)
@@ -68,28 +77,42 @@ class HistoryOrderAdapter(
         binding.footerBar.setOnClickListener {
             when (item.status) {
                 WorkOrderStatus.REJECT -> {
-                    ARouter.getInstance()
-                        .build("/hiddendanger/CreateWorkOrderActivity")
-                        .withSerializable("draft_data", item)
-                        .withBoolean("is_resubmit", true)
-                        .withString("resubmit_id", item.id)
-                        .navigation()
+                    if (isCreator(item)) openResubmit(item) else openDetail(item)
                 }
-                WorkOrderStatus.EVAL -> onEvalClick?.invoke(item) ?: openDetail(item)
+                WorkOrderStatus.EVAL -> {
+                    if (isCreator(item)) {
+                        onEvalClick?.invoke(item) ?: openDetail(item)
+                    } else {
+                        openDetail(item)
+                    }
+                }
                 else -> openDetail(item)
             }
         }
 
         holder.itemView.setOnClickListener {
             if (item.status == WorkOrderStatus.DRAFT) {
-                ARouter.getInstance()
-                    .build("/hiddendanger/CreateWorkOrderActivity")
-                    .withSerializable("draft_data", item)
-                    .navigation()
+                if (isCreator(item)) {
+                    ARouter.getInstance()
+                        .build("/hiddendanger/CreateWorkOrderActivity")
+                        .withSerializable("draft_data", item)
+                        .navigation()
+                } else {
+                    openDetail(item)
+                }
             } else {
                 openDetail(item)
             }
         }
+    }
+
+    private fun openResubmit(item: WorkOrderItem) {
+        ARouter.getInstance()
+            .build("/hiddendanger/CreateWorkOrderActivity")
+            .withSerializable("draft_data", item)
+            .withBoolean("is_resubmit", true)
+            .withString("resubmit_id", item.id)
+            .navigation()
     }
 
     private fun bindPriorityTag(binding: ItemHistoryOrderBinding, priority: String?) {
@@ -121,9 +144,9 @@ class HistoryOrderAdapter(
         WorkOrderStatus.PENDING -> "期望：${item.expectedCompleteTime ?: item.submitTime}"
         WorkOrderStatus.PROCESSING -> "期望：${item.expectedCompleteTime ?: "--"}"
         WorkOrderStatus.COMPLETED -> "完成于 ${item.submitTime}"
-        WorkOrderStatus.REJECT -> "↩ 撤回修改后重新提交"
+        WorkOrderStatus.REJECT -> if (isCreator(item)) "↩ 撤回修改后重新提交" else "已驳回"
         WorkOrderStatus.DRAFT -> "隶属项目：${item.projectName ?: "--"}"
-        WorkOrderStatus.EVAL -> "待评价 · 点击去评价"
+        WorkOrderStatus.EVAL -> if (isCreator(item)) "待评价 · 点击去评价" else "待提报人评价"
         else -> item.projectName?.let { "隶属项目：$it" } ?: item.submitTime
     }
 
