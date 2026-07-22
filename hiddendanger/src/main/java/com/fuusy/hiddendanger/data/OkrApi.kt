@@ -66,6 +66,18 @@ interface OkrApi {
         @Body body: CreateObjectiveRequest
     ): BaseResp<Long>
 
+    /** 编辑页上下文：目标详情 + 对齐区域 */
+    @GET("mobile/okr/objective/edit/{id}")
+    suspend fun getObjectiveEdit(
+        @Path("id") objectiveId: Long
+    ): BaseResp<OkrObjectiveEditContextResponse>
+
+    /** 更新目标（含 KRs）；仅创建人可操作 */
+    @PUT("mobile/okr/update")
+    suspend fun updateObjective(
+        @Body body: UpdateObjectiveRequest
+    ): BaseResp<Any?>
+
     @GET("mobile/okr/pending/kr/user")
     suspend fun getPendingKrs(): BaseResp<List<PendingKrItem>>
 

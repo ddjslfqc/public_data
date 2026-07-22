@@ -40,9 +40,11 @@ data class WorkOrderOperationRecord(
 ) : Serializable {
     val isClaim: Boolean get() = operationType.equals("CLAIM", ignoreCase = true)
     val isReject: Boolean get() = operationType.equals("REJECT", ignoreCase = true)
+    val isTransfer: Boolean get() = operationType.equals("TRANSFER", ignoreCase = true)
     val typeLabel: String get() = when {
         isClaim -> "认领"
         isReject -> "驳回"
+        isTransfer -> "转单"
         else -> operationType
     }
 }

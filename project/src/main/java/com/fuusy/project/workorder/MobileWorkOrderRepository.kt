@@ -62,7 +62,8 @@ class MobileWorkOrderRepository {
 
     suspend fun create(
         body: CreateWorkOrderRequest,
-        files: List<File> = emptyList()
+        files: List<File> = emptyList(),
+        keepAttachmentIds: String? = null
     ): Result<CreateWorkOrderResult> = safeCall {
         val json = Gson().toJson(body)
         val dataPart = MultipartBody.Part.createFormData(
@@ -74,7 +75,9 @@ class MobileWorkOrderRepository {
             val partBody = file.asRequestBody("application/octet-stream".toMediaTypeOrNull())
             MultipartBody.Part.createFormData("files", file.name, partBody)
         }
-        authApi.create(dataPart, fileParts)
+        val keepPart = keepAttachmentIds?.trim()?.takeIf { it.isNotBlank() }
+            ?.toRequestBody("text/plain; charset=utf-8".toMediaType())
+        authApi.create(dataPart, fileParts, keepPart)
     }
 
     suspend fun options(): Result<WorkOrderOptionsDto> =
@@ -118,6 +121,24 @@ class MobileWorkOrderRepository {
         )
         if (resp.isSuccess) Result.success(Unit)
         else Result.failure(IllegalStateException(resp.errorMsg ?: "驳回失败(${resp.errorCode})"))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun transfer(
+        workOrderId: String,
+        targetUserId: String,
+        reason: String? = null
+    ): Result<Unit> = try {
+        val resp = authApi.transfer(
+            TransferWorkOrderRequest(
+                workOrderId = workOrderId,
+                targetUserId = targetUserId.trim(),
+                transferReason = reason?.trim()?.ifBlank { null }
+            )
+        )
+        if (resp.isSuccess) Result.success(Unit)
+        else Result.failure(IllegalStateException(resp.errorMsg ?: "转单失败(${resp.errorCode})"))
     } catch (e: Exception) {
         Result.failure(e)
     }

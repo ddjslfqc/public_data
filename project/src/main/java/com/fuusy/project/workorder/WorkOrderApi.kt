@@ -35,7 +35,9 @@ interface WorkOrderApi {
         /** 工单 JSON，对应后端 @RequestPart("data") */
         @Part data: MultipartBody.Part,
         /** 附件，对应后端 @RequestParam("files") */
-        @Part files: List<MultipartBody.Part> = emptyList()
+        @Part files: List<MultipartBody.Part> = emptyList(),
+        /** 编辑/重提时保留的附件 ID，逗号分隔 */
+        @Part("keepAttachmentIds") keepAttachmentIds: okhttp3.RequestBody? = null
     ): BaseResp<CreateWorkOrderResult>
 
     @GET("mobile/workorder/options")
@@ -49,6 +51,9 @@ interface WorkOrderApi {
 
     @POST("mobile/workorder/reject")
     suspend fun reject(@Body body: RejectWorkOrderRequest): BaseResp<Any?>
+
+    @POST("mobile/workorder/transfer")
+    suspend fun transfer(@Body body: TransferWorkOrderRequest): BaseResp<Any?>
 
     @POST("mobile/workorder/claim/{id}")
     suspend fun claim(@Path("id") id: String): BaseResp<Any?>

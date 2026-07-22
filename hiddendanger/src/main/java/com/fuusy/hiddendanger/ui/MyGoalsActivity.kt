@@ -30,13 +30,26 @@ class MyGoalsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMyGoalsBinding
     private val viewModel: MyGoalsViewModel by viewModels()
-    private val objectiveAdapter = GoalObjectiveSectionAdapter { item ->
-        krDetailLauncher.launch(
-            Intent(this, KrDetailActivity::class.java).apply {
-                KrNavHelper.putExtra(this, item)
-            }
-        )
-    }
+    private val objectiveAdapter = GoalObjectiveSectionAdapter(
+        onKrClick = { item ->
+            krDetailLauncher.launch(
+                Intent(this, KrDetailActivity::class.java).apply {
+                    KrNavHelper.putExtra(this, item)
+                }
+            )
+        },
+        onObjectiveEdit = { objective ->
+            editGoalLauncher.launch(
+                Intent(this, EditGoalActivity::class.java).apply {
+                    putExtra(
+                        EditGoalActivity.EXTRA_PERIOD_VALUE,
+                        OkrPeriodHelper.periodValueFromDates(objective.startDate, objective.endDate)
+                    )
+                    putExtra(EditGoalActivity.EXTRA_OBJECTIVE_ID, objective.id)
+                }
+            )
+        }
+    )
     private var selectedPeriod: String? = null
     private var cachedPeriods: List<OkrPeriodOption> = emptyList()
     private var peerEvalPending = 0

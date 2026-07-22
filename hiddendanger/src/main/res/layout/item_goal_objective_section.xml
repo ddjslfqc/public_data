@@ -48,6 +48,21 @@
             android:textColor="#1365EC"
             android:textSize="11sp"
             tools:text="进行中" />
+
+        <TextView
+            android:id="@+id/tv_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv_objective_status"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="6dp"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="2dp"
+            android:text="编辑"
+            android:textColor="#1365EC"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:visibility="visible" />
     </RelativeLayout>
 
     <TextView

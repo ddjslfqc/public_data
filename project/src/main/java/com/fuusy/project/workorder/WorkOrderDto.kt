@@ -63,6 +63,12 @@ data class RejectWorkOrderRequest(
     val rejectReason: String
 )
 
+data class TransferWorkOrderRequest(
+    val workOrderId: String,
+    val targetUserId: String,
+    val transferReason: String? = null
+)
+
 data class WorkOrderAttachmentDto(
     val id: String? = null,
     val fileName: String? = null,
@@ -71,6 +77,8 @@ data class WorkOrderAttachmentDto(
 )
 
 data class CreateWorkOrderRequest(
+    /** 驳回/草稿重新提交时传入，走后台编辑同一工单；为空则新建 */
+    val id: String? = null,
     val title: String,
     val brief: String,
     val typeCode: String,

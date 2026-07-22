@@ -54,6 +54,7 @@ data class OkrKeyResult(
 data class OkrObjective(
     val id: Long,
     val title: String,
+    val description: String? = null,
     val userId: Long? = null,
     val createTime: String? = null,
     val periodType: String? = null,
@@ -173,6 +174,59 @@ data class CreateObjectiveRequest(
     val parentKrId: Long? = null,
     val objectiveType: Int? = null,
     val keyResults: List<CreateKrRequest>? = null
+)
+
+/** PUT /mobile/okr/update 的 KR 项（有 id 则更新，无 id 则新增） */
+data class UpdateKrRequest(
+    val id: Long? = null,
+    val title: String,
+    val targetValue: Double,
+    val weight: Int? = null,
+    val currentValue: Double? = null,
+    val unit: String? = null,
+    val sortOrder: Int? = null,
+    val status: Int? = null,
+    val userId: Long? = null
+)
+
+data class UpdateObjectiveRequest(
+    val id: Long,
+    val title: String,
+    val description: String? = null,
+    val periodType: String,
+    val startDate: String,
+    val endDate: String,
+    val deptId: Long,
+    val parentKrId: Long? = null,
+    val objectiveType: Int? = null,
+    val keyResults: List<UpdateKrRequest>? = null
+)
+
+data class OkrAlignPersonOption(
+    val userId: Long,
+    val name: String? = null,
+    val deptName: String? = null,
+    val selected: Boolean? = null
+)
+
+data class OkrAlignContext(
+    val alignType: String? = null,
+    val alignTypeLabel: String? = null,
+    val ownerUserId: Long? = null,
+    val ownerName: String? = null,
+    val deptId: Long? = null,
+    val deptName: String? = null,
+    val roleLabel: String? = null,
+    val selectedTargetUserId: Long? = null,
+    val selectedParentKrId: Long? = null,
+    val personOptions: List<OkrAlignPersonOption>? = null,
+    val alignableKrs: List<AlignableKr>? = null
+)
+
+/** GET /mobile/okr/objective/edit/{id} */
+data class OkrObjectiveEditContextResponse(
+    val objective: OkrObjective? = null,
+    val alignment: OkrAlignContext? = null
 )
 
 data class PendingKrItem(

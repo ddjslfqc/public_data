@@ -91,6 +91,15 @@ object OkrPeriodHelper {
         return objective.periodLabel.orEmpty().ifBlank { "—" }
     }
 
+    /** 根据目标起止日期反推 Tab value（quarter-2 / year） */
+    fun periodValueFromDates(startDate: String?, endDate: String?): String {
+        if (startDate.isNullOrBlank() || startDate.length < 7) return currentQuarterValue()
+        val month = startDate.substring(5, 7).toIntOrNull() ?: return currentQuarterValue()
+        val end = endDate?.take(10).orEmpty()
+        if (month == 1 && end.endsWith("-12-31")) return "year"
+        return quarterValueForMonth(month)
+    }
+
     private fun currentMonth(): Int = Calendar.getInstance().get(Calendar.MONTH) + 1
 
     private fun quarterValueForMonth(month: Int): String = when {

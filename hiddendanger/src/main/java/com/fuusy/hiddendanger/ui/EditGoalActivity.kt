@@ -71,9 +71,15 @@ class EditGoalActivity : AppCompatActivity() {
         setupAlignSection()
         observeViewModel()
 
-        krAdapter.submitItems(listOf(GoalKrEditItem()))
-        updateKrUiState()
-        viewModel.loadAlignOptions()
+        val objectiveId = intent.getLongExtra(EXTRA_OBJECTIVE_ID, -1L).takeIf { it > 0 }
+        if (objectiveId != null) {
+            binding.btnSubmit.text = "保存目标"
+            viewModel.loadForEdit(objectiveId)
+        } else {
+            krAdapter.submitItems(listOf(GoalKrEditItem()))
+            updateKrUiState()
+            viewModel.loadAlignOptions()
+        }
     }
 
     private fun observeViewModel() {
@@ -90,6 +96,17 @@ class EditGoalActivity : AppCompatActivity() {
                 finish()
             }
         }
+        viewModel.updated.observe(this) { ok ->
+            if (ok == true) {
+                Toast.makeText(this, "目标已保存", Toast.LENGTH_SHORT).show()
+                setResult(RESULT_OK)
+                finish()
+            }
+        }
+        viewModel.editForm.observe(this) { form ->
+            if (form == null) return@observe
+            applyEditForm(form)
+        }
         viewModel.alignOptions.observe(this) {
             updateScopeLabel()
         }
@@ -99,19 +116,35 @@ class EditGoalActivity : AppCompatActivity() {
         }
     }
 
+    private fun applyEditForm(form: EditGoalViewModel.EditGoalForm) {
+        binding.etObjective.setText(form.title)
+        binding.etDescription.setText(form.description.orEmpty())
+        selectPeriod(form.periodValue)
+        binding.switchAlign.isChecked = form.alignEnabled
+        binding.llAlignContent.isVisible = form.alignEnabled
+        if (form.alignEnabled && viewModel.selectedParentKr != null) {
+            binding.tvAlignTarget.text = krLabel(viewModel.selectedParentKr!!)
+        }
+        updateOwnDeptLabel()
+        updateScopeLabel()
+        krAdapter.submitItems(form.krItems)
+        updateKrUiState()
+    }
+
     private fun setupActions() {
         binding.btnBack.setOnClickListener { finish() }
         binding.btnCancel.setOnClickListener { finish() }
         binding.btnAddKr.setOnClickListener { addKrItem() }
         binding.btnSubmit.setOnClickListener {
-            if (validateForm()) {
-                viewModel.createObjective(
-                    periodQueryValue = currentPeriodValue,
-                    title = binding.etObjective.text?.toString().orEmpty(),
-                    description = binding.etDescription.text?.toString(),
-                    alignEnabled = binding.switchAlign.isChecked,
-                    krItems = krAdapter.currentItems()
-                )
+            if (!validateForm()) return@setOnClickListener
+            val title = binding.etObjective.text?.toString().orEmpty()
+            val description = binding.etDescription.text?.toString()
+            val alignEnabled = binding.switchAlign.isChecked
+            val krs = krAdapter.currentItems()
+            if (viewModel.isEditMode) {
+                viewModel.updateObjective(currentPeriodValue, title, description, alignEnabled, krs)
+            } else {
+                viewModel.createObjective(currentPeriodValue, title, description, alignEnabled, krs)
             }
         }
         binding.rowOwnDept.setOnClickListener { showOwnDeptPicker() }
@@ -337,6 +370,7 @@ class EditGoalActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_PERIOD_VALUE = "period_value"
+        const val EXTRA_OBJECTIVE_ID = "objective_id"
         private const val PERIOD_Q2 = "quarter-2"
         private const val PERIOD_Q3 = "quarter-3"
         private const val PERIOD_Q4 = "quarter-4"

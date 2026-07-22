@@ -33,7 +33,7 @@ class ForgotPasswordActivity : BaseVmActivity<ActivityForgotPasswordBinding>() {
                 val rePassword = etIvPasswordSure.text.toString()
 
                 when {
-                    username.isBlank() -> showToast("请输入工号或手机号")
+                    username.isBlank() -> showToast("请输入登录账号")
                     nickName.isBlank() -> showToast("请输入姓名")
                     password.isBlank() -> showToast("请输入新密码")
                     password.length < 6 -> showToast("密码至少 6 位")

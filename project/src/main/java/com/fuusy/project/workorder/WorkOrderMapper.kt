@@ -8,16 +8,18 @@ import com.fuusy.common.data.WorkOrderStatus
 
 object WorkOrderMapper {
 
-    /** 将表单字段映射为文档定义的 create 请求体 */
+    /** 将表单字段映射为文档定义的 create 请求体；[workOrderId] 非空时为编辑/驳回重提 */
     fun buildCreateRequest(
         form: Map<String, String>,
-        projectName: String?
+        projectName: String?,
+        workOrderId: String? = null
     ): CreateWorkOrderRequest {
         fun opt(key: String): String? = form[key]?.trim()?.takeIf { it.isNotBlank() }
 
         val handlerId = resolveRectificationPerson(form)
 
         return CreateWorkOrderRequest(
+            id = workOrderId?.trim()?.takeIf { it.isNotBlank() },
             title = opt("title") ?: form["hiddenDangerName"].orEmpty(),
             brief = opt("brief") ?: form["hiddenDangerDescription"].orEmpty(),
             typeCode = opt("typeCode") ?: opt("workOrderType").orEmpty(),

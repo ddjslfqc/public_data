@@ -44,6 +44,8 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
     // 新增：本地文件路径到URL的映射
     private val localPathToUrlMap = mutableMapOf<String, String>() // 本地路径 -> URL
     private val urlToLocalPathMap = mutableMapOf<String, String>() // URL -> 本地路径
+    /** 已有服务端附件 URL → id，驳回重提时用于 keepAttachmentIds */
+    private val urlToAttachmentIdMap = mutableMapOf<String, String>()
 
     // 表单验证错误
     private val _validationErrors = MutableLiveData<List<String>>()
@@ -374,6 +376,9 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
         android.util.Log.d("AttachmentDebug", "removeAttachment: path=$path, before currentSelectedFiles=$currentSelectedFiles uploadedUrls=$uploadedUrls")
         currentSelectedFiles.remove(path)
         uploadedUrls.remove(path)
+        if (path != null) {
+            urlToAttachmentIdMap.remove(path)
+        }
         
         // 使用兼容的 API 21+ 方法替换 removeIf
         val localPathToUrlMapIterator = localPathToUrlMap.entries.iterator()
@@ -388,6 +393,7 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
         while (urlToLocalPathMapIterator.hasNext()) {
             val entry = urlToLocalPathMapIterator.next()
             if (entry.key == path || entry.value == path) {
+                urlToAttachmentIdMap.remove(entry.key)
                 urlToLocalPathMapIterator.remove()
             }
         }
@@ -515,6 +521,7 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
         uploadedUrls.clear()
         localPathToUrlMap.clear()
         urlToLocalPathMap.clear()
+        urlToAttachmentIdMap.clear()
         updateAttachmentsDisplay()
     }
 
@@ -524,23 +531,36 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
         // 将草稿中的附件URL添加到已上传集合，过滤无效路径
         draft.attachments?.forEach { attachment ->
             val url = attachment?.url
+            val attId = attachment?.id?.trim()?.takeIf { it.isNotBlank() }
             if (url != null && url.isNotBlank()) {
                 if (url.startsWith("http://") || url.startsWith("https://")) {
-                    // 过滤有效的URL
                     uploadedUrls.add(url)
-                    // 对于草稿中的URL，我们可能没有对应的本地路径映射
-                    // 这种情况下，URL会直接显示，但无法在相册中预选
+                    if (attId != null) urlToAttachmentIdMap[url] = attId
                 } else {
-                    // 过滤有效的本地路径
                     val file = java.io.File(url)
                     if (file.exists() || url.startsWith("content://")) {
                         currentSelectedFiles.add(url)
+                        if (attId != null) urlToAttachmentIdMap[url] = attId
                     }
                 }
             }
         }
         updateAttachmentsDisplay()
     }
+
+    /** 当前仍保留在表单中的服务端附件 ID（逗号分隔） */
+    private fun resolveKeepAttachmentIds(): String? {
+        val remaining = getAllAttachments().filterNotNull().toSet()
+        val ids = urlToAttachmentIdMap
+            .filterKeys { it in remaining || urlToLocalPathMap[it] in remaining }
+            .values
+            .distinct()
+        return ids.takeIf { it.isNotEmpty() }?.joinToString(",")
+    }
+
+    private fun resolveEditWorkOrderId(): String? =
+        resubmitId?.trim()?.takeIf { it.isNotBlank() }
+            ?: draftEditId?.trim()?.takeIf { it.isNotBlank() }
 
     private fun validateForm(): List<String> {
         val errors = mutableListOf<String>()
@@ -829,9 +849,11 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
         if (formValueMap["project"].isNullOrBlank()) {
             projectInfo["itemName"]?.takeIf { it.isNotBlank() }?.let { formValueMap["project"] = it }
         }
+        val editId = resolveEditWorkOrderId()
         val createBody = WorkOrderMapper.buildCreateRequest(
             form = formValueMap,
-            projectName = projectInfo["itemName"]
+            projectName = projectInfo["itemName"],
+            workOrderId = editId
         )
         if (createBody.title.isBlank()) {
             _submitStatus.value = SubmitStatus.Error("工单名称不能为空")
@@ -861,22 +883,24 @@ class CreateWorkOrderViewModel(application: Application) : AndroidViewModel(appl
             if (file != null) attachmentFiles.add(file)
         }
 
-        val createResult = mobileWorkOrderRepo.create(createBody, attachmentFiles)
+        val keepIds = if (editId != null) resolveKeepAttachmentIds() else null
+        val createResult = mobileWorkOrderRepo.create(createBody, attachmentFiles, keepIds)
         if (createResult.isFailure) {
-            val msg = createResult.exceptionOrNull()?.message ?: "创建失败"
+            val msg = createResult.exceptionOrNull()?.message ?: "提交失败"
             _submitStatus.value = SubmitStatus.Error(msg)
             onResult(false, msg)
             return
         }
         val workOrderId = createResult.getOrNull()?.id.orEmpty()
         if (workOrderId.isBlank()) {
-            _submitStatus.value = SubmitStatus.Error("创建失败：未返回工单ID")
-            onResult(false, "创建失败")
+            _submitStatus.value = SubmitStatus.Error("提交失败：未返回工单ID")
+            onResult(false, "提交失败")
             return
         }
 
         _submitStatus.value = SubmitStatus.Success
-        val msg = if (attachmentFiles.isEmpty()) "工单提交成功" else "工单提交成功（含 ${attachmentFiles.size} 个附件）"
+        val actionLabel = if (editId != null) "重新提交成功" else "工单提交成功"
+        val msg = if (attachmentFiles.isEmpty()) actionLabel else "$actionLabel（含 ${attachmentFiles.size} 个新附件）"
         ToastUtil.showCustomToast(context, msg)
         onResult(true, null)
     }

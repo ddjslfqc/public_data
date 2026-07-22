@@ -104,17 +104,10 @@ class CreateWorkOrderActivity : BaseVmActivity<ActivityCreateWorkOrderBinding>()
         val resubmitIdExtra = intent.getStringExtra("resubmit_id")
 
         if (draft != null) {
-            // 只回显有效的图片/视频路径，防止无效路径导致闪退
-            val validAttachments = draft.attachments?.mapNotNull { it?.url }
-                ?.filter { it.startsWith("content://") || File(it).exists() } ?: emptyList()
-            viewModel.setAttachments(validAttachments)
+            // 附件由 loadFormAndFillDraft → loadAttachmentsFromDraft 加载（含 http 远程附件）
             viewModel.loadFormAndFillDraft(draft)
             if (isResubmit) {
-                viewModel.setResubmitId(resubmitIdExtra)
-            }
-
-            // 如果是重新提交，修改标题并显示驳回理由
-            if (isResubmit) {
+                viewModel.setResubmitId(resubmitIdExtra ?: draft.id)
                 showRejectionReasonCard(draft)
             }
         } else {

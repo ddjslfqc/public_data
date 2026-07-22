@@ -16,7 +16,8 @@ import com.fuusy.hiddendanger.ui.model.GoalKrItem
 import com.fuusy.hiddendanger.ui.model.KrNavHelper
 
 class GoalObjectiveSectionAdapter(
-    private val onKrClick: (GoalKrItem) -> Unit = {}
+    private val onKrClick: (GoalKrItem) -> Unit = {},
+    private val onObjectiveEdit: ((OkrObjective) -> Unit)? = null
 ) : ListAdapter<OkrObjective, GoalObjectiveSectionAdapter.VH>(DiffCallback()) {
 
     class VH(val binding: ItemGoalObjectiveSectionBinding) : RecyclerView.ViewHolder(binding.root)
@@ -44,6 +45,11 @@ class GoalObjectiveSectionAdapter(
             } else {
                 tvObjectiveStatus.setBackgroundResource(R.drawable.bg_goal_progress_tag)
                 tvObjectiveStatus.setTextColor(Color.parseColor("#1365EC"))
+            }
+            // 仅「我的目标」传入 onObjectiveEdit；周期已结束不展示
+            tvEdit.isVisible = onObjectiveEdit != null && !periodEnded
+            tvEdit.setOnClickListener {
+                if (onObjectiveEdit != null && !periodEnded) onObjectiveEdit.invoke(objective)
             }
             tvCreatedAt.text = objective.createTime?.take(10).orEmpty().ifBlank { "—" }
             tvPeriodLabel.text = OkrPeriodHelper.objectivePeriodDisplay(objective)

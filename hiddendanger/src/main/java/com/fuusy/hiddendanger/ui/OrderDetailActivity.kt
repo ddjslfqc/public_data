@@ -228,6 +228,7 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
                 if (isHandler) {
                     binding.bottomBar.isVisible = true
                     addActionButton("驳回", style = ButtonStyle.SECONDARY) { showRejectDialog(item) }
+                    addActionButton("转单", style = ButtonStyle.SECONDARY) { showTransferDialog(item) }
                     addActionButton("提交处理结果", style = ButtonStyle.PRIMARY) { showCompleteDialog(item) }
                 } else {
                     binding.bottomBar.isVisible = false
@@ -329,6 +330,52 @@ class OrderDetailActivity : androidx.appcompat.app.AppCompatActivity() {
                     ToastUtil.showCustomToast(this@OrderDetailActivity, msg ?: "驳回失败")
                 }
             }
+        }
+    }
+
+    private fun showTransferDialog(item: WorkOrderItem) {
+        val deptId = item.responsibleDeptId?.trim().orEmpty()
+        if (deptId.isBlank()) {
+            ToastUtil.showCustomToast(this, "缺少处理部门，无法转单")
+            return
+        }
+        LoadingUtils.showLoading(this)
+        viewModel.loadDeptUsers(deptId) { users, err ->
+            LoadingUtils.hideLoading()
+            if (err != null) {
+                ToastUtil.showCustomToast(this, err)
+                return@loadDeptUsers
+            }
+            val me = UserIdProvider.current()?.toString()?.trim().orEmpty()
+            val candidates = users.filter { it.value.trim() != me }
+            if (candidates.isEmpty()) {
+                ToastUtil.showCustomToast(this, "同部门暂无可转单人员")
+                return@loadDeptUsers
+            }
+            val labels = candidates.map { it.label }.toTypedArray()
+            AlertDialog.Builder(this)
+                .setTitle("选择转单对象")
+                .setItems(labels) { _, which ->
+                    val target = candidates[which]
+                    AppDialogHelper.showInput(
+                        context = this,
+                        title = "转单给 ${target.label}",
+                        label = "转单说明（可选）：",
+                        hint = "说明转单原因...",
+                        required = false,
+                        confirmText = "确认转单"
+                    ) { reason ->
+                        viewModel.transfer(item.id, target.value, reason) { ok, msg ->
+                            if (ok) {
+                                ToastUtil.showCustomToast(this@OrderDetailActivity, "转单成功")
+                            } else {
+                                ToastUtil.showCustomToast(this@OrderDetailActivity, msg ?: "转单失败")
+                            }
+                        }
+                    }
+                }
+                .setNegativeButton("取消", null)
+                .show()
         }
     }
 

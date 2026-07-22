@@ -107,6 +107,37 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    fun loadDeptUsers(
+        deptId: String,
+        onResult: (List<com.fuusy.project.workorder.OptionItemDto>, String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            repo.users(deptId).fold(
+                onSuccess = { onResult(it, null) },
+                onFailure = { onResult(emptyList(), it.message ?: "加载人员失败") }
+            )
+        }
+    }
+
+    fun transfer(
+        workOrderId: String,
+        targetUserId: String,
+        reason: String?,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            _loading.value = true
+            repo.transfer(workOrderId, targetUserId, reason).fold(
+                onSuccess = {
+                    loadDetail(workOrderId)
+                    onResult(true, null)
+                },
+                onFailure = { onResult(false, it.message) }
+            )
+            _loading.value = false
+        }
+    }
+
     fun evaluate(workOrderId: String, score: Int, content: String?, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             _loading.value = true

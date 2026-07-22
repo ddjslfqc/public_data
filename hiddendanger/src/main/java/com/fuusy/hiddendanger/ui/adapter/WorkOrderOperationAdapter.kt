@@ -29,10 +29,10 @@ class WorkOrderOperationAdapter :
         val item = getItem(position)
         holder.binding.apply {
             tvType.text = item.typeLabel
-            val (bg, fg) = if (item.isReject) {
-                Color.parseColor("#33EB1919") to Color.parseColor("#EB1919")
-            } else {
-                Color.parseColor("#331365EC") to Color.parseColor("#1365EC")
+            val (bg, fg) = when {
+                item.isReject -> Color.parseColor("#33EB1919") to Color.parseColor("#EB1919")
+                item.isTransfer -> Color.parseColor("#33FA8C16") to Color.parseColor("#FA8C16")
+                else -> Color.parseColor("#331365EC") to Color.parseColor("#1365EC")
             }
             tvType.background = GradientDrawable().apply {
                 cornerRadius = 4f * root.resources.displayMetrics.density

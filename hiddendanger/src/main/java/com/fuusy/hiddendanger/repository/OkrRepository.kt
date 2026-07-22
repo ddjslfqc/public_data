@@ -19,12 +19,14 @@ import com.fuusy.hiddendanger.data.OkrDepartment
 import com.fuusy.hiddendanger.data.OkrKrComment
 import com.fuusy.hiddendanger.data.OkrKrDetailResponse
 import com.fuusy.hiddendanger.data.OkrObjective
+import com.fuusy.hiddendanger.data.OkrObjectiveEditContextResponse
 import com.fuusy.hiddendanger.data.OkrPeriodHelper
 import com.fuusy.hiddendanger.data.OkrUpdateRecordItem
 import com.fuusy.hiddendanger.data.OkrReviewPrep
 import com.fuusy.hiddendanger.data.PeerEvalOrgOverviewResponse
 import com.fuusy.hiddendanger.data.PendingKrItem
 import com.fuusy.hiddendanger.data.PendingUpdateRecordItem
+import com.fuusy.hiddendanger.data.UpdateObjectiveRequest
 import com.fuusy.hiddendanger.data.UpdateRecordApproveRequest
 import com.fuusy.hiddendanger.ui.model.GoalKrItem
 import com.fuusy.hiddendanger.ui.model.KrNavHelper
@@ -151,6 +153,17 @@ class OkrRepository {
 
     suspend fun createObjective(body: CreateObjectiveRequest): Result<Long> =
         safeCall { api.createObjective(body) }
+
+    suspend fun getObjectiveEdit(objectiveId: Long): Result<OkrObjectiveEditContextResponse> =
+        safeCall { api.getObjectiveEdit(objectiveId) }
+
+    suspend fun updateObjective(body: UpdateObjectiveRequest): Result<Unit> = try {
+        val resp = api.updateObjective(body)
+        if (resp.isSuccess) Result.success(Unit)
+        else Result.failure(IllegalStateException(resp.errorMsg ?: "更新失败(${resp.errorCode})"))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 
     suspend fun getPendingKrs(): Result<List<PendingKrItem>> =
         safeListCall { api.getPendingKrs() }
