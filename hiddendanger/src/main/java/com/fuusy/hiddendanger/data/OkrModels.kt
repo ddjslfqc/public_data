@@ -415,8 +415,10 @@ data class KrCommentCreateRequest(
 
 data class OkrAttachmentDto(
     val id: Long? = null,
+    @SerializedName(value = "fileName", alternate = ["name"])
     val fileName: String? = null,
-    @SerializedName("fileUrl") val fileUrl: String? = null,
+    @SerializedName(value = "fileUrl", alternate = ["url", "filePath"])
+    val fileUrl: String? = null,
     @SerializedName("filePath") val filePath: String? = null,
     val fileSize: Long? = null,
     val fileType: String? = null

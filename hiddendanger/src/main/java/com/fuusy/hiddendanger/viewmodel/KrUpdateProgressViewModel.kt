@@ -10,6 +10,7 @@ import com.fuusy.hiddendanger.data.CreateUpdateRecordRequest
 import com.fuusy.hiddendanger.data.OkrUpdateRecordAttachment
 import com.fuusy.hiddendanger.repository.OkrRepository
 import com.fuusy.hiddendanger.ui.model.GoalKrItem
+import com.fuusy.hiddendanger.ui.model.KrNavHelper
 import com.fuusy.hiddendanger.util.OkrFileHelper
 import kotlinx.coroutines.launch
 
@@ -87,11 +88,17 @@ class KrUpdateProgressViewModel(application: Application) : AndroidViewModel(app
                     return@launch
                 }
                 uploadResult.getOrNull()?.let { dto ->
+                    val url = dto.fileUrl ?: dto.filePath
+                    if (url.isNullOrBlank()) {
+                        _loading.value = false
+                        _error.value = "附件上传成功但未返回地址"
+                        return@launch
+                    }
                     attachmentItems.add(
                         OkrUpdateRecordAttachment(
                             type = inferAttachmentType(file.name),
                             name = dto.fileName ?: file.name,
-                            url = dto.fileUrl ?: dto.filePath
+                            url = url
                         )
                     )
                 }
@@ -106,11 +113,22 @@ class KrUpdateProgressViewModel(application: Application) : AndroidViewModel(app
             )
             repo.createUpdateRecord(body).fold(
                 onSuccess = {
-                    _updatedItem.value = item.copy(
-                        pendingProgressValue = currentValue,
-                        progressApprovalStatus = 0
+                    // 提交后以服务端为准（可能自动通过，也可能待审批）
+                    repo.getKrDetail(item.id).fold(
+                        onSuccess = { detail ->
+                            _updatedItem.value = KrNavHelper.goalKrItem(detail, item.periodEndDate)
+                            _submitted.value = true
+                        },
+                        onFailure = {
+                            // 详情刷新失败时至少带上本次提交值，避免界面完全不刷新
+                            _updatedItem.value = item.copy(
+                                currentValue = currentValue,
+                                pendingProgressValue = currentValue,
+                                progressApprovalStatus = 0
+                            )
+                            _submitted.value = true
+                        }
                     )
-                    _submitted.value = true
                 },
                 onFailure = { _error.value = it.message ?: "提交失败" }
             )

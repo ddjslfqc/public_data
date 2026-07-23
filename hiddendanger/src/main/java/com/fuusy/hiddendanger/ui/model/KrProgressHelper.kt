@@ -15,7 +15,8 @@ object KrProgressHelper {
         if (!isKrOwner(item)) return false
         if (OkrPeriodHelper.isPeriodEnded(item.periodEndDate)) return false
         if (item.achieved || item.status == 1) return false
-        if (item.approvalStatus != 1) return false
+        // approvalStatus 为空时不拦截（兼容旧数据/部分接口未回传）
+        if (item.approvalStatus != null && item.approvalStatus != 1) return false
         if (item.progressApprovalStatus == 0) return false
         return true
     }

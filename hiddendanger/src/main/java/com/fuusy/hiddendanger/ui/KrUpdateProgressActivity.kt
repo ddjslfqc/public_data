@@ -152,11 +152,13 @@ class KrUpdateProgressActivity : AppCompatActivity() {
         }
         viewModel.submitted.observe(this) { done ->
             if (done != true) return@observe
-            Toast.makeText(this, KrProgressHelper.progressSubmitSuccessMessage(krItem), Toast.LENGTH_SHORT).show()
-            val updated = viewModel.updatedItem.value ?: krItem.copy(
-                pendingProgressValue = viewModel.currentValue,
-                progressApprovalStatus = 0
-            )
+            val updated = viewModel.updatedItem.value ?: krItem
+            val msg = if (updated.progressApprovalStatus == 0) {
+                KrProgressHelper.progressSubmitSuccessMessage(updated)
+            } else {
+                "进度已更新"
+            }
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
             setResult(RESULT_OK, Intent().apply { KrNavHelper.putExtra(this, updated) })
             finish()
         }
