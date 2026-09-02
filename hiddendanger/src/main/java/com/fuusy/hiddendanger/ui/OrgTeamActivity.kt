@@ -39,14 +39,16 @@ class OrgTeamActivity : AppCompatActivity() {
     private var selectedMember: OrgTeamMemberItem? = null
 
     private val memberAdapter = OrgTeamMemberAdapter { member -> openMemberDetail(member) }
-    private val objectiveAdapter = GoalObjectiveSectionAdapter { item ->
-        startActivity(
-            Intent(this, KrDetailActivity::class.java).apply {
-                KrNavHelper.putExtra(this, item)
-                putExtra(KrDetailActivity.EXTRA_READ_ONLY, true)
-            }
-        )
-    }
+    private val objectiveAdapter = GoalObjectiveSectionAdapter(
+        onKrClick = { item ->
+            startActivity(
+                Intent(this, KrDetailActivity::class.java).apply {
+                    KrNavHelper.putExtra(this, item)
+                    putExtra(KrDetailActivity.EXTRA_READ_ONLY, true)
+                }
+            )
+        }
+    )
     private val collaboratorAdapter = PeerCollaboratorAdapter { }
 
     override fun onCreate(savedInstanceState: Bundle?) {

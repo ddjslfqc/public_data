@@ -79,4 +79,26 @@
         <item name="android:textColorPrimary">#000000</item>
     </style>
 
+    <!-- 日期选择器：头部 / 选中圈 / 按钮统一品牌蓝 -->
+    <style name="Theme.Yuecheng.DatePickerDialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="colorPrimary">@color/brand_blue</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorAccent">@color/brand_blue</item>
+        <item name="colorControlActivated">@color/brand_blue</item>
+        <item name="android:colorAccent">@color/brand_blue</item>
+        <item name="materialCalendarTheme">@style/ThemeOverlay.Yuecheng.MaterialCalendar</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Theme.Yuecheng.DatePickerDialog.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Theme.Yuecheng.DatePickerDialog.Button</item>
+    </style>
+
+    <style name="ThemeOverlay.Yuecheng.MaterialCalendar" parent="ThemeOverlay.MaterialComponents.MaterialCalendar">
+        <item name="colorPrimary">@color/brand_blue</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorAccent">@color/brand_blue</item>
+    </style>
+
+    <style name="Theme.Yuecheng.DatePickerDialog.Button" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/brand_blue</item>
+    </style>
+
 </resources>

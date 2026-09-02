@@ -51,6 +51,41 @@ object ServerConfig {
     fun getOkrBaseUrl(): String = getWorkOrderBaseUrl()
 
     /**
+     * 千文智能助手服务地址（独立于业务 9220）
+     * 与 Web order-background 默认一致；可通过 Sp 键 qianwen_base_url 覆盖
+     */
+    fun getQianwenBaseUrl(): String {
+        val custom = IpConfigUtils.getQianwenBaseUrl()
+        if (custom.isNotBlank()) return ensureTrailingSlash(custom)
+        return "http://42.228.15.242:24632/"
+    }
+
+    /** FileBrowser 知识库（与 Web order-background 默认一致） */
+    fun getFileBrowserBaseUrl(): String {
+        val custom = IpConfigUtils.getFileBrowserBaseUrl()
+        if (custom.isNotBlank()) return ensureTrailingSlash(custom)
+        return "http://42.228.15.242:24634/"
+    }
+
+    /** 匿名公共分享 hash（与 Web index.html 默认一致） */
+    fun getFileBrowserShareHash(): String =
+        IpConfigUtils.getFileBrowserShareHash().ifBlank { "dCRyVzvSrnmXZdfuTZArkw" }
+
+    /**
+     * FileBrowser 长期 API Token（可选）。
+     * 仅 Sp 配置了有效 token 时才走 /api/resources + Authorization；
+     * 默认与 Web 一致：公共分享 hash，不强制 JWT。
+     */
+    fun getFileBrowserApiToken(): String = IpConfigUtils.getFileBrowserApiToken()
+
+
+    /** FileBrowser 来源名（文档默认：本地文件） */
+    fun getFileBrowserSource(): String = "本地文件"
+
+    private fun ensureTrailingSlash(url: String): String =
+        if (url.endsWith("/")) url else "$url/"
+
+    /**
      * 获取当前环境的服务器地址
      */
     fun getBaseUrl(): String {

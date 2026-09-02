@@ -103,6 +103,30 @@ object IpConfigUtils {
     fun getYunServerUrl(): String =
         buildBaseUrl(getYunServerIp(), getYunServerPort())
 
+    /** 千文助手 BaseURL（完整 URL，可含端口）；空则用 ServerConfig 默认 */
+    fun getQianwenBaseUrl(): String =
+        SpUtils.getString("qianwen_base_url").orEmpty().trim()
+
+    fun setQianwenBaseUrl(url: String) {
+        SpUtils.put("qianwen_base_url", url.trim())
+    }
+
+    /** FileBrowser 知识库公网地址，留空则用 ServerConfig 默认 */
+    fun getFileBrowserBaseUrl(): String =
+        SpUtils.getString("filebrowser_base_url").orEmpty().trim()
+
+    /** 匿名分享 hash，与 Web index.html FILEBROWSER_SHARE_HASH 一致 */
+    fun getFileBrowserShareHash(): String =
+        SpUtils.getString("filebrowser_share_hash").orEmpty().trim()
+
+    /** FileBrowser 长期 API Token（Bearer），留空则只用公共 hash 上传 */
+    fun getFileBrowserApiToken(): String =
+        SpUtils.getString("filebrowser_api_token").orEmpty().trim()
+
+    fun setFileBrowserApiToken(token: String) {
+        SpUtils.put("filebrowser_api_token", token.trim())
+    }
+
     /**
      * 检查是否使用了自定义远程配置（三组 IP 都填了）
      */

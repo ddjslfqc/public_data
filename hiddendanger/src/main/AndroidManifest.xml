@@ -141,6 +141,25 @@
             android:theme="@style/HiddenDangerTheme"
             android:label="组织互评" />
 
+        <activity
+            android:name=".ui.AiAssistantActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="悦城助手"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.MyReportsActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="我的报告" />
+
+        <activity
+            android:name=".ui.MyReportDetailActivity"
+            android:exported="false"
+            android:theme="@style/HiddenDangerTheme"
+            android:label="报告详情" />
+
         <activity android:name="com.fuusy.hiddendanger.ui.DraftBoxActivity" />
 
         <provider

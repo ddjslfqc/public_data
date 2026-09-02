@@ -33,6 +33,9 @@
     <color name="page_indicator_background">#80000000</color>
     <color name="page_indicator_text">#FFFFFF</color>
 
+    <!-- 悦城助手品牌蓝（与 UI #1465EB 一致） -->
+    <color name="brand_blue">#1465EB</color>
+
     <!-- 我的页 -->
     <color name="personal_bg">#EEF1F8</color>
     <color name="personal_text_sub">#686D79</color>

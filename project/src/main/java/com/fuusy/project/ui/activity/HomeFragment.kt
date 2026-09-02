@@ -160,6 +160,16 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupClicks() {
+        binding.cardAiAssistant.setOnClickListener {
+            ARouter.getInstance()
+                .build("/hiddendanger/AiAssistantActivity")
+                .navigation()
+        }
+        binding.cardMyReports.setOnClickListener {
+            ARouter.getInstance()
+                .build("/hiddendanger/MyReportsActivity")
+                .navigation()
+        }
         binding.cardUwbDebug.setOnClickListener {
             ARouter.getInstance().build("/project/UwbDebugActivity").navigation()
         }

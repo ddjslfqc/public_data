@@ -24,5 +24,16 @@ object SessionHelper {
         DeptRoleHelper.clear()
         SpUtils.removeValue("selected_project")
         DbHelper.deleteUserInfo(context)
+        // 悦城助手本地缓存（聊天 / 报告草稿 / 资料）不按用户隔离，登出必须清掉
+        context.applicationContext
+            .getSharedPreferences("qianwen_chat", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .apply()
+        context.applicationContext
+            .getSharedPreferences("weekly_report_okr_cache_v1", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .apply()
     }
 }

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_ai_timing_dialog"
+    android:elevation="12dp"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/tv_timing_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="本次请求性能详情"
+        android:textColor="#111827"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:id="@+id/ll_timing_rows"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_ai_timing_list"
+        android:clipToOutline="true"
+        android:orientation="vertical"
+        android:padding="1dp"
+        tools:layout_height="48dp" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp">
+
+        <TextView
+            android:id="@+id/btn_timing_close"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_gravity="end"
+            android:background="@drawable/bg_ai_timing_close"
+            android:gravity="center"
+            android:minWidth="72dp"
+            android:paddingHorizontal="18dp"
+            android:text="关闭"
+            android:textColor="#5F6E80"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </FrameLayout>
+</LinearLayout>
