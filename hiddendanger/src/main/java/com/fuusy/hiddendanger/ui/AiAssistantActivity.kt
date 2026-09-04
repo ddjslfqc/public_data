@@ -1,7 +1,6 @@
 package com.fuusy.hiddendanger.ui
 
 import android.Manifest
-import android.app.DatePickerDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -52,6 +51,7 @@ import com.fuusy.hiddendanger.databinding.ActivityAiAssistantBinding
 import com.fuusy.hiddendanger.ui.adapter.AiChatAdapter
 import com.fuusy.hiddendanger.ui.adapter.KnowledgeUploadAdapter
 import com.fuusy.hiddendanger.ui.widget.SegmentTabUi
+import com.fuusy.hiddendanger.ui.widget.YuechengDatePicker
 import com.fuusy.hiddendanger.util.OkrFileHelper
 import com.fuusy.hiddendanger.viewmodel.AiAssistantViewModel
 import java.util.Calendar
@@ -1671,17 +1671,10 @@ class AiAssistantActivity : AppCompatActivity() {
             parts[1].toIntOrNull()?.let { cal.set(Calendar.MONTH, it - 1) }
             parts[2].toIntOrNull()?.let { cal.set(Calendar.DAY_OF_MONTH, it) }
         }
-        DatePickerDialog(
-            this,
-            R.style.Theme_Yuecheng_DatePickerDialog,
-            { _, y, m, d ->
-                val value = String.format(Locale.US, "%04d-%02d-%02d", y, m + 1, d)
-                viewModel.setDailyReportDate(value)
-            },
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH),
-            cal.get(Calendar.DAY_OF_MONTH)
-        ).show()
+        YuechengDatePicker.showFromCalendar(this, cal) { y, m, d ->
+            val value = String.format(Locale.US, "%04d-%02d-%02d", y, m + 1, d)
+            viewModel.setDailyReportDate(value)
+        }
     }
 
     /** 选周内任意一天，ViewModel 自动对齐周一～周日 */
@@ -1694,17 +1687,10 @@ class AiAssistantActivity : AppCompatActivity() {
             parts[1].toIntOrNull()?.let { cal.set(Calendar.MONTH, it - 1) }
             parts[2].toIntOrNull()?.let { cal.set(Calendar.DAY_OF_MONTH, it) }
         }
-        DatePickerDialog(
-            this,
-            R.style.Theme_Yuecheng_DatePickerDialog,
-            { _, y, m, d ->
-                val value = String.format(Locale.US, "%04d-%02d-%02d", y, m + 1, d)
-                viewModel.setWeeklyPeriodFromDay(value)
-            },
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH),
-            cal.get(Calendar.DAY_OF_MONTH)
-        ).show()
+        YuechengDatePicker.showFromCalendar(this, cal) { y, m, d ->
+            val value = String.format(Locale.US, "%04d-%02d-%02d", y, m + 1, d)
+            viewModel.setWeeklyPeriodFromDay(value)
+        }
     }
 
     private fun showEntryMonthlyMonthPicker() {
@@ -1715,20 +1701,9 @@ class AiAssistantActivity : AppCompatActivity() {
             parts[0].toIntOrNull()?.let { cal.set(Calendar.YEAR, it) }
             parts[1].toIntOrNull()?.let { cal.set(Calendar.MONTH, it - 1) }
         }
-        val dialog = DatePickerDialog(
-            this,
-            R.style.Theme_Yuecheng_DatePickerDialog,
-            { _, y, m, _ ->
-                viewModel.setMonthlyMonth(String.format(Locale.US, "%04d-%02d", y, m + 1))
-            },
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH),
-            1
-        )
-        dialog.show()
-        dialog.datePicker.findViewById<android.view.View>(
-            resources.getIdentifier("day", "id", "android")
-        )?.visibility = android.view.View.GONE
+        YuechengDatePicker.showFromCalendar(this, cal, hideDay = true) { y, m, _ ->
+            viewModel.setMonthlyMonth(String.format(Locale.US, "%04d-%02d", y, m + 1))
+        }
     }
 
     private fun showDatePicker(fieldKey: String, current: String) {
@@ -1739,17 +1714,10 @@ class AiAssistantActivity : AppCompatActivity() {
             parts[1].toIntOrNull()?.let { cal.set(Calendar.MONTH, it - 1) }
             parts[2].toIntOrNull()?.let { cal.set(Calendar.DAY_OF_MONTH, it) }
         }
-        DatePickerDialog(
-            this,
-            R.style.Theme_Yuecheng_DatePickerDialog,
-            { _, y, m, d ->
-                val value = String.format(Locale.US, "%04d-%02d-%02d", y, m + 1, d)
-                viewModel.updatePayloadField(fieldKey, value, rebuildUi = true)
-            },
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH),
-            cal.get(Calendar.DAY_OF_MONTH)
-        ).show()
+        YuechengDatePicker.showFromCalendar(this, cal) { y, m, d ->
+            val value = String.format(Locale.US, "%04d-%02d-%02d", y, m + 1, d)
+            viewModel.updatePayloadField(fieldKey, value, rebuildUi = true)
+        }
     }
 
     private fun showMonthPicker(fieldKey: String, current: String) {
@@ -1759,25 +1727,10 @@ class AiAssistantActivity : AppCompatActivity() {
             parts[0].toIntOrNull()?.let { cal.set(Calendar.YEAR, it) }
             parts[1].toIntOrNull()?.let { cal.set(Calendar.MONTH, it - 1) }
         }
-        DatePickerDialog(
-            this,
-            R.style.Theme_Yuecheng_DatePickerDialog,
-            { _, y, m, _ ->
-                val value = String.format(Locale.US, "%04d-%02d", y, m + 1)
-                viewModel.updatePayloadField(fieldKey, value, rebuildUi = true)
-            },
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH),
-            1
-        ).apply {
-            try {
-                val day = datePicker.findViewById<android.view.View>(
-                    resources.getIdentifier("day", "id", "android")
-                )
-                day?.visibility = android.view.View.GONE
-            } catch (_: Exception) {
-            }
-        }.show()
+        YuechengDatePicker.showFromCalendar(this, cal, hideDay = true) { y, m, _ ->
+            val value = String.format(Locale.US, "%04d-%02d", y, m + 1)
+            viewModel.updatePayloadField(fieldKey, value, rebuildUi = true)
+        }
     }
 
     private var lastRevealedDraftId: String? = null

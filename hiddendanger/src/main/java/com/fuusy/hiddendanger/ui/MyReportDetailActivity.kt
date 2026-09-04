@@ -1,6 +1,5 @@
 package com.fuusy.hiddendanger.ui
 
-import android.app.DatePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -26,6 +25,7 @@ import com.fuusy.hiddendanger.databinding.ActivityMyReportDetailBinding
 import com.fuusy.hiddendanger.R
 import com.fuusy.hiddendanger.repository.DailyReportRepository
 import com.fuusy.hiddendanger.repository.WeeklyReportOkrCache
+import com.fuusy.hiddendanger.ui.widget.YuechengDatePicker
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -261,16 +261,9 @@ class MyReportDetailActivity : AppCompatActivity() {
         if (parts.size >= 3) {
             cal.set(parts[0].toIntOrNull() ?: cal.get(Calendar.YEAR), (parts[1].toIntOrNull() ?: 1) - 1, parts[2].toIntOrNull() ?: 1)
         }
-        DatePickerDialog(
-            this,
-            R.style.Theme_Yuecheng_DatePickerDialog,
-            { _, y, m, d ->
-                onPicked(String.format(Locale.getDefault(), "%04d-%02d-%02d", y, m + 1, d))
-            },
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH),
-            cal.get(Calendar.DAY_OF_MONTH)
-        ).show()
+        YuechengDatePicker.showFromCalendar(this, cal) { y, m, d ->
+            onPicked(String.format(Locale.getDefault(), "%04d-%02d-%02d", y, m + 1, d))
+        }
     }
 
     private fun resolveReportDate(item: ReportArchiveItem): String {

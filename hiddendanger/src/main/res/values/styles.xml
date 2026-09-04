@@ -79,25 +79,26 @@
         <item name="android:textColorPrimary">#000000</item>
     </style>
 
-    <!-- 日期选择器：头部 / 选中圈 / 按钮统一品牌蓝 -->
-    <style name="Theme.Yuecheng.DatePickerDialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+    <!--
+      日期选择器主题：
+      - 不要用 ThemeOverlay.MaterialComponents.Dialog.Alert（日历数字易白底白字）
+      - AppCompat.Light.Dialog 在荣耀/华为等机型上日历网格更稳
+    -->
+    <style name="Theme.Yuecheng.DatePickerDialog" parent="Theme.AppCompat.Light.Dialog">
         <item name="colorPrimary">@color/brand_blue</item>
-        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryDark">@color/brand_blue</item>
         <item name="colorAccent">@color/brand_blue</item>
         <item name="colorControlActivated">@color/brand_blue</item>
         <item name="android:colorAccent">@color/brand_blue</item>
-        <item name="materialCalendarTheme">@style/ThemeOverlay.Yuecheng.MaterialCalendar</item>
+        <item name="android:textColorPrimary">#111827</item>
+        <item name="android:textColorSecondary">#5F6E80</item>
+        <item name="android:textColor">#111827</item>
+        <item name="android:windowBackground">@color/white</item>
         <item name="buttonBarPositiveButtonStyle">@style/Theme.Yuecheng.DatePickerDialog.Button</item>
         <item name="buttonBarNegativeButtonStyle">@style/Theme.Yuecheng.DatePickerDialog.Button</item>
     </style>
 
-    <style name="ThemeOverlay.Yuecheng.MaterialCalendar" parent="ThemeOverlay.MaterialComponents.MaterialCalendar">
-        <item name="colorPrimary">@color/brand_blue</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorAccent">@color/brand_blue</item>
-    </style>
-
-    <style name="Theme.Yuecheng.DatePickerDialog.Button" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+    <style name="Theme.Yuecheng.DatePickerDialog.Button" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
         <item name="android:textColor">@color/brand_blue</item>
     </style>
 
